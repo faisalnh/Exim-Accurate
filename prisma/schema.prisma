@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+
+  accurateCredentials AccurateCredentials[]
+  exportJobs          ExportJob[]
+  importJobs          ImportJob[]
+}
+
+model AccurateCredentials {
+  id              String   @id @default(uuid())
+  userId          String
+  appKey          String
+  signatureSecret String
+  apiToken        String
+  host            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ExportJob {
+  id          String    @id @default(uuid())
+  userId      String
+  type        String // "inventory_adjustment"
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  status      String // pending, running, done, error
+  resultUrl   String?
+  errorMessage String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ImportJob {
+  id          String    @id @default(uuid())
+  userId      String
+  type        String
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  status      String
+  resultUrl   String?
+  errorMessage String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
