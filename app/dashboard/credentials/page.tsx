@@ -4,22 +4,17 @@ import {
   Title,
   Paper,
   Stack,
-  TextInput,
-  PasswordInput,
   Button,
-  Alert,
   Table,
   ActionIcon,
   Group,
   Text,
   LoadingOverlay,
-  Divider,
 } from "@mantine/core";
 import { useState, useEffect, useRef } from "react";
-import { IconAlertCircle, IconTrash, IconCheck } from "@tabler/icons-react";
+import { IconTrash, IconCheck, IconKey } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { useSearchParams } from "next/navigation";
-import { IconKey } from "@tabler/icons-react";
 
 interface Credential {
   id: string;
@@ -31,11 +26,6 @@ interface Credential {
 export default function CredentialsPage() {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [appKey, setAppKey] = useState("");
-  const [signatureSecret, setSignatureSecret] = useState("");
-  const [apiToken, setApiToken] = useState("");
-  const [error, setError] = useState("");
   const searchParams = useSearchParams();
   const handledStatus = useRef<string | null>(null);
 
@@ -85,41 +75,6 @@ export default function CredentialsPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSaving(true);
-
-    try {
-      const response = await fetch("/api/credentials", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appKey, signatureSecret, apiToken }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to save credentials");
-      }
-
-      notifications.show({
-        title: "Success",
-        message: "Credentials saved successfully",
-        color: "green",
-        icon: <IconCheck size={16} />,
-      });
-
-      setAppKey("");
-      setSignatureSecret("");
-      setApiToken("");
-      fetchCredentials();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this credential?")) {
       return;
@@ -154,11 +109,10 @@ export default function CredentialsPage() {
 
       <Paper p="md" withBorder>
         <Stack gap="md">
-          <Title order={3}>Connect via Accurate OAuth</Title>
+          <Title order={3}>Connect Accurate</Title>
           <Text c="dimmed" size="sm">
-            Use the Accurate app you published to fetch the API token directly.
-            App Key and Signature Secret are read from environment variables,
-            the token will be auto-saved to your account.
+            Connect your Accurate account to enable data import and export.
+            Your App Key and Signature Secret are configured in environment variables.
           </Text>
           <Button
             component="a"
@@ -168,65 +122,24 @@ export default function CredentialsPage() {
           >
             Connect Accurate
           </Button>
-          <Divider />
         </Stack>
-
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <Title order={3}>Add New Credentials</Title>
-
-            {error && (
-              <Alert icon={<IconAlertCircle size={16} />} color="red">
-                {error}
-              </Alert>
-            )}
-
-            <TextInput
-              label="App Key"
-              placeholder="Your Accurate app key"
-              required
-              value={appKey}
-              onChange={(e) => setAppKey(e.currentTarget.value)}
-            />
-
-            <PasswordInput
-              label="Signature Secret"
-              placeholder="Your signature secret"
-              required
-              value={signatureSecret}
-              onChange={(e) => setSignatureSecret(e.currentTarget.value)}
-            />
-
-            <PasswordInput
-              label="API Token"
-              placeholder="Your API token"
-              required
-              value={apiToken}
-              onChange={(e) => setApiToken(e.currentTarget.value)}
-            />
-
-            <Button type="submit" loading={saving}>
-              Save Credentials
-            </Button>
-          </Stack>
-        </form>
       </Paper>
 
       <Paper p="md" withBorder pos="relative">
         <LoadingOverlay visible={loading} />
         <Title order={3} mb="md">
-          Saved Credentials
+          Connected Accounts
         </Title>
 
         {credentials.length === 0 && !loading ? (
-          <Text c="dimmed">No credentials saved yet</Text>
+          <Text c="dimmed">No Accurate accounts connected yet. Click "Connect Accurate" to get started.</Text>
         ) : (
           <Table>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>App Key</Table.Th>
                 <Table.Th>Host</Table.Th>
-                <Table.Th>Created At</Table.Th>
+                <Table.Th>Connected At</Table.Th>
                 <Table.Th>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
@@ -243,6 +156,7 @@ export default function CredentialsPage() {
                       <ActionIcon
                         color="red"
                         onClick={() => handleDelete(cred.id)}
+                        title="Disconnect"
                       >
                         <IconTrash size={16} />
                       </ActionIcon>
