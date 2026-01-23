@@ -31,6 +31,8 @@ interface PreviewRecord {
   type: string;
   quantity: number;
   unit: string;
+  warehouse?: string;
+  description?: string;
 }
 
 export default function ExportInventoryAdjustmentPage() {
@@ -130,11 +132,11 @@ export default function ExportInventoryAdjustmentPage() {
     try {
       const response = await fetch(
         `/api/export/inventory-adjustment/preview?` +
-          new URLSearchParams({
-            credentialId: selectedCredential,
-            startDate: dayjs(dateRange[0]).format("YYYY-MM-DD"),
-            endDate: dayjs(dateRange[1]).format("YYYY-MM-DD"),
-          })
+        new URLSearchParams({
+          credentialId: selectedCredential,
+          startDate: dayjs(dateRange[0]).format("YYYY-MM-DD"),
+          endDate: dayjs(dateRange[1]).format("YYYY-MM-DD"),
+        })
       );
 
       if (response.ok) {
@@ -221,6 +223,8 @@ export default function ExportInventoryAdjustmentPage() {
                 <Table.Th>Type</Table.Th>
                 <Table.Th>Quantity</Table.Th>
                 <Table.Th>Unit</Table.Th>
+                <Table.Th>Warehouse</Table.Th>
+                <Table.Th>Description</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -233,6 +237,8 @@ export default function ExportInventoryAdjustmentPage() {
                   <Table.Td>{record.type}</Table.Td>
                   <Table.Td>{record.quantity}</Table.Td>
                   <Table.Td>{record.unit}</Table.Td>
+                  <Table.Td>{record.warehouse || "-"}</Table.Td>
+                  <Table.Td>{record.description || "-"}</Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>

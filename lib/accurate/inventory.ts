@@ -4,6 +4,7 @@ interface AccurateCredentials {
   apiToken: string;
   signatureSecret: string;
   host: string;
+  session?: string;
 }
 
 export interface InventoryAdjustment {
@@ -113,28 +114,49 @@ export async function getInventoryAdjustmentDetail(
 export async function saveInventoryAdjustment(
   credentials: AccurateCredentials,
   data: {
-    transDate: string; // YYYY-MM-DD
+    transDate: string; // expect YYYY-MM-DD from caller
     number?: string;
     description?: string;
     detailItem: Array<{
-      itemId: number;
+      itemNo: string;
       quantity: number;
-      unitId?: number;
-      warehouseId?: number;
-      type?: string; // "Penambahan" or "Pengurangan"
+      itemAdjustmentType: "ADJUSTMENT_IN" | "ADJUSTMENT_OUT" | "ADJUSTMENT_STOCK";
+      unitCost?: number;
+      warehouseName?: string;
     }>;
   }
 ): Promise<{ id: number }> {
-  const response = await accurateFetch<{ d: { id: number } }>(
+  // Format date to DD/MM/YYYY as required by Accurate
+  const [year, month, day] = data.transDate.split("-");
+  const formattedDate = `${day}/${month}/${year}`;
+
+  const requestBody = {
+    transDate: formattedDate,
+    number: data.number,
+    description: data.description,
+    detailItem: data.detailItem.map((item) => ({
+      itemNo: item.itemNo,
+      quantity: item.quantity,
+      itemAdjustmentType: item.itemAdjustmentType,
+      unitCost: item.unitCost || 0,
+      warehouseName: item.warehouseName,
+    })),
+  };
+
+  const response = await accurateFetch<{ d: { id: number }; s: boolean; d_message?: string[] }>(
     `/api/item-adjustment/save.do`,
     credentials,
     {
       method: "POST",
-      body: data,
+      body: requestBody,
     }
   );
 
-  return response.d;
+  if (!response.s) {
+    throw new Error(response.d?.[0] || response.d_message?.[0] || "Failed to save inventory adjustment");
+  }
+
+  return response.d as any as { id: number };
 }
 
 /**

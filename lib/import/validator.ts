@@ -3,6 +3,7 @@ import { findItemByCode } from "@/lib/accurate/inventory";
 
 export const ImportRowSchema = z.object({
   itemCode: z.string().min(1, "Item code is required"),
+  itemName: z.string().optional(),
   type: z.enum(["Penambahan", "Pengurangan"], {
     errorMap: () => ({ message: 'Type must be "Penambahan" or "Pengurangan"' }),
   }),
@@ -10,6 +11,8 @@ export const ImportRowSchema = z.object({
   unit: z.string().min(1, "Unit is required"),
   adjustmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
   referenceNumber: z.string().optional(),
+  warehouse: z.string().optional(),
+  description: z.string().optional(),
 });
 
 export interface ValidationResult {
@@ -21,11 +24,14 @@ export interface ValidationResult {
 
 export interface ImportRow {
   itemCode: string;
+  itemName?: string;
   type: string;
   quantity: number;
   unit: string;
   adjustmentDate: string;
   referenceNumber?: string;
+  warehouse?: string;
+  description?: string;
 }
 
 /**
@@ -37,6 +43,7 @@ export async function validateImportRow(
     apiToken: string;
     signatureSecret: string;
     host: string;
+    session?: string;
   },
   rowIndex: number
 ): Promise<ValidationResult> {
@@ -84,6 +91,7 @@ export async function validateImportRows(
     apiToken: string;
     signatureSecret: string;
     host: string;
+    session?: string;
   }
 ): Promise<{
   valid: boolean;

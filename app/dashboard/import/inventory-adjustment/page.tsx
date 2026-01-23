@@ -13,6 +13,7 @@ import {
   Group,
   Text,
   List,
+  Checkbox,
 } from "@mantine/core";
 import { useState, useEffect } from "react";
 import {
@@ -35,6 +36,9 @@ interface ValidatedRow {
   quantity: number;
   unit: string;
   adjustmentDate: string;
+  referenceNumber?: string;
+  warehouse?: string;
+  description?: string;
   valid: boolean;
   errors: string[];
 }
@@ -51,6 +55,12 @@ export default function ImportInventoryAdjustmentPage() {
   const [validatedRows, setValidatedRows] = useState<ValidatedRow[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [useAutoNumbering, setUseAutoNumbering] = useState(true);
+  const [importResults, setImportResults] = useState<{
+    successCount: number;
+    failedCount: number;
+    errors: string[];
+  } | null>(null);
 
   useEffect(() => {
     fetchCredentials();
@@ -141,6 +151,7 @@ export default function ImportInventoryAdjustmentPage() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("credentialId", selectedCredential);
+      formData.append("useAutoNumbering", String(useAutoNumbering));
 
       const response = await fetch("/api/import/inventory-adjustment", {
         method: "POST",
@@ -153,13 +164,30 @@ export default function ImportInventoryAdjustmentPage() {
       }
 
       const result = await response.json();
+      setImportResults(result);
 
-      notifications.show({
-        title: "Import Successful",
-        message: `Successfully imported ${result.successCount} adjustments`,
-        color: "green",
-        icon: <IconCheck size={16} />,
-      });
+      if (result.success && result.failedCount === 0) {
+        notifications.show({
+          title: "Import Successful",
+          message: `Successfully imported all ${result.successCount} adjustments`,
+          color: "green",
+          icon: <IconCheck size={16} />,
+        });
+      } else if (result.successCount > 0) {
+        notifications.show({
+          title: "Import Partially Successful",
+          message: `Imported ${result.successCount} adjustments, but ${result.failedCount} failed.`,
+          color: "orange",
+          icon: <IconAlertCircle size={16} />,
+        });
+      } else {
+        notifications.show({
+          title: "Import Failed",
+          message: `Failed to import any adjustments. Found ${result.failedCount} errors.`,
+          color: "red",
+          icon: <IconAlertCircle size={16} />,
+        });
+      }
 
       // Reset form
       setFile(null);
@@ -219,7 +247,17 @@ export default function ImportInventoryAdjustmentPage() {
               <Table.Tr>
                 <Table.Td>referenceNumber</Table.Td>
                 <Table.Td>No</Table.Td>
-                <Table.Td>Optional reference</Table.Td>
+                <Table.Td>Optional reference (Adjustment No)</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td>warehouse</Table.Td>
+                <Table.Td>No</Table.Td>
+                <Table.Td>Warehouse name</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td>description</Table.Td>
+                <Table.Td>No</Table.Td>
+                <Table.Td>Adjustment description</Table.Td>
               </Table.Tr>
             </Table.Tbody>
           </Table>
@@ -257,6 +295,13 @@ export default function ImportInventoryAdjustmentPage() {
             required
           />
 
+          <Checkbox
+            label="Use Automatic Numbering"
+            description="If checked, Accurate will generate the sequence number automatically. The number in your CSV will be ignored."
+            checked={useAutoNumbering}
+            onChange={(event) => setUseAutoNumbering(event.currentTarget.checked)}
+          />
+
           <Group>
             <Button
               onClick={handleValidate}
@@ -283,6 +328,18 @@ export default function ImportInventoryAdjustmentPage() {
         </Stack>
       </Paper>
 
+      {importResults && importResults.errors.length > 0 && (
+        <Paper p="md" withBorder>
+          <Alert icon={<IconAlertCircle size={16} />} color="red" title="Import Errors">
+            <List>
+              {importResults.errors.map((err, idx) => (
+                <List.Item key={idx}>{err}</List.Item>
+              ))}
+            </List>
+          </Alert>
+        </Paper>
+      )}
+
       {validationErrors.length > 0 && (
         <Paper p="md" withBorder>
           <Alert icon={<IconAlertCircle size={16} />} color="red" title="Validation Errors">
@@ -308,7 +365,10 @@ export default function ImportInventoryAdjustmentPage() {
                 <Table.Th>Type</Table.Th>
                 <Table.Th>Quantity</Table.Th>
                 <Table.Th>Unit</Table.Th>
+                <Table.Th>Warehouse</Table.Th>
+                <Table.Th>Description</Table.Th>
                 <Table.Th>Date</Table.Th>
+                <Table.Th>Ref #</Table.Th>
                 <Table.Th>Status</Table.Th>
               </Table.Tr>
             </Table.Thead>
@@ -325,7 +385,10 @@ export default function ImportInventoryAdjustmentPage() {
                   <Table.Td>{row.type}</Table.Td>
                   <Table.Td>{row.quantity}</Table.Td>
                   <Table.Td>{row.unit}</Table.Td>
+                  <Table.Td>{row.warehouse || "-"}</Table.Td>
+                  <Table.Td>{row.description || "-"}</Table.Td>
                   <Table.Td>{row.adjustmentDate}</Table.Td>
+                  <Table.Td>{row.referenceNumber || "-"}</Table.Td>
                   <Table.Td>
                     {row.valid ? (
                       <Text c="green">Valid</Text>

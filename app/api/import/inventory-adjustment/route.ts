@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { parseCSV, parseXLSX } from "@/lib/import/parser";
 import { validateImportRows } from "@/lib/import/validator";
 import { saveInventoryAdjustment } from "@/lib/accurate/inventory";
+import { refreshSession, refreshAccessToken } from "@/lib/accurate/client";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -17,6 +18,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const credentialId = formData.get("credentialId") as string;
+    const useAutoNumbering = formData.get("useAutoNumbering") === "true";
 
     if (!file || !credentialId) {
       return NextResponse.json(
@@ -33,12 +35,67 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (!credential || !credential.host) {
+    if (!credential || !credential.host || !credential.dbId) {
       return NextResponse.json(
-        { error: "Credential not found or host not resolved" },
+        { error: "Credential not found or not properly configured. Please reconnect to Accurate." },
         { status: 404 },
       );
     }
+
+    // Get client credentials from env
+    const clientId = process.env.ACCURATE_CLIENT_ID;
+    const clientSecret = process.env.ACCURATE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      throw new Error("Missing ACCURATE_CLIENT_ID or ACCURATE_CLIENT_SECRET environment variables");
+    }
+
+    let currentAccessToken = credential.apiToken;
+    let currentRefreshToken = credential.refreshToken;
+
+    // Refresh access token if we have a refresh token
+    if (currentRefreshToken) {
+      console.log("[import] Refreshing access token...");
+      try {
+        const { accessToken, refreshToken: newRefreshToken } = await refreshAccessToken(
+          currentRefreshToken,
+          clientId,
+          clientSecret
+        );
+        currentAccessToken = accessToken;
+        if (newRefreshToken) {
+          currentRefreshToken = newRefreshToken;
+        }
+
+        // Update the credential with new tokens
+        await prisma.accurateCredentials.update({
+          where: { id: credential.id },
+          data: {
+            apiToken: currentAccessToken,
+            refreshToken: currentRefreshToken,
+          },
+        });
+      } catch (tokenError: any) {
+        console.error("[import] Token refresh failed:", tokenError.message);
+        return NextResponse.json(
+          { error: "Session expired. Please reconnect to Accurate." },
+          { status: 401 }
+        );
+      }
+    }
+
+    // Refresh session before making API calls
+    console.log("[import] Refreshing session before API calls...");
+    const { session: freshSession, host: freshHost } = await refreshSession(
+      currentAccessToken,
+      credential.dbId
+    );
+
+    // Update the credential with fresh session
+    await prisma.accurateCredentials.update({
+      where: { id: credential.id },
+      data: { session: freshSession, host: freshHost },
+    });
 
     // Parse file based on extension
     const fileName = file.name.toLowerCase();
@@ -59,9 +116,10 @@ export async function POST(req: NextRequest) {
 
     // Validate rows first
     const validationResult = await validateImportRows(rows, {
-      apiToken: credential.apiToken,
+      apiToken: currentAccessToken,
       signatureSecret: credential.signatureSecret,
-      host: credential.host,
+      host: freshHost,
+      session: freshSession,
     });
 
     if (!validationResult.valid) {
@@ -89,7 +147,7 @@ export async function POST(req: NextRequest) {
       const groupedRows = new Map<string, typeof rows>();
 
       for (const row of rows) {
-        const key = `${row.adjustmentDate}_${row.referenceNumber || "default"}`;
+        const key = `${row.adjustmentDate}_${row.referenceNumber || "none"}`;
         if (!groupedRows.has(key)) {
           groupedRows.set(key, []);
         }
@@ -99,35 +157,35 @@ export async function POST(req: NextRequest) {
       // Import each group as a separate adjustment
       for (const [key, groupRows] of groupedRows.entries()) {
         try {
-          // Find item IDs for all rows in this group
-          const detailItems = [];
+          // Build detail items for saveInventoryAdjustment
+          const detailItems = groupRows.map((row) => {
+            // Map "Penambahan" -> "ADJUSTMENT_IN", everything else -> "ADJUSTMENT_OUT"
+            const itemAdjustmentType = row.type.toLowerCase().includes("tambah") ||
+              row.type.toLowerCase() === "add" ||
+              row.type.toLowerCase() === "penambahan"
+              ? ("ADJUSTMENT_IN" as const)
+              : ("ADJUSTMENT_OUT" as const);
 
-          for (const row of groupRows) {
-            const validatedRow = validationResult.results.find(
-              (r) => r.row.itemCode === row.itemCode,
-            );
-
-            if (!validatedRow?.itemId) {
-              throw new Error(`Item ID not found for ${row.itemCode}`);
-            }
-
-            detailItems.push({
-              itemId: validatedRow.itemId,
+            return {
+              itemNo: row.itemCode,
               quantity: row.quantity,
-              type: row.type,
-            });
-          }
+              itemAdjustmentType,
+              warehouseName: row.warehouse,
+            };
+          });
 
           // Save to Accurate
           await saveInventoryAdjustment(
             {
-              apiToken: credential.apiToken,
+              apiToken: currentAccessToken,
               signatureSecret: credential.signatureSecret,
-              host: credential.host,
+              host: freshHost,
+              session: freshSession,
             },
             {
               transDate: groupRows[0].adjustmentDate,
-              number: groupRows[0].referenceNumber,
+              number: useAutoNumbering ? undefined : groupRows[0].referenceNumber,
+              description: groupRows[0].description,
               detailItem: detailItems,
             },
           );
@@ -150,7 +208,7 @@ export async function POST(req: NextRequest) {
       });
 
       return NextResponse.json({
-        success: true,
+        success: failedCount === 0,
         successCount,
         failedCount,
         errors,

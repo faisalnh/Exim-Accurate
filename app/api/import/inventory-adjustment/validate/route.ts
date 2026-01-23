@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseCSV, parseXLSX } from "@/lib/import/parser";
 import { validateImportRows } from "@/lib/import/validator";
+import { refreshSession, refreshAccessToken } from "@/lib/accurate/client";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -32,12 +33,67 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (!credential || !credential.host) {
+    if (!credential || !credential.host || !credential.dbId) {
       return NextResponse.json(
-        { error: "Credential not found or host not resolved" },
+        { error: "Credential not found or not properly configured. Please reconnect to Accurate." },
         { status: 404 },
       );
     }
+
+    // Get client credentials from env
+    const clientId = process.env.ACCURATE_CLIENT_ID;
+    const clientSecret = process.env.ACCURATE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      throw new Error("Missing ACCURATE_CLIENT_ID or ACCURATE_CLIENT_SECRET environment variables");
+    }
+
+    let currentAccessToken = credential.apiToken;
+    let currentRefreshToken = credential.refreshToken;
+
+    // Refresh access token if we have a refresh token
+    if (currentRefreshToken) {
+      console.log("[validate] Refreshing access token...");
+      try {
+        const { accessToken, refreshToken: newRefreshToken } = await refreshAccessToken(
+          currentRefreshToken,
+          clientId,
+          clientSecret
+        );
+        currentAccessToken = accessToken;
+        if (newRefreshToken) {
+          currentRefreshToken = newRefreshToken;
+        }
+
+        // Update the credential with new tokens
+        await prisma.accurateCredentials.update({
+          where: { id: credential.id },
+          data: {
+            apiToken: currentAccessToken,
+            refreshToken: currentRefreshToken,
+          },
+        });
+      } catch (tokenError: any) {
+        console.error("[validate] Token refresh failed:", tokenError.message);
+        return NextResponse.json(
+          { error: "Session expired. Please reconnect to Accurate." },
+          { status: 401 }
+        );
+      }
+    }
+
+    // Refresh session before making API calls
+    console.log("[validate] Refreshing session before API calls...");
+    const { session: freshSession, host: freshHost } = await refreshSession(
+      currentAccessToken,
+      credential.dbId
+    );
+
+    // Update the credential with fresh session
+    await prisma.accurateCredentials.update({
+      where: { id: credential.id },
+      data: { session: freshSession, host: freshHost },
+    });
 
     // Parse file based on extension
     const fileName = file.name.toLowerCase();
@@ -58,19 +114,23 @@ export async function POST(req: NextRequest) {
 
     // Validate rows
     const validationResult = await validateImportRows(rows, {
-      apiToken: credential.apiToken,
+      apiToken: currentAccessToken,
       signatureSecret: credential.signatureSecret,
-      host: credential.host,
+      host: freshHost,
+      session: freshSession,
     });
 
     // Format results for frontend
     const formattedResults = validationResult.results.map((result) => ({
       itemCode: result.row.itemCode,
-      itemName: result.itemName,
+      itemName: result.itemName || result.row.itemName,
       type: result.row.type,
       quantity: result.row.quantity,
       unit: result.row.unit,
       adjustmentDate: result.row.adjustmentDate,
+      referenceNumber: result.row.referenceNumber,
+      warehouse: result.row.warehouse,
+      description: result.row.description,
       valid: result.valid,
       errors: result.errors,
     }));
