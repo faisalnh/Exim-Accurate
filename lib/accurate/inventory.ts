@@ -125,7 +125,7 @@ export async function saveInventoryAdjustment(
       warehouseName?: string;
     }>;
   }
-): Promise<{ id: number }> {
+): Promise<{ id: number; r: string }> {
   // Format date to DD/MM/YYYY as required by Accurate
   const [year, month, day] = data.transDate.split("-");
   const formattedDate = `${day}/${month}/${year}`;
@@ -143,7 +143,7 @@ export async function saveInventoryAdjustment(
     })),
   };
 
-  const response = await accurateFetch<{ d: { id: number }; s: boolean; d_message?: string[] }>(
+  const response = await accurateFetch<{ d: { id: number } | string[]; s: boolean; d_message?: string[] }>(
     `/api/item-adjustment/save.do`,
     credentials,
     {
@@ -152,28 +152,49 @@ export async function saveInventoryAdjustment(
     }
   );
 
+  console.log("[saveInventoryAdjustment] Response:", JSON.stringify(response).substring(0, 500));
+
   if (!response.s) {
-    throw new Error(response.d?.[0] || response.d_message?.[0] || "Failed to save inventory adjustment");
+    // When error, d can be an array of error messages
+    const errorMessages = Array.isArray(response.d) ? response.d : response.d_message;
+    throw new Error(errorMessages?.[0] || "Failed to save inventory adjustment");
   }
 
-  return response.d as any as { id: number };
+  // Accurate success response 'd' typically contains { id: number, r: string }
+  // where 'r' is the record number (e.g. IA.2023.00001)
+  return response.d as { id: number; r: string };
 }
 
 /**
- * Search for item by code
+ * Search for item by code (exact match first, then keyword fallback)
  */
 export async function findItemByCode(
   credentials: AccurateCredentials,
   itemCode: string
 ): Promise<{ id: number; name: string; no: string } | null> {
-  const response = await accurateFetch<ItemResponse>(
-    `/api/item/list.do?filter.no.op=EQUAL&filter.no.val[0]=${encodeURIComponent(itemCode)}`,
+  // First, try exact match by item number
+  const exactMatch = await accurateFetch<ItemResponse>(
+    `/api/item/list.do?fields=id,name,no&filter.no.op=EQUAL&filter.no.val[0]=${encodeURIComponent(itemCode)}`,
     credentials,
     { method: "GET" }
   );
 
-  return response.d.length > 0 ? response.d[0] : null;
+  if (exactMatch.d.length > 0) {
+    return exactMatch.d[0];
+  }
+
+  // Fallback: search by keywords (broader search)
+  const keywordSearch = await accurateFetch<ItemResponse>(
+    `/api/item/list.do?fields=id,name,no&filter.keywords.op=CONTAIN&filter.keywords.val[0]=${encodeURIComponent(itemCode)}`,
+    credentials,
+    { method: "GET" }
+  );
+
+  // Return first match from keyword search, if any
+  return keywordSearch.d.length > 0 ? keywordSearch.d[0] : null;
 }
+
+
 
 /**
  * Export all inventory adjustments for a date range
@@ -234,9 +255,9 @@ export async function exportInventoryAdjustments(
         allRecords.push({
           adjustmentNumber: detail.number,
           date: detail.transDate,
-          itemName: item.item?.name || item.detailName || "",
+          itemName: item.item?.name || (item as any).detailName || "",
           itemCode: item.item?.no || "",
-          type: item.itemAdjustmentTypeName || item.type || "",
+          type: (item as any).itemAdjustmentTypeName || item.type || "",
           quantity: item.quantity,
           unit: (item as any).itemUnit?.name || (item as any).unit?.name || "",
           warehouse: item.warehouse?.name || "",

@@ -12,6 +12,7 @@ import {
   IconUser,
   IconLogout,
   IconAdjustments,
+  IconScan,
 } from "@tabler/icons-react";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -97,6 +98,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             }
           />
         </NavLink>
+
+        <NavLink
+          label="Self Checkout"
+          leftSection={<IconScan size={20} />}
+          active={pathname === "/dashboard/self-checkout"}
+          onClick={() => router.push("/dashboard/self-checkout")}
+        />
 
         <NavLink
           label="Accurate Credentials"

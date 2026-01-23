@@ -24,6 +24,7 @@
     "bcryptjs": "^2.4.3",
     "dayjs": "^1.11.13",
     "exceljs": "^4.4.0",
+    "html5-qrcode": "^2.3.8",
     "next": "^16.0.0",
     "next-auth": "^4.24.11",
     "react": "^19.0.0",

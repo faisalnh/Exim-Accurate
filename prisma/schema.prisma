@@ -35,7 +35,36 @@ model AccurateCredentials {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkoutSessions CheckoutSession[]
+}
+
+// Self Checkout feature - tracks staff checkout sessions
+model CheckoutSession {
+  id            String    @id @default(uuid())
+  staffEmail    String    // Email from QR badge scan
+  staffName     String?   // Parsed from email or badge
+  staffDept     String?   // Department parsed from email
+  createdAt     DateTime  @default(now())
+  completedAt   DateTime?
+  status        String    @default("pending") // pending, completed, failed
+  errorMessage  String?
+  
+  items         CheckoutItem[]
+  credentialId  String
+  credential    AccurateCredentials @relation(fields: [credentialId], references: [id])
+  
+  adjustmentId  Int?      // ID of created inventory adjustment in Accurate
+}
+
+model CheckoutItem {
+  id              String   @id @default(uuid())
+  sessionId       String
+  session         CheckoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  itemCode        String   // Scanned barcode/item code
+  itemName        String?  // Fetched from Accurate
+  quantity        Int      @default(1)
+  scannedAt       DateTime @default(now())
 }
 
 model ExportJob {
