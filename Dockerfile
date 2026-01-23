@@ -1,0 +1,43 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Disable telemetry during build
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Install dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Copy source
+COPY . .
+
+# Generate Prisma client and build
+RUN npx prisma generate
+RUN npm run build
+
+# Prune dev dependencies for smaller runtime image
+RUN npm prune --production
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    HOSTNAME=0.0.0.0 \
+    PORT=5758
+
+# Non-root user for runtime
+RUN addgroup -g 1001 nodejs && adduser -D -u 1001 appuser
+
+# Copy built assets and dependencies
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.* ./
+COPY --from=builder /app/prisma ./prisma
+
+USER appuser
+
+EXPOSE 5758
+
+CMD ["npm", "run", "start"]

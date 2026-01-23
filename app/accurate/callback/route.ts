@@ -50,19 +50,21 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Use Basic Auth for client credentials as per OAuth 2.0 spec
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
     const tokenResponse = await fetch(
       "https://account.accurate.id/oauth/token",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": `Basic ${credentials}`,
         },
         body: new URLSearchParams({
           grant_type: "authorization_code",
           code,
           redirect_uri: redirectUri,
-          client_id: clientId,
-          client_secret: clientSecret,
         }),
       }
     );
@@ -73,14 +75,17 @@ export async function GET(req: NextRequest) {
     }
 
     const tokenJson = await tokenResponse.json();
+    console.log("[OAuth callback] Token response:", JSON.stringify(tokenJson, null, 2));
+
     const apiToken =
       tokenJson.access_token || tokenJson.api_token || tokenJson.token;
+    const refreshToken = tokenJson.refresh_token;
 
     if (!apiToken) {
       throw new Error("API token not found in token response");
     }
 
-    const host = await resolveHost(apiToken);
+    const { host, session: accurateSession, dbId } = await resolveHost(apiToken);
 
     await prisma.accurateCredentials.create({
       data: {
@@ -88,7 +93,10 @@ export async function GET(req: NextRequest) {
         appKey,
         signatureSecret,
         apiToken,
+        refreshToken,
         host,
+        session: accurateSession,
+        dbId,
       },
     });
 

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { exportInventoryAdjustments } from "@/lib/accurate/inventory";
+import { refreshSession, refreshAccessToken } from "@/lib/accurate/client";
 import {
   exportToCSV,
   exportToXLSX,
@@ -35,12 +36,67 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (!credential || !credential.host) {
+    if (!credential || !credential.host || !credential.dbId) {
       return NextResponse.json(
-        { error: "Credential not found or host not resolved" },
+        { error: "Credential not found or not properly configured. Please reconnect to Accurate." },
         { status: 404 },
       );
     }
+
+    // Get client credentials from env
+    const clientId = process.env.ACCURATE_CLIENT_ID;
+    const clientSecret = process.env.ACCURATE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      throw new Error("Missing ACCURATE_CLIENT_ID or ACCURATE_CLIENT_SECRET environment variables");
+    }
+
+    let currentAccessToken = credential.apiToken;
+    let currentRefreshToken = credential.refreshToken;
+
+    // Refresh access token if we have a refresh token
+    if (currentRefreshToken) {
+      console.log("[export] Refreshing access token...");
+      try {
+        const { accessToken, refreshToken: newRefreshToken } = await refreshAccessToken(
+          currentRefreshToken,
+          clientId,
+          clientSecret
+        );
+        currentAccessToken = accessToken;
+        if (newRefreshToken) {
+          currentRefreshToken = newRefreshToken;
+        }
+
+        // Update the credential with new tokens
+        await prisma.accurateCredentials.update({
+          where: { id: credential.id },
+          data: {
+            apiToken: currentAccessToken,
+            refreshToken: currentRefreshToken,
+          },
+        });
+      } catch (tokenError: any) {
+        console.error("[export] Token refresh failed:", tokenError.message);
+        return NextResponse.json(
+          { error: "Session expired. Please reconnect to Accurate." },
+          { status: 401 }
+        );
+      }
+    }
+
+    // Refresh session before making API calls
+    console.log("[export] Refreshing session before API calls...");
+    const { session: freshSession, host: freshHost } = await refreshSession(
+      currentAccessToken,
+      credential.dbId
+    );
+
+    // Update the credential with fresh session
+    await prisma.accurateCredentials.update({
+      where: { id: credential.id },
+      data: { session: freshSession, host: freshHost },
+    });
 
     // Create export job
     const exportJob = await prisma.exportJob.create({
@@ -52,12 +108,13 @@ export async function POST(req: NextRequest) {
     });
 
     try {
-      // Export data from Accurate
+      // Export data from Accurate with fresh tokens and session
       const records = await exportInventoryAdjustments(
         {
-          apiToken: credential.apiToken,
+          apiToken: currentAccessToken,
           signatureSecret: credential.signatureSecret,
-          host: credential.host,
+          host: freshHost,
+          session: freshSession,
         },
         startDate,
         endDate,

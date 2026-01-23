@@ -28,7 +28,10 @@ model AccurateCredentials {
   appKey          String
   signatureSecret String
   apiToken        String
+  refreshToken    String?  // OAuth refresh token for token refresh
   host            String?
+  session         String?  // Session token from open-db.do
+  dbId            Int?     // Database ID from Accurate
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

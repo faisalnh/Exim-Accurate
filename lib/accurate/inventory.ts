@@ -80,11 +80,15 @@ export async function listInventoryAdjustments(
     params.append("filter.transDate.end", filter.endDate);
   }
 
-  return accurateFetch<InventoryAdjustmentListResponse>(
-    `/api/inventory-adjustment/list.do?${params.toString()}`,
+  const response = await accurateFetch<InventoryAdjustmentListResponse>(
+    `/api/item-adjustment/list.do?${params.toString()}`,
     credentials,
     { method: "GET" }
   );
+
+  console.log("[listInventoryAdjustments] Response:", JSON.stringify(response).substring(0, 500));
+
+  return response;
 }
 
 /**
@@ -95,7 +99,7 @@ export async function getInventoryAdjustmentDetail(
   id: number
 ): Promise<InventoryAdjustmentDetail> {
   const response = await accurateFetch<{ d: InventoryAdjustmentDetail }>(
-    `/api/inventory-adjustment/detail.do?id=${id}`,
+    `/api/item-adjustment/detail.do?id=${id}`,
     credentials,
     { method: "GET" }
   );
@@ -122,7 +126,7 @@ export async function saveInventoryAdjustment(
   }
 ): Promise<{ id: number }> {
   const response = await accurateFetch<{ d: { id: number } }>(
-    `/api/inventory-adjustment/save.do`,
+    `/api/item-adjustment/save.do`,
     credentials,
     {
       method: "POST",
@@ -155,7 +159,8 @@ export async function findItemByCode(
 export async function exportInventoryAdjustments(
   credentials: AccurateCredentials,
   startDate: string,
-  endDate: string
+  endDate: string,
+  limit?: number
 ): Promise<
   Array<{
     adjustmentNumber: string;
@@ -173,38 +178,54 @@ export async function exportInventoryAdjustments(
   let page = 1;
   let hasMore = true;
 
+  console.log(`[exportInventoryAdjustments] Starting export for ${startDate} to ${endDate}${limit ? ` with limit ${limit}` : ""}`);
+
   // Fetch all pages
   while (hasMore) {
+    console.log(`[exportInventoryAdjustments] Fetching page ${page}...`);
     const response = await listInventoryAdjustments(credentials, page, 100, {
       startDate,
       endDate,
     });
 
-    if (response.d.length === 0) {
+    console.log(`[exportInventoryAdjustments] Page ${page} returned ${response.d?.length || 0} items`);
+
+    if (!response.d || response.d.length === 0) {
       hasMore = false;
       break;
     }
 
     // Fetch details for each adjustment
     for (const adjustment of response.d) {
+      console.log(`[exportInventoryAdjustments] Fetching detail for adjustment ${adjustment.id}...`);
       const detail = await getInventoryAdjustmentDetail(
         credentials,
         adjustment.id
       );
+      console.log(`[exportInventoryAdjustments] Detail has ${detail.detailItem?.length || 0} items`);
 
       // Flatten item lines
       for (const item of detail.detailItem) {
+        // Detailed logging for debugging
+        console.log(`[exportInventoryAdjustments] Processing item:`, JSON.stringify(item, null, 2));
+
         allRecords.push({
           adjustmentNumber: detail.number,
           date: detail.transDate,
-          itemName: item.item.name,
-          itemCode: item.item.no,
-          type: item.type || "",
+          itemName: item.item?.name || item.detailName || "",
+          itemCode: item.item?.no || "",
+          type: item.itemAdjustmentTypeName || item.type || "",
           quantity: item.quantity,
-          unit: item.unit.name,
+          unit: (item as any).itemUnit?.name || (item as any).unit?.name || "",
           warehouse: item.warehouse?.name || "",
           description: detail.description || "",
         });
+
+        // Check if limit reached
+        if (limit && allRecords.length >= limit) {
+          console.log(`[exportInventoryAdjustments] Limit of ${limit} reached, stopping early.`);
+          return allRecords;
+        }
       }
     }
 

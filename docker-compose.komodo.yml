@@ -3,23 +3,23 @@ version: "3.8"
 services:
   app:
     build: .
-    container_name: exima-app
+    image: exima:latest
     restart: unless-stopped
     env_file:
       - .env
     environment:
       NODE_ENV: production
       PORT: 5758
-      NEXTAUTH_URL: "http://localhost:5758"
-      DATABASE_URL: "postgresql://postgres:password@postgres:5432/exim_accurate?schema=public"
-    depends_on:
-      - postgres
+      # Override if Komodo provides a managed DB; otherwise use the postgres service below.
+      # DATABASE_URL: ${DATABASE_URL}
+      # NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:5758}
     ports:
       - "5758:5758"
+    depends_on:
+      - postgres
 
   postgres:
     image: postgres:16-alpine
-    container_name: exima-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -29,6 +29,11 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
