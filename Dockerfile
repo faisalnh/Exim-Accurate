@@ -26,7 +26,7 @@ ENV NODE_ENV=production \
     PORT=5758
 
 # Non-root user for runtime
-RUN addgroup -g 1001 nodejs && adduser -D -u 1001 appuser
+RUN addgroup -g 1002 -S nodejs && adduser -S -u 1002 -G nodejs appuser
 
 # Copy built assets and dependencies
 COPY --from=builder /app/.next ./.next
