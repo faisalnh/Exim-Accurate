@@ -111,8 +111,9 @@ export default function CredentialsPage() {
         <Stack gap="md">
           <Title order={3}>Connect Accurate</Title>
           <Text c="dimmed" size="sm">
-            Connect your Accurate account to enable data import and export.
-            Your App Key and Signature Secret are configured in environment variables.
+            Connect your Accurate account to enable data import and export. Your
+            App Key and Signature Secret are configured in environment
+            variables.
           </Text>
           <Button
             component="a"
@@ -132,7 +133,10 @@ export default function CredentialsPage() {
         </Title>
 
         {credentials.length === 0 && !loading ? (
-          <Text c="dimmed">No Accurate accounts connected yet. Click "Connect Accurate" to get started.</Text>
+          <Text c="dimmed">
+            No Accurate accounts connected yet. Click &quot;Connect
+            Accurate&quot; to get started.
+          </Text>
         ) : (
           <Table>
             <Table.Thead>

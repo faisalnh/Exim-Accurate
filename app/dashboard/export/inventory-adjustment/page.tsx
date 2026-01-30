@@ -8,15 +8,44 @@ import {
   Select,
   Table,
   Alert,
-  LoadingOverlay,
   Group,
   Text,
+  Box,
+  Badge,
+  ThemeIcon,
+  SimpleGrid,
+  Divider,
+  ScrollArea,
+  Tooltip,
+  ActionIcon,
+  useMantineColorScheme,
+  rem,
+  Transition,
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { useState, useEffect } from "react";
-import { IconAlertCircle, IconDownload } from "@tabler/icons-react";
+import {
+  IconAlertCircle,
+  IconDownload,
+  IconFileExport,
+  IconDatabase,
+  IconCalendar,
+  IconSettings,
+  IconCheck,
+  IconArrowRight,
+  IconArrowLeft,
+  IconEye,
+  IconFileTypeCsv,
+  IconFileTypeXls,
+  IconFileCode,
+  IconPlugConnected,
+  IconRefresh,
+  IconInfoCircle,
+} from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import dayjs from "dayjs";
+import { Stepper, StepperCard, type Step } from "@/components/ui";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface Credential {
   id: string;
@@ -35,31 +64,89 @@ interface PreviewRecord {
   description?: string;
 }
 
+const steps: Step[] = [
+  {
+    id: "select-account",
+    title: "Select Account",
+    description: "Choose Accurate account",
+  },
+  {
+    id: "configure",
+    title: "Configure",
+    description: "Set date range & format",
+  },
+  {
+    id: "preview",
+    title: "Preview & Export",
+    description: "Review and download",
+  },
+];
+
+const formatOptions = [
+  {
+    value: "csv",
+    label: "CSV",
+    description: "Comma-separated values",
+    icon: <IconFileTypeCsv size={24} />,
+    color: "green",
+  },
+  {
+    value: "xlsx",
+    label: "Excel (XLSX)",
+    description: "Microsoft Excel format",
+    icon: <IconFileTypeXls size={24} />,
+    color: "blue",
+  },
+  {
+    value: "json",
+    label: "JSON",
+    description: "JavaScript Object Notation",
+    icon: <IconFileCode size={24} />,
+    color: "orange",
+  },
+];
+
 export default function ExportInventoryAdjustmentPage() {
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const [activeStep, setActiveStep] = useState(0);
   const [credentials, setCredentials] = useState<Credential[]>([]);
-  const [selectedCredential, setSelectedCredential] = useState<string | null>(null);
+  const [selectedCredential, setSelectedCredential] = useState<string | null>(
+    null,
+  );
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
     null,
     null,
   ]);
   const [format, setFormat] = useState<string>("csv");
   const [loading, setLoading] = useState(false);
+  const [loadingCredentials, setLoadingCredentials] = useState(true);
   const [preview, setPreview] = useState<PreviewRecord[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [error, setError] = useState("");
+  const [totalRecords, setTotalRecords] = useState<number | null>(null);
 
   useEffect(() => {
     fetchCredentials();
   }, []);
 
   const fetchCredentials = async () => {
+    setLoadingCredentials(true);
     try {
       const response = await fetch("/api/credentials");
       if (response.ok) {
         const data = await response.json();
         setCredentials(data);
+        // Auto-select if only one credential
+        if (data.length === 1) {
+          setSelectedCredential(data[0].id);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch credentials", err);
+    } finally {
+      setLoadingCredentials(false);
     }
   };
 
@@ -76,7 +163,6 @@ export default function ExportInventoryAdjustmentPage() {
 
     setError("");
     setLoading(true);
-    setPreview([]);
 
     try {
       const response = await fetch("/api/export/inventory-adjustment", {
@@ -112,15 +198,19 @@ export default function ExportInventoryAdjustmentPage() {
       document.body.removeChild(a);
 
       notifications.show({
-        title: "Success",
-        message: "Export completed successfully",
+        title: "Export Successful",
+        message: `Downloaded ${filename}`,
         color: "green",
+        icon: <IconCheck size={16} />,
       });
-
-      // Fetch preview (first 20 rows)
-      fetchPreview();
     } catch (err: any) {
       setError(err.message);
+      notifications.show({
+        title: "Export Failed",
+        message: err.message,
+        color: "red",
+        icon: <IconAlertCircle size={16} />,
+      });
     } finally {
       setLoading(false);
     }
@@ -129,122 +219,601 @@ export default function ExportInventoryAdjustmentPage() {
   const fetchPreview = async () => {
     if (!selectedCredential || !dateRange[0] || !dateRange[1]) return;
 
+    setPreviewLoading(true);
+    setError("");
+
     try {
       const response = await fetch(
         `/api/export/inventory-adjustment/preview?` +
-        new URLSearchParams({
-          credentialId: selectedCredential,
-          startDate: dayjs(dateRange[0]).format("YYYY-MM-DD"),
-          endDate: dayjs(dateRange[1]).format("YYYY-MM-DD"),
-        })
+          new URLSearchParams({
+            credentialId: selectedCredential,
+            startDate: dayjs(dateRange[0]).format("YYYY-MM-DD"),
+            endDate: dayjs(dateRange[1]).format("YYYY-MM-DD"),
+          }),
       );
 
       if (response.ok) {
         const data = await response.json();
-        setPreview(data.preview);
+        setPreview(data.preview || []);
+        setTotalRecords(data.total || data.preview?.length || 0);
+      } else {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to fetch preview");
       }
-    } catch (err) {
-      console.error("Failed to fetch preview", err);
+    } catch (err: any) {
+      setError(err.message);
+      setPreview([]);
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
+  const canProceedToStep2 = selectedCredential !== null;
+  const canProceedToStep3 = dateRange[0] !== null && dateRange[1] !== null;
+
+  const handleNext = () => {
+    if (activeStep === 1 && canProceedToStep3) {
+      // Fetch preview when moving to step 3
+      fetchPreview();
+    }
+    setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+  };
+
+  const handleBack = () => {
+    setActiveStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const selectedCredentialData = credentials.find(
+    (c) => c.id === selectedCredential,
+  );
+  const selectedFormatData = formatOptions.find((f) => f.value === format);
+
   return (
-    <Stack gap="md">
-      <Title order={1}>Export Inventory Adjustment</Title>
-
-      <Paper p="md" withBorder pos="relative">
-        <LoadingOverlay visible={loading} />
-
-        <Stack gap="md">
-          <Title order={3}>Export Settings</Title>
-
-          {error && (
-            <Alert icon={<IconAlertCircle size={16} />} color="red">
-              {error}
-            </Alert>
-          )}
-
-          <Select
-            label="Accurate Credentials"
-            placeholder="Select credentials"
-            data={credentials.map((c) => ({ value: c.id, label: c.appKey }))}
-            value={selectedCredential}
-            onChange={setSelectedCredential}
-            required
-          />
-
-          <DatePickerInput
-            type="range"
-            label="Date Range"
-            placeholder="Pick date range"
-            value={dateRange}
-            onChange={setDateRange}
-            required
-          />
-
-          <Select
-            label="Export Format"
-            data={[
-              { value: "csv", label: "CSV" },
-              { value: "xlsx", label: "Excel (XLSX)" },
-              { value: "json", label: "JSON" },
-            ]}
-            value={format}
-            onChange={(val) => setFormat(val || "csv")}
-          />
-
-          <Group>
-            <Button
-              leftSection={<IconDownload size={16} />}
-              onClick={handleExport}
-              disabled={!selectedCredential || !dateRange[0] || !dateRange[1]}
-            >
-              Export
-            </Button>
-            <Button variant="outline" onClick={fetchPreview}>
-              Preview (20 rows)
-            </Button>
+    <Stack gap="lg">
+      {/* Page Header */}
+      <Group justify="space-between" align="flex-start">
+        <Box>
+          <Group gap="sm" mb={4}>
+            <ThemeIcon size={32} radius="md" variant="light" color="brand">
+              <IconFileExport size={18} />
+            </ThemeIcon>
+            <Title order={2}>Export Inventory Adjustment</Title>
           </Group>
-        </Stack>
+          <Text c="dimmed" size="sm">
+            Export your inventory adjustment data to CSV, Excel, or JSON format
+          </Text>
+        </Box>
+        <Badge size="lg" variant="light" color="blue">
+          Step {activeStep + 1} of {steps.length}
+        </Badge>
+      </Group>
+
+      {/* Stepper */}
+      <Paper
+        p="md"
+        radius="lg"
+        style={{
+          border: isDark
+            ? "1px solid var(--mantine-color-dark-4)"
+            : "1px solid var(--mantine-color-gray-2)",
+        }}
+      >
+        <Stepper
+          steps={steps}
+          activeStep={activeStep}
+          onStepClick={setActiveStep}
+          allowClickNavigation
+          size="md"
+        />
       </Paper>
 
-      {preview.length > 0 && (
-        <Paper p="md" withBorder>
-          <Title order={3} mb="md">
-            Preview (showing {preview.length} rows)
-          </Title>
-          <Table striped highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Adjustment #</Table.Th>
-                <Table.Th>Date</Table.Th>
-                <Table.Th>Item Name</Table.Th>
-                <Table.Th>Item Code</Table.Th>
-                <Table.Th>Type</Table.Th>
-                <Table.Th>Quantity</Table.Th>
-                <Table.Th>Unit</Table.Th>
-                <Table.Th>Warehouse</Table.Th>
-                <Table.Th>Description</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {preview.map((record, idx) => (
-                <Table.Tr key={idx}>
-                  <Table.Td>{record.adjustmentNumber}</Table.Td>
-                  <Table.Td>{record.date}</Table.Td>
-                  <Table.Td>{record.itemName}</Table.Td>
-                  <Table.Td>{record.itemCode}</Table.Td>
-                  <Table.Td>{record.type}</Table.Td>
-                  <Table.Td>{record.quantity}</Table.Td>
-                  <Table.Td>{record.unit}</Table.Td>
-                  <Table.Td>{record.warehouse || "-"}</Table.Td>
-                  <Table.Td>{record.description || "-"}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Paper>
+      {/* Error Alert */}
+      {error && (
+        <Alert
+          icon={<IconAlertCircle size={16} />}
+          color="red"
+          variant="light"
+          radius="md"
+          withCloseButton
+          onClose={() => setError("")}
+        >
+          {error}
+        </Alert>
       )}
+
+      {/* Step Content */}
+      <Box>
+        {/* Step 1: Select Account */}
+        <Transition mounted={activeStep === 0} transition="fade" duration={200}>
+          {(styles) => (
+            <Box style={styles}>
+              <StepperCard
+                title="Select Accurate Account"
+                description="Choose which account to export data from"
+              >
+                {loadingCredentials ? (
+                  <Stack gap="md" py="xl" align="center">
+                    <Text c="dimmed">Loading accounts...</Text>
+                  </Stack>
+                ) : credentials.length === 0 ? (
+                  <EmptyState
+                    variant="no-credentials"
+                    title="No accounts connected"
+                    description="Connect your Accurate account first to export data"
+                    action={{
+                      label: "Connect Account",
+                      onClick: () =>
+                        (window.location.href = "/dashboard/credentials"),
+                    }}
+                  />
+                ) : (
+                  <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
+                    {credentials.map((cred) => {
+                      const isSelected = selectedCredential === cred.id;
+                      return (
+                        <Paper
+                          key={cred.id}
+                          p="lg"
+                          radius="lg"
+                          withBorder
+                          style={{
+                            cursor: "pointer",
+                            borderColor: isSelected
+                              ? "var(--mantine-color-brand-6)"
+                              : isDark
+                                ? "var(--mantine-color-dark-4)"
+                                : "var(--mantine-color-gray-3)",
+                            borderWidth: isSelected ? 2 : 1,
+                            backgroundColor: isSelected
+                              ? isDark
+                                ? "rgba(34, 139, 230, 0.1)"
+                                : "rgba(34, 139, 230, 0.05)"
+                              : undefined,
+                            transition: "all 0.2s ease",
+                          }}
+                          onClick={() => setSelectedCredential(cred.id)}
+                        >
+                          <Group justify="space-between" mb="sm">
+                            <ThemeIcon
+                              size={40}
+                              radius="md"
+                              variant="light"
+                              color={isSelected ? "brand" : "gray"}
+                            >
+                              <IconPlugConnected size={20} />
+                            </ThemeIcon>
+                            {isSelected && (
+                              <ThemeIcon
+                                size={24}
+                                radius="xl"
+                                color="brand"
+                                variant="filled"
+                              >
+                                <IconCheck size={14} />
+                              </ThemeIcon>
+                            )}
+                          </Group>
+                          <Text fw={600} size="sm">
+                            {cred.appKey}
+                          </Text>
+                          <Text size="xs" c="dimmed" mt={4}>
+                            Click to select
+                          </Text>
+                        </Paper>
+                      );
+                    })}
+                  </SimpleGrid>
+                )}
+              </StepperCard>
+            </Box>
+          )}
+        </Transition>
+
+        {/* Step 2: Configure */}
+        <Transition mounted={activeStep === 1} transition="fade" duration={200}>
+          {(styles) => (
+            <Box style={styles}>
+              <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+                {/* Date Range Card */}
+                <StepperCard
+                  title="Date Range"
+                  description="Select the date range for your export"
+                >
+                  <Stack gap="md">
+                    <Group gap="sm">
+                      <ThemeIcon size={32} radius="md" variant="light">
+                        <IconCalendar size={18} />
+                      </ThemeIcon>
+                      <Box>
+                        <Text size="sm" fw={500}>
+                          Transaction Date Range
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          Filter adjustments by their transaction date
+                        </Text>
+                      </Box>
+                    </Group>
+
+                    <DatePickerInput
+                      type="range"
+                      label="Select Date Range"
+                      placeholder="Pick start and end date"
+                      value={dateRange}
+                      onChange={setDateRange}
+                      size="md"
+                      radius="md"
+                      clearable
+                      valueFormat="DD MMM YYYY"
+                    />
+
+                    {dateRange[0] && dateRange[1] && (
+                      <Alert
+                        variant="light"
+                        color="blue"
+                        radius="md"
+                        icon={<IconInfoCircle size={16} />}
+                      >
+                        <Text size="sm">
+                          Exporting data from{" "}
+                          <strong>
+                            {dayjs(dateRange[0]).format("DD MMM YYYY")}
+                          </strong>{" "}
+                          to{" "}
+                          <strong>
+                            {dayjs(dateRange[1]).format("DD MMM YYYY")}
+                          </strong>{" "}
+                          ({dayjs(dateRange[1]).diff(dateRange[0], "day") + 1}{" "}
+                          days)
+                        </Text>
+                      </Alert>
+                    )}
+                  </Stack>
+                </StepperCard>
+
+                {/* Format Card */}
+                <StepperCard
+                  title="Export Format"
+                  description="Choose your preferred file format"
+                >
+                  <Stack gap="md">
+                    {formatOptions.map((option) => {
+                      const isSelected = format === option.value;
+                      return (
+                        <Paper
+                          key={option.value}
+                          p="md"
+                          radius="md"
+                          withBorder
+                          style={{
+                            cursor: "pointer",
+                            borderColor: isSelected
+                              ? `var(--mantine-color-${option.color}-6)`
+                              : isDark
+                                ? "var(--mantine-color-dark-4)"
+                                : "var(--mantine-color-gray-3)",
+                            borderWidth: isSelected ? 2 : 1,
+                            backgroundColor: isSelected
+                              ? isDark
+                                ? `rgba(var(--mantine-color-${option.color}-6-rgb), 0.1)`
+                                : `rgba(var(--mantine-color-${option.color}-6-rgb), 0.05)`
+                              : undefined,
+                            transition: "all 0.2s ease",
+                          }}
+                          onClick={() => setFormat(option.value)}
+                        >
+                          <Group justify="space-between" wrap="nowrap">
+                            <Group gap="md" wrap="nowrap">
+                              <ThemeIcon
+                                size={44}
+                                radius="md"
+                                variant="light"
+                                color={isSelected ? option.color : "gray"}
+                              >
+                                {option.icon}
+                              </ThemeIcon>
+                              <Box>
+                                <Text fw={600} size="sm">
+                                  {option.label}
+                                </Text>
+                                <Text size="xs" c="dimmed">
+                                  {option.description}
+                                </Text>
+                              </Box>
+                            </Group>
+                            {isSelected && (
+                              <ThemeIcon
+                                size={24}
+                                radius="xl"
+                                color={option.color}
+                                variant="filled"
+                              >
+                                <IconCheck size={14} />
+                              </ThemeIcon>
+                            )}
+                          </Group>
+                        </Paper>
+                      );
+                    })}
+                  </Stack>
+                </StepperCard>
+              </SimpleGrid>
+            </Box>
+          )}
+        </Transition>
+
+        {/* Step 3: Preview & Export */}
+        <Transition mounted={activeStep === 2} transition="fade" duration={200}>
+          {(styles) => (
+            <Box style={styles}>
+              <Stack gap="lg">
+                {/* Summary Card */}
+                <Paper
+                  p="lg"
+                  radius="lg"
+                  style={{
+                    background: isDark
+                      ? "linear-gradient(135deg, rgba(34, 139, 230, 0.1) 0%, rgba(121, 80, 242, 0.1) 100%)"
+                      : "linear-gradient(135deg, rgba(34, 139, 230, 0.05) 0%, rgba(121, 80, 242, 0.05) 100%)",
+                    border: isDark
+                      ? "1px solid var(--mantine-color-dark-4)"
+                      : "1px solid var(--mantine-color-gray-2)",
+                  }}
+                >
+                  <Group justify="space-between" align="flex-start" wrap="wrap">
+                    <Stack gap="md">
+                      <Text size="lg" fw={600}>
+                        Export Summary
+                      </Text>
+                      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
+                        <Group gap="sm">
+                          <ThemeIcon
+                            size={36}
+                            radius="md"
+                            variant="light"
+                            color="violet"
+                          >
+                            <IconPlugConnected size={18} />
+                          </ThemeIcon>
+                          <Box>
+                            <Text size="xs" c="dimmed">
+                              Account
+                            </Text>
+                            <Text size="sm" fw={600}>
+                              {selectedCredentialData?.appKey || "-"}
+                            </Text>
+                          </Box>
+                        </Group>
+
+                        <Group gap="sm">
+                          <ThemeIcon
+                            size={36}
+                            radius="md"
+                            variant="light"
+                            color="blue"
+                          >
+                            <IconCalendar size={18} />
+                          </ThemeIcon>
+                          <Box>
+                            <Text size="xs" c="dimmed">
+                              Date Range
+                            </Text>
+                            <Text size="sm" fw={600}>
+                              {dateRange[0] && dateRange[1]
+                                ? `${dayjs(dateRange[0]).format(
+                                    "DD/MM/YY",
+                                  )} - ${dayjs(dateRange[1]).format(
+                                    "DD/MM/YY",
+                                  )}`
+                                : "-"}
+                            </Text>
+                          </Box>
+                        </Group>
+
+                        <Group gap="sm">
+                          <ThemeIcon
+                            size={36}
+                            radius="md"
+                            variant="light"
+                            color={selectedFormatData?.color || "gray"}
+                          >
+                            {selectedFormatData?.icon || (
+                              <IconFileExport size={18} />
+                            )}
+                          </ThemeIcon>
+                          <Box>
+                            <Text size="xs" c="dimmed">
+                              Format
+                            </Text>
+                            <Text size="sm" fw={600}>
+                              {selectedFormatData?.label || "-"}
+                            </Text>
+                          </Box>
+                        </Group>
+                      </SimpleGrid>
+                    </Stack>
+
+                    <Button
+                      size="lg"
+                      leftSection={<IconDownload size={20} />}
+                      onClick={handleExport}
+                      loading={loading}
+                      disabled={!canProceedToStep3}
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #228BE6 0%, #1C7ED6 100%)",
+                        boxShadow: "0 4px 14px rgba(34, 139, 230, 0.4)",
+                      }}
+                    >
+                      Download Export
+                    </Button>
+                  </Group>
+                </Paper>
+
+                {/* Preview Section */}
+                <StepperCard
+                  title="Data Preview"
+                  description={
+                    totalRecords !== null
+                      ? `Showing first 20 of ${totalRecords} records`
+                      : "Preview of your export data"
+                  }
+                >
+                  <Group justify="flex-end" mb="md">
+                    <Button
+                      variant="light"
+                      size="sm"
+                      leftSection={<IconRefresh size={16} />}
+                      onClick={fetchPreview}
+                      loading={previewLoading}
+                    >
+                      Refresh Preview
+                    </Button>
+                  </Group>
+
+                  {previewLoading ? (
+                    <Stack gap="md" py="xl" align="center">
+                      <Text c="dimmed">Loading preview...</Text>
+                    </Stack>
+                  ) : preview.length === 0 ? (
+                    <EmptyState
+                      variant="no-data"
+                      title="No data to preview"
+                      description="No inventory adjustments found for the selected date range"
+                      size="sm"
+                    />
+                  ) : (
+                    <ScrollArea>
+                      <Table
+                        striped
+                        highlightOnHover
+                        withTableBorder
+                        withColumnBorders
+                        styles={{
+                          th: {
+                            backgroundColor: isDark
+                              ? "var(--mantine-color-dark-6)"
+                              : "var(--mantine-color-gray-0)",
+                          },
+                        }}
+                      >
+                        <Table.Thead>
+                          <Table.Tr>
+                            <Table.Th>Adjustment #</Table.Th>
+                            <Table.Th>Date</Table.Th>
+                            <Table.Th>Item Name</Table.Th>
+                            <Table.Th>Item Code</Table.Th>
+                            <Table.Th>Type</Table.Th>
+                            <Table.Th>Quantity</Table.Th>
+                            <Table.Th>Unit</Table.Th>
+                            <Table.Th>Warehouse</Table.Th>
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                          {preview.map((record, idx) => (
+                            <Table.Tr key={idx}>
+                              <Table.Td>
+                                <Text size="sm" fw={500}>
+                                  {record.adjustmentNumber}
+                                </Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm">{record.date}</Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm" lineClamp={1}>
+                                  {record.itemName}
+                                </Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Badge size="sm" variant="light" color="gray">
+                                  {record.itemCode}
+                                </Badge>
+                              </Table.Td>
+                              <Table.Td>
+                                <Badge
+                                  size="sm"
+                                  variant="light"
+                                  color={
+                                    record.type === "Penambahan"
+                                      ? "green"
+                                      : "red"
+                                  }
+                                >
+                                  {record.type}
+                                </Badge>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm" fw={500}>
+                                  {record.quantity}
+                                </Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm">{record.unit}</Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm" c="dimmed">
+                                  {record.warehouse || "-"}
+                                </Text>
+                              </Table.Td>
+                            </Table.Tr>
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                    </ScrollArea>
+                  )}
+                </StepperCard>
+              </Stack>
+            </Box>
+          )}
+        </Transition>
+      </Box>
+
+      {/* Navigation */}
+      <Paper
+        p="md"
+        radius="lg"
+        style={{
+          border: isDark
+            ? "1px solid var(--mantine-color-dark-4)"
+            : "1px solid var(--mantine-color-gray-2)",
+        }}
+      >
+        <Group justify="space-between">
+          <Button
+            variant="subtle"
+            leftSection={<IconArrowLeft size={16} />}
+            onClick={handleBack}
+            disabled={activeStep === 0}
+          >
+            Back
+          </Button>
+
+          <Group gap="sm">
+            {activeStep === 2 ? (
+              <Button
+                leftSection={<IconDownload size={16} />}
+                onClick={handleExport}
+                loading={loading}
+                disabled={!canProceedToStep3}
+                color="green"
+              >
+                Export Now
+              </Button>
+            ) : (
+              <Button
+                rightSection={<IconArrowRight size={16} />}
+                onClick={handleNext}
+                disabled={
+                  (activeStep === 0 && !canProceedToStep2) ||
+                  (activeStep === 1 && !canProceedToStep3)
+                }
+              >
+                Continue
+              </Button>
+            )}
+          </Group>
+        </Group>
+      </Paper>
     </Stack>
   );
 }

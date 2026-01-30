@@ -1,6 +1,22 @@
 "use client";
 
-import { AppShell, Burger, Group, NavLink, Text, Button } from "@mantine/core";
+import {
+  AppShell,
+  Burger,
+  Group,
+  NavLink,
+  Text,
+  Button,
+  Avatar,
+  Menu,
+  Divider,
+  Box,
+  useMantineColorScheme,
+  Badge,
+  Tooltip,
+  Stack,
+  rem,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { signOut, useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
@@ -13,30 +29,197 @@ import {
   IconLogout,
   IconAdjustments,
   IconScan,
+  IconChevronRight,
+  IconSettings,
+  IconExternalLink,
 } from "@tabler/icons-react";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [opened, { toggle }] = useDisclosure();
-  const pathname = usePathname();
-  const router = useRouter();
+interface NavItem {
+  label: string;
+  icon: React.ReactNode;
+  href?: string;
+  children?: {
+    label: string;
+    icon: React.ReactNode;
+    href: string;
+    badge?: string;
+  }[];
+  badge?: string;
+}
+
+const navItems: NavItem[] = [
+  {
+    label: "Dashboard",
+    icon: <IconDashboard size={20} />,
+    href: "/dashboard",
+  },
+  {
+    label: "Inventory Adjustment",
+    icon: <IconAdjustments size={20} />,
+    children: [
+      {
+        label: "Export (Get data)",
+        icon: <IconFileExport size={16} />,
+        href: "/dashboard/export/inventory-adjustment",
+      },
+      {
+        label: "Import (Input data)",
+        icon: <IconFileImport size={16} />,
+        href: "/dashboard/import/inventory-adjustment",
+      },
+    ],
+  },
+  {
+    label: "Self Checkout",
+    icon: <IconScan size={20} />,
+    href: "/dashboard/self-checkout",
+  },
+  {
+    label: "Accurate Credentials",
+    icon: <IconKey size={20} />,
+    href: "/dashboard/credentials",
+  },
+];
+
+function UserMenu() {
   const { data: session } = useSession();
+  const router = useRouter();
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
     router.push("/login");
   };
 
+  const getInitials = (email?: string | null) => {
+    if (!email) return "U";
+    const parts = email.split("@")[0].split(/[._-]/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return email.substring(0, 2).toUpperCase();
+  };
+
+  const getUserName = (email?: string | null) => {
+    if (!email) return "User";
+    const localPart = email.split("@")[0];
+    return localPart
+      .split(/[._-]/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  return (
+    <Menu position="bottom-end" withArrow shadow="lg" width={220}>
+      <Menu.Target>
+        <Button
+          variant="subtle"
+          px="xs"
+          style={{
+            height: "auto",
+            padding: "6px 10px",
+          }}
+        >
+          <Group gap="sm">
+            <Avatar
+              size={32}
+              radius="xl"
+              color="brand"
+              variant="filled"
+              style={{
+                cursor: "pointer",
+              }}
+            >
+              {getInitials(session?.user?.email)}
+            </Avatar>
+            <Box visibleFrom="sm">
+              <Text size="sm" fw={500} lh={1.2}>
+                {getUserName(session?.user?.email)}
+              </Text>
+              <Text size="xs" c="dimmed" lh={1.2}>
+                {session?.user?.email}
+              </Text>
+            </Box>
+          </Group>
+        </Button>
+      </Menu.Target>
+
+      <Menu.Dropdown>
+        <Menu.Label>Account</Menu.Label>
+        <Menu.Item
+          leftSection={<IconUser size={16} />}
+          onClick={() => router.push("/dashboard/profile")}
+        >
+          Profile
+        </Menu.Item>
+        <Menu.Item
+          leftSection={<IconSettings size={16} />}
+          onClick={() => router.push("/dashboard/settings")}
+        >
+          Settings
+        </Menu.Item>
+        <Menu.Divider />
+        <Menu.Label>Links</Menu.Label>
+        <Menu.Item
+          leftSection={<IconExternalLink size={16} />}
+          onClick={() => window.open("/kiosk", "_blank")}
+        >
+          Open Kiosk Mode
+        </Menu.Item>
+        <Menu.Divider />
+        <Menu.Item
+          leftSection={<IconLogout size={16} />}
+          color="red"
+          onClick={handleSignOut}
+        >
+          Sign out
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
+  );
+}
+
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [opened, { toggle, close }] = useDisclosure();
+  const pathname = usePathname();
+  const router = useRouter();
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const isActive = (href: string) => pathname === href;
+  const isParentActive = (children?: { href: string }[]) =>
+    children?.some((child) => pathname === child.href);
+
+  const handleNavClick = (href: string) => {
+    router.push(href);
+    close();
+  };
+
   return (
     <AppShell
-      header={{ height: 60 }}
+      header={{ height: 64 }}
       navbar={{
         width: 280,
         breakpoint: "sm",
         collapsed: { mobile: !opened },
       }}
       padding="md"
+      styles={{
+        main: {
+          backgroundColor: isDark
+            ? "var(--mantine-color-dark-8)"
+            : "var(--mantine-color-gray-0)",
+        },
+      }}
     >
-      <AppShell.Header>
+      <AppShell.Header
+        style={{
+          borderBottom: isDark
+            ? "1px solid var(--mantine-color-dark-4)"
+            : "1px solid var(--mantine-color-gray-2)",
+          backgroundColor: isDark ? "var(--mantine-color-dark-7)" : "white",
+        }}
+      >
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger
@@ -45,80 +228,212 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               hiddenFrom="sm"
               size="sm"
             />
-            <Text size="xl" fw={700}>
-              Exima
-            </Text>
-          </Group>
-          <Group>
-            <Text size="sm">{session?.user?.email}</Text>
-            <Button
-              variant="subtle"
-              color="red"
-              leftSection={<IconLogout size={16} />}
-              onClick={handleSignOut}
+            <Group
+              gap="xs"
+              style={{ cursor: "pointer" }}
+              onClick={() => router.push("/dashboard")}
             >
-              Logout
-            </Button>
+              <Box
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background:
+                    "linear-gradient(135deg, #228BE6 0%, #1C7ED6 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: 16,
+                }}
+              >
+                E
+              </Box>
+              <Text
+                size="xl"
+                fw={700}
+                style={{
+                  background: isDark
+                    ? "linear-gradient(135deg, #74C0FC 0%, #A5D8FF 100%)"
+                    : "linear-gradient(135deg, #228BE6 0%, #1C7ED6 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Exima
+              </Text>
+            </Group>
+          </Group>
+
+          <Group gap="sm">
+            <ThemeToggle />
+            <UserMenu />
           </Group>
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="md">
-        <NavLink
-          label="Dashboard"
-          leftSection={<IconDashboard size={20} />}
-          active={pathname === "/dashboard"}
-          onClick={() => router.push("/dashboard")}
-        />
+      <AppShell.Navbar
+        p="md"
+        style={{
+          backgroundColor: isDark ? "var(--mantine-color-dark-7)" : "white",
+          borderRight: isDark
+            ? "1px solid var(--mantine-color-dark-4)"
+            : "1px solid var(--mantine-color-gray-2)",
+        }}
+      >
+        <Stack gap="xs">
+          {navItems.map((item) => {
+            if (item.children) {
+              const parentActive = isParentActive(item.children);
 
-        <NavLink
-          label="Inventory Adjustment"
-          leftSection={<IconAdjustments size={20} />}
-          childrenOffset={28}
-          active={
-            pathname.startsWith("/dashboard/export/inventory-adjustment") ||
-            pathname.startsWith("/dashboard/import/inventory-adjustment")
-          }
+              return (
+                <NavLink
+                  key={item.label}
+                  label={
+                    <Group gap="xs">
+                      <Text size="sm" fw={500}>
+                        {item.label}
+                      </Text>
+                      {item.badge && (
+                        <Badge size="xs" variant="light">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Group>
+                  }
+                  leftSection={item.icon}
+                  childrenOffset={28}
+                  defaultOpened={parentActive}
+                  style={{
+                    borderRadius: rem(8),
+                    fontWeight: parentActive ? 600 : 500,
+                  }}
+                  styles={{
+                    root: {
+                      "&:hover": {
+                        backgroundColor: isDark
+                          ? "var(--mantine-color-dark-5)"
+                          : "var(--mantine-color-gray-1)",
+                      },
+                    },
+                    children: {
+                      paddingLeft: rem(12),
+                      borderLeft: isDark
+                        ? "2px solid var(--mantine-color-dark-4)"
+                        : "2px solid var(--mantine-color-gray-2)",
+                      marginLeft: rem(14),
+                    },
+                  }}
+                >
+                  {item.children.map((child) => (
+                    <NavLink
+                      key={child.href}
+                      label={
+                        <Group gap="xs" justify="space-between" wrap="nowrap">
+                          <Text size="sm">{child.label}</Text>
+                          {child.badge && (
+                            <Badge size="xs" variant="light">
+                              {child.badge}
+                            </Badge>
+                          )}
+                        </Group>
+                      }
+                      leftSection={child.icon}
+                      active={isActive(child.href)}
+                      onClick={() => handleNavClick(child.href)}
+                      style={{
+                        borderRadius: rem(6),
+                      }}
+                      styles={{
+                        root: {
+                          "&[dataActive]": {
+                            backgroundColor: isDark
+                              ? "rgba(34, 139, 230, 0.15)"
+                              : "rgba(34, 139, 230, 0.1)",
+                            color: "var(--mantine-color-brand-6)",
+                            fontWeight: 600,
+                          },
+                        },
+                      }}
+                    />
+                  ))}
+                </NavLink>
+              );
+            }
+
+            return (
+              <NavLink
+                key={item.href}
+                label={
+                  <Group gap="xs">
+                    <Text size="sm" fw={isActive(item.href!) ? 600 : 500}>
+                      {item.label}
+                    </Text>
+                    {item.badge && (
+                      <Badge size="xs" variant="light">
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </Group>
+                }
+                leftSection={item.icon}
+                active={isActive(item.href!)}
+                onClick={() => handleNavClick(item.href!)}
+                style={{
+                  borderRadius: rem(8),
+                }}
+                styles={{
+                  root: {
+                    "&[dataActive]": {
+                      backgroundColor: isDark
+                        ? "rgba(34, 139, 230, 0.15)"
+                        : "rgba(34, 139, 230, 0.1)",
+                      color: "var(--mantine-color-brand-6)",
+                      fontWeight: 600,
+                    },
+                    "&:hover": {
+                      backgroundColor: isDark
+                        ? "var(--mantine-color-dark-5)"
+                        : "var(--mantine-color-gray-1)",
+                    },
+                  },
+                }}
+              />
+            );
+          })}
+        </Stack>
+
+        <Box style={{ flex: 1 }} />
+
+        <Divider my="md" />
+
+        <Box
+          p="sm"
+          style={{
+            backgroundColor: isDark
+              ? "var(--mantine-color-dark-6)"
+              : "var(--mantine-color-gray-0)",
+            borderRadius: rem(8),
+          }}
         >
-          <NavLink
-            label="Export (Get data)"
-            leftSection={<IconFileExport size={16} />}
-            active={pathname === "/dashboard/export/inventory-adjustment"}
-            onClick={() =>
-              router.push("/dashboard/export/inventory-adjustment")
-            }
-          />
-
-          <NavLink
-            label="Import (Input data)"
-            leftSection={<IconFileImport size={16} />}
-            active={pathname === "/dashboard/import/inventory-adjustment"}
-            onClick={() =>
-              router.push("/dashboard/import/inventory-adjustment")
-            }
-          />
-        </NavLink>
-
-        <NavLink
-          label="Self Checkout"
-          leftSection={<IconScan size={20} />}
-          active={pathname === "/dashboard/self-checkout"}
-          onClick={() => router.push("/dashboard/self-checkout")}
-        />
-
-        <NavLink
-          label="Accurate Credentials"
-          leftSection={<IconKey size={20} />}
-          active={pathname === "/dashboard/credentials"}
-          onClick={() => router.push("/dashboard/credentials")}
-        />
-
-        <NavLink
-          label="Profile"
-          leftSection={<IconUser size={20} />}
-          active={pathname === "/dashboard/profile"}
-          onClick={() => router.push("/dashboard/profile")}
-        />
+          <Group gap="xs" mb={4}>
+            <Box
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                backgroundColor: "var(--mantine-color-green-6)",
+              }}
+            />
+            <Text size="xs" fw={500}>
+              Connected to Accurate
+            </Text>
+          </Group>
+          <Text size="xs" c="dimmed">
+            API Status: Operational
+          </Text>
+        </Box>
       </AppShell.Navbar>
 
       <AppShell.Main>{children}</AppShell.Main>
