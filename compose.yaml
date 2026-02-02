@@ -7,9 +7,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5758
-      # Override if Komodo provides a managed DB; otherwise use the postgres service below.
-      # DATABASE_URL: ${DATABASE_URL}
-      # NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:5758}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:password@postgres:5432/exim_accurate?schema=public}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:5758}
     ports:
       - "5758:5758"
     depends_on:

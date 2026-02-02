@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getBaseUrl } from "@/lib/url";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
+    const baseUrl = getBaseUrl(req);
     return NextResponse.redirect(
-      new URL("/login?callbackUrl=/dashboard/credentials", req.url)
+      new URL("/login?callbackUrl=/dashboard/credentials", baseUrl)
     );
   }
 

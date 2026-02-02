@@ -10,8 +10,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5758
-      NEXTAUTH_URL: "http://localhost:5758"
-      DATABASE_URL: "postgresql://postgres:password@postgres:5432/exim_accurate?schema=public"
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:5758}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:password@postgres:5432/exim_accurate?schema=public}
     depends_on:
       - postgres
     ports:
