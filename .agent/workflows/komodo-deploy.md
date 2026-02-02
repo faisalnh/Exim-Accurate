@@ -39,11 +39,14 @@ This guide uses **GitHub Actions** to build the image and **Komodo UI** to deplo
 ## Step 3: Pull and Deploy (Manual or Automated)
 
 ### Automated (Recommended)
-1. In Komodo UI, go to your Stack settings and find the **Deploy Webhook**.
+1. In Komodo UI, go to your Stack settings and find the **Deploy Webhook** (or **Git Sync Webhook**).
 2. Copy the Webhook URL.
-3. Go to your GitHub Repository → **Settings** → **Secrets and variables** → **Actions**.
-4. Add a new secret named `KOMODO_WEBHOOK_URL` and paste the URL.
-5. Every successful push to `main` will now trigger Komodo to pull and redeploy automatically.
+3. If the URL is a "Git Sync" webhook, you **must** also have a Secret.
+4. Go to your GitHub Repository → **Settings** → **Secrets and variables** → **Actions**.
+5. Add two secrets:
+   - `KOMODO_WEBHOOK_URL`: The URL you copied.
+   - `KOMODO_WEBHOOK_SECRET`: The secret string configured in Komodo for this webhook.
+6. Every successful push to `main` will now trigger Komodo to pull and redeploy automatically.
 
 ### Manual
 1. In the `exima` stack, click **Pull** to sync the latest `compose.yaml`.
