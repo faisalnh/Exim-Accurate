@@ -39,14 +39,22 @@ This guide uses **GitHub Actions** to build the image and **Komodo UI** to deplo
 ## Step 3: Pull and Deploy (Manual or Automated)
 
 ### Automated (Recommended)
-1. In Komodo UI, go to your Stack settings and find the **Deploy Webhook** (or **Git Sync Webhook**).
-2. Copy the Webhook URL.
-3. If the URL is a "Git Sync" webhook, you **must** also have a Secret.
-4. Go to your GitHub Repository → **Settings** → **Secrets and variables** → **Actions**.
-5. Add two secrets:
-   - `KOMODO_WEBHOOK_URL`: The URL you copied.
-   - `KOMODO_WEBHOOK_SECRET`: The secret string configured in Komodo for this webhook.
-6. Every successful push to `main` will now trigger Komodo to pull and redeploy automatically.
+Using a **Komodo Procedure** ensures your stack not only syncs but also forces an image pull and container restart.
+
+1.  **Create Procedure**:
+    - In Komodo UI → **Procedures** → **Create Procedure**.
+    - Name it `exima-redeploy`.
+    - Add Step: `Sync Stack` (select `exima`).
+    - Add Step: `Deploy Stack` (select `exima`).
+2.  **Generate Webhook**:
+    - Inside the Procedure page, scroll to **Webhook**.
+    - Click **Generate Webhook**.
+    - Copy the **URL** and the **Secret**.
+3.  **Config GitHub Secrets**:
+    - GitHub Repository → **Settings** → **Secrets and variables** → **Actions**.
+    - Update `KOMODO_WEBHOOK_URL` with the Procedure URL.
+    - Update `KOMODO_WEBHOOK_SECRET` with the Procedure Secret.
+4.  Every push to `main` will now trigger the full redeploy pipeline.
 
 ### Manual
 1. In the `exima` stack, click **Pull** to sync the latest `compose.yaml`.
