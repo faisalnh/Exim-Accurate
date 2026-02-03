@@ -16,16 +16,37 @@ export interface ImportRow {
  * Parse CSV file content
  */
 export async function parseCSV(content: string): Promise<ImportRow[]> {
-  const lines = content.split("\n").filter((line) => line.trim());
+  let start = 0;
+  let end = content.indexOf('\n');
+  let headerLine: string | null = null;
 
-  if (lines.length < 2) {
+  // Find header (first non-empty line)
+  while (true) {
+    const line = (end === -1 ? content.substring(start) : content.substring(start, end));
+
+    if (line.trim()) {
+      headerLine = line;
+      // Advance pointers past this line
+      start = end === -1 ? content.length : end + 1;
+      break;
+    }
+
+    if (end === -1) {
+      start = content.length;
+      break;
+    }
+    start = end + 1;
+    end = content.indexOf('\n', start);
+  }
+
+  if (!headerLine) {
     throw new Error(
       "CSV file must have at least a header row and one data row",
     );
   }
 
   // Parse header
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const headers = headerLine.split(",").map((h) => h.trim().toLowerCase());
 
   // Find column indices
   const itemCodeIdx = headers.findIndex(
@@ -61,6 +82,7 @@ export async function parseCSV(content: string): Promise<ImportRow[]> {
 
   // Parse data rows
   const rows: ImportRow[] = [];
+  let hasDataRow = false;
 
   const normalizeDate = (dateStr: string) => {
     // If already YYYY-MM-DD
@@ -78,8 +100,22 @@ export async function parseCSV(content: string): Promise<ImportRow[]> {
     return dateStr; // Return as is, validator will catch it
   };
 
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i]
+  while (start < content.length) {
+    end = content.indexOf('\n', start);
+    const lineStr = (end === -1 ? content.substring(start) : content.substring(start, end));
+
+    // Update start for next iteration
+    if (end === -1) {
+      start = content.length;
+    } else {
+      start = end + 1;
+    }
+
+    if (!lineStr.trim()) continue;
+
+    hasDataRow = true;
+
+    const values = lineStr
       .split(",")
       .map((v) => v.trim().replace(/^"|"$/g, ""));
 
@@ -96,6 +132,12 @@ export async function parseCSV(content: string): Promise<ImportRow[]> {
       warehouse: warehouseIdx !== -1 ? values[warehouseIdx] : undefined,
       description: descriptionIdx !== -1 ? values[descriptionIdx] : undefined,
     });
+  }
+
+  if (!hasDataRow) {
+    throw new Error(
+      "CSV file must have at least a header row and one data row",
+    );
   }
 
   return rows;
