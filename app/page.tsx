@@ -27,6 +27,8 @@ import {
   IconSparkles,
   IconRocket,
   IconBrandGithub,
+  IconArrowsLeftRight,
+  IconDeviceDesktop,
 } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -34,20 +36,12 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const features = [
   {
-    icon: <IconDownload size={28} />,
-    title: "Ekspor massal",
+    icon: <IconArrowsLeftRight size={28} />,
+    title: "Impor & Ekspor massal",
     description:
-      "Unduh penyesuaian persediaan ke CSV, XLSX, atau JSON dengan pratinjau 20 baris sebelum download.",
+      "Validasi & unduh template CSV/XLSX, lalu ekspor atau impor batch dengan pratinjau 20 baris sebelum jalan.",
     color: "blue",
-    gradient: "linear-gradient(135deg, #228BE6 0%, #1C7ED6 100%)",
-  },
-  {
-    icon: <IconUpload size={28} />,
-    title: "Impor massal",
-    description:
-      "Validasi template CSV/XLSX (kode item, tanggal, unit, jenis) lalu impor batch ke Accurate.",
-    color: "green",
-    gradient: "linear-gradient(135deg, #40C057 0%, #37B24D 100%)",
+    gradient: "linear-gradient(135deg, #228BE6 0%, #37B24D 100%)",
   },
   {
     icon: <IconShield size={28} />,
@@ -65,6 +59,14 @@ const features = [
     color: "orange",
     gradient: "linear-gradient(135deg, #FD7E14 0%, #F76707 100%)",
   },
+  {
+    icon: <IconDeviceDesktop size={28} />,
+    title: "Kiosk Mode (Self Checkout)",
+    description:
+      "Mode kios untuk pemindaian mandiri, cocok di gudang/outlet sehingga tim bisa input adjustment tanpa login berulang.",
+    color: "teal",
+    gradient: "linear-gradient(135deg, #12B886 0%, #0CA678 100%)",
+  },
 ];
 
 const benefits = [
@@ -81,6 +83,7 @@ export default function HomePage() {
   const router = useRouter();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
+  const currentYear = new Date().getFullYear();
 
   const primaryCta = () => {
     router.push(session ? "/dashboard" : "/login");
@@ -323,7 +326,10 @@ export default function HomePage() {
               variant="outline"
               leftSection={<IconBrandGithub size={18} />}
               onClick={() =>
-                window.open("https://github.com/yourusername/exima", "_blank")
+                window.open(
+                  "https://github.com/faisalnh/Exim-Accurate",
+                  "_blank",
+                )
               }
             >
               View on GitHub
@@ -473,18 +479,6 @@ export default function HomePage() {
                   </Group>
                 ))}
               </Stack>
-
-              <Button
-                variant="light"
-                color="green"
-                size="md"
-                mt="md"
-                w="fit-content"
-                rightSection={<IconArrowRight size={16} />}
-                onClick={() => router.push("/pricing")}
-              >
-                Lihat detail pricing
-              </Button>
             </Stack>
 
             <Box
@@ -529,7 +523,7 @@ export default function HomePage() {
                       <Stack gap={0}>
                         <Text fw={600}>Quick Start</Text>
                         <Text size="xs" c="dimmed">
-                          Setup dalam 5 menit
+                          Self-host via Docker
                         </Text>
                       </Stack>
                     </Group>
@@ -554,7 +548,7 @@ export default function HomePage() {
                             1
                           </Text>
                         </Box>
-                        <Text size="sm">Register & Login</Text>
+                        <Text size="sm">Clone repo & copy .env.example</Text>
                       </Group>
                       <Group gap="xs">
                         <Box
@@ -573,7 +567,9 @@ export default function HomePage() {
                             2
                           </Text>
                         </Box>
-                        <Text size="sm">Connect Accurate OAuth</Text>
+                        <Text size="sm">
+                          Isi kredensial Accurate + NextAuth
+                        </Text>
                       </Group>
                       <Group gap="xs">
                         <Box
@@ -592,9 +588,13 @@ export default function HomePage() {
                             3
                           </Text>
                         </Box>
-                        <Text size="sm">Start Export/Import</Text>
+                        <Text size="sm">docker compose up -d --build</Text>
                       </Group>
                     </Stack>
+                    <Text size="xs" c="dimmed">
+                      Lanjutkan dengan `docker compose exec app npm run
+                      db:push`.
+                    </Text>
                   </Stack>
                 </Card>
               </Box>
@@ -697,7 +697,16 @@ export default function HomePage() {
                 E
               </Box>
               <Text size="sm" c="dimmed">
-                © 2024 Exima. All rights reserved.
+                © {currentYear}{" "}
+                <Anchor
+                  href="https://madlabs.millenniaws.sch.id/"
+                  target="_blank"
+                  rel="noreferrer"
+                  c="dimmed"
+                >
+                  MAD Labs by Millennia World School
+                </Anchor>
+                . All rights reserved.
               </Text>
             </Group>
 

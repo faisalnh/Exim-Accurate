@@ -229,6 +229,7 @@ export default function IntegrationPage() {
   const router = useRouter();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
+  const currentYear = new Date().getFullYear();
 
   return (
     <Box
@@ -853,7 +854,10 @@ ACCURATE_SIGNATURE_SECRET=your_signature_secret`}
                 color="white"
                 leftSection={<IconBrandGithub size={18} />}
                 onClick={() =>
-                  window.open("https://github.com/yourusername/exima", "_blank")
+                  window.open(
+                    "https://github.com/faisalnh/Exim-Accurate",
+                    "_blank",
+                  )
                 }
               >
                 View Docs
@@ -894,7 +898,16 @@ ACCURATE_SIGNATURE_SECRET=your_signature_secret`}
                 E
               </Box>
               <Text size="sm" c="dimmed">
-                © 2024 Exima. All rights reserved.
+                © {currentYear}{" "}
+                <Anchor
+                  href="https://madlabs.millenniaws.sch.id/"
+                  target="_blank"
+                  rel="noreferrer"
+                  c="dimmed"
+                >
+                  MAD Labs by Millennia World School
+                </Anchor>
+                . All rights reserved.
               </Text>
             </Group>
 

@@ -160,6 +160,7 @@ export default function PricingPage() {
   const router = useRouter();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
+  const currentYear = new Date().getFullYear();
 
   return (
     <Box
@@ -468,7 +469,10 @@ export default function PricingPage() {
                 fullWidth
                 leftSection={<IconBrandGithub size={18} />}
                 onClick={() =>
-                  window.open("https://github.com/yourusername/exima", "_blank")
+                  window.open(
+                    "https://github.com/faisalnh/Exim-Accurate",
+                    "_blank",
+                  )
                 }
               >
                 Lihat di GitHub
@@ -730,7 +734,10 @@ export default function PricingPage() {
                 color="white"
                 leftSection={<IconBrandGithub size={18} />}
                 onClick={() =>
-                  window.open("https://github.com/yourusername/exima", "_blank")
+                  window.open(
+                    "https://github.com/faisalnh/Exim-Accurate",
+                    "_blank",
+                  )
                 }
               >
                 GitHub
@@ -771,7 +778,16 @@ export default function PricingPage() {
                 E
               </Box>
               <Text size="sm" c="dimmed">
-                © 2024 Exima. All rights reserved.
+                © {currentYear}{" "}
+                <Anchor
+                  href="https://madlabs.millenniaws.sch.id/"
+                  target="_blank"
+                  rel="noreferrer"
+                  c="dimmed"
+                >
+                  MAD Labs by Millennia World School
+                </Anchor>
+                . All rights reserved.
               </Text>
             </Group>
 

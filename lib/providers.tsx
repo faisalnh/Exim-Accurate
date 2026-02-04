@@ -9,7 +9,7 @@ import { theme } from "./theme";
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <MantineProvider theme={theme} defaultColorScheme="auto">
+      <MantineProvider theme={theme} defaultColorScheme="light">
         <Notifications position="top-right" />
         <ModalsProvider>{children}</ModalsProvider>
       </MantineProvider>
