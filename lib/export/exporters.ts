@@ -55,12 +55,10 @@ export function exportToCSV(records: ExportRecord[]): string {
   };
 
   // Build CSV content
-  const csvContent = [
-    headers.map(escape).join(","),
-    ...rows.map((row) => row.map(escape).join(",")),
-  ].join("\n");
+  const headerLine = headers.map(escape).join(",");
+  const bodyContent = rows.map((row) => row.map(escape).join(",")).join("\n");
 
-  return csvContent;
+  return headerLine + "\n" + bodyContent;
 }
 
 /**
