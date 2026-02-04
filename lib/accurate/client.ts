@@ -202,13 +202,14 @@ export async function refreshAccessToken(
 /**
  * Rate limiter for Accurate API (8 req/sec, 8 concurrent)
  */
-class RateLimiter {
+export class RateLimiter {
   private queue: Array<() => void> = [];
   private activeRequests = 0;
   private maxConcurrent = 8;
   private requestsPerSecond = 8;
   private lastRequestTime = 0;
   private minInterval: number;
+  private timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.minInterval = 1000 / this.requestsPerSecond;
@@ -216,39 +217,47 @@ class RateLimiter {
 
   async acquire(): Promise<void> {
     return new Promise((resolve) => {
-      const tryAcquire = () => {
-        const now = Date.now();
-        const timeSinceLastRequest = now - this.lastRequestTime;
-
-        if (
-          this.activeRequests < this.maxConcurrent &&
-          timeSinceLastRequest >= this.minInterval
-        ) {
-          this.activeRequests++;
-          this.lastRequestTime = now;
-          resolve();
-        } else {
-          const waitTime = Math.max(
-            0,
-            this.minInterval - timeSinceLastRequest
-          );
-          setTimeout(tryAcquire, waitTime);
-        }
-      };
-
-      if (this.activeRequests >= this.maxConcurrent) {
-        this.queue.push(tryAcquire);
-      } else {
-        tryAcquire();
-      }
+      this.queue.push(resolve);
+      this.processQueue();
     });
   }
 
   release(): void {
     this.activeRequests--;
-    if (this.queue.length > 0) {
-      const next = this.queue.shift();
-      if (next) next();
+    this.processQueue();
+  }
+
+  private processQueue() {
+    if (this.queue.length === 0) {
+      return;
+    }
+
+    if (this.activeRequests >= this.maxConcurrent) {
+      return;
+    }
+
+    if (this.timeoutId) {
+      return;
+    }
+
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    const waitTime = this.minInterval - timeSinceLastRequest;
+
+    if (waitTime <= 0) {
+      const resolve = this.queue.shift();
+      if (resolve) {
+        this.activeRequests++;
+        this.lastRequestTime = Date.now();
+        resolve();
+        // Try to process the next item immediately
+        this.processQueue();
+      }
+    } else {
+      this.timeoutId = setTimeout(() => {
+        this.timeoutId = null;
+        this.processQueue();
+      }, waitTime);
     }
   }
 }
