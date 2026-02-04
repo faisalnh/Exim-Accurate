@@ -10,6 +10,7 @@ import {
   Group,
   Text,
   LoadingOverlay,
+  Tooltip,
 } from "@mantine/core";
 import { useState, useEffect, useRef } from "react";
 import { IconTrash, IconCheck, IconKey } from "@tabler/icons-react";
@@ -26,6 +27,7 @@ interface Credential {
 export default function CredentialsPage() {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingDeleteId, setLoadingDeleteId] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const handledStatus = useRef<string | null>(null);
 
@@ -80,6 +82,7 @@ export default function CredentialsPage() {
       return;
     }
 
+    setLoadingDeleteId(id);
     try {
       const response = await fetch(`/api/credentials?id=${id}`, {
         method: "DELETE",
@@ -100,6 +103,8 @@ export default function CredentialsPage() {
         message: "Failed to delete credential",
         color: "red",
       });
+    } finally {
+      setLoadingDeleteId(null);
     }
   };
 
@@ -157,13 +162,16 @@ export default function CredentialsPage() {
                   </Table.Td>
                   <Table.Td>
                     <Group gap="xs">
-                      <ActionIcon
-                        color="red"
-                        onClick={() => handleDelete(cred.id)}
-                        title="Disconnect"
-                      >
-                        <IconTrash size={16} />
-                      </ActionIcon>
+                      <Tooltip label="Disconnect account" withArrow>
+                        <ActionIcon
+                          color="red"
+                          onClick={() => handleDelete(cred.id)}
+                          loading={loadingDeleteId === cred.id}
+                          aria-label="Disconnect account"
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Tooltip>
                     </Group>
                   </Table.Td>
                 </Table.Tr>
