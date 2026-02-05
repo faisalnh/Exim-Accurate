@@ -19,6 +19,7 @@ import {
   IconShoppingCartOff,
   IconCloudOff,
 } from "@tabler/icons-react";
+import Image from "next/image";
 import { ReactNode } from "react";
 
 type EmptyStateVariant =
@@ -243,14 +244,18 @@ export function IllustratedEmptyState({
           opacity: isDark ? 0.8 : 1,
         }}
       >
-        <img
+        <Image
           src={illustrationUrl}
           alt=""
+          width={sizeSettings.iconSize * 1.5}
+          height={sizeSettings.iconSize * 1.5}
           style={{
             width: "100%",
             height: "100%",
             objectFit: "contain",
           }}
+          unoptimized
+          loader={({ src }) => src}
         />
       </Box>
 

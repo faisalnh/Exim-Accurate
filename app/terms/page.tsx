@@ -145,7 +145,7 @@ export default function TermsPage() {
                 kredensial jika sudah tidak digunakan.
               </List.Item>
               <List.Item>
-                Layanan disediakan apa adanya ("as-is") tanpa jaminan; gunakan
+                Layanan disediakan apa adanya (&quot;as-is&quot;) tanpa jaminan; gunakan
                 dengan mempertimbangkan kebijakan internal perusahaan Anda.
               </List.Item>
             </List>

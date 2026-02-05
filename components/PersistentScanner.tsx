@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Box, Text, Loader, Stack, Center, Select, Group } from "@mantine/core";
 import { IconCamera, IconAlertCircle } from "@tabler/icons-react";
@@ -27,6 +27,66 @@ export function PersistentScanner({
     const readerId = "persistent-scanner-reader";
 
     const isTransitioningRef = useRef(false);
+
+    const startScanning = useCallback(async () => {
+        if (!selectedCamera || isTransitioningRef.current) return;
+
+        try {
+            isTransitioningRef.current = true;
+            setError(null);
+
+            if (!scannerRef.current) {
+                scannerRef.current = new Html5Qrcode(readerId, {
+                    verbose: false,
+                    formatsToSupport: [
+                        Html5QrcodeSupportedFormats.QR_CODE,
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                    ],
+                });
+            }
+
+            // Ensure we aren't already scanning (library state check)
+            if (scannerRef.current.isScanning) {
+                isTransitioningRef.current = false;
+                setStatus("scanning");
+                return;
+            }
+
+            await scannerRef.current.start(
+                selectedCamera,
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 150 },
+                    aspectRatio: 1.5,
+                },
+                (decodedText) => {
+                    if (disabled) return;
+                    const now = Date.now();
+                    if (decodedText === lastScannedRef.current && now - lastScanTimeRef.current < 2000) return;
+                    lastScannedRef.current = decodedText;
+                    lastScanTimeRef.current = now;
+                    onScan(decodedText);
+                },
+                () => { }
+            );
+            setStatus("scanning");
+        } catch (err: any) {
+            if (err?.message?.includes("already under transition")) {
+                // Ignore and let state catch up
+                return;
+            }
+            console.error("Scanner start error:", err);
+            setError(err.message || "Failed to start camera");
+            setStatus("error");
+        } finally {
+            isTransitioningRef.current = false;
+        }
+    }, [disabled, onScan, readerId, selectedCamera]);
 
     useEffect(() => {
         Html5Qrcode.getCameras()
@@ -91,69 +151,7 @@ export function PersistentScanner({
                 }
             }
         };
-    }, [selectedCamera, status]);
-
-    const startScanning = async () => {
-        if (!selectedCamera || isTransitioningRef.current) return;
-
-        try {
-            isTransitioningRef.current = true;
-            setError(null);
-
-            if (!scannerRef.current) {
-                scannerRef.current = new Html5Qrcode(readerId, {
-                    verbose: false,
-                    formatsToSupport: [
-                        Html5QrcodeSupportedFormats.QR_CODE,
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.EAN_8,
-                        Html5QrcodeSupportedFormats.CODE_128,
-                        Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.UPC_A,
-                        Html5QrcodeSupportedFormats.UPC_E,
-                    ],
-                });
-            }
-
-            // Ensure we aren't already scanning (library state check)
-            if (scannerRef.current.isScanning) {
-                isTransitioningRef.current = false;
-                setStatus("scanning");
-                return;
-            }
-
-            await scannerRef.current.start(
-                selectedCamera,
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 150 },
-                    aspectRatio: 1.5,
-                },
-                (decodedText) => {
-                    if (disabled) return;
-                    const now = Date.now();
-                    if (decodedText === lastScannedRef.current && now - lastScanTimeRef.current < 2000) return;
-                    lastScannedRef.current = decodedText;
-                    lastScanTimeRef.current = now;
-                    onScan(decodedText);
-                },
-                () => { }
-            );
-            setStatus("scanning");
-        } catch (err: any) {
-            if (err?.message?.includes("already under transition")) {
-                // Ignore and let state catch up
-                return;
-            }
-            console.error("Scanner start error:", err);
-            setError(err.message || "Failed to start camera");
-            setStatus("error");
-        } finally {
-            isTransitioningRef.current = false;
-        }
-    };
-
-
+    }, [selectedCamera, startScanning, status]);
 
     const handleCameraChange = async (cameraId: string | null) => {
         if (!cameraId) return;
