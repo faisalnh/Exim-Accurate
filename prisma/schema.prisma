@@ -37,6 +37,8 @@ model AccurateCredentials {
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   checkoutSessions CheckoutSession[]
+  exportJobs       ExportJob[]
+  importJobs       ImportJob[]
 }
 
 // Self Checkout feature - tracks staff checkout sessions
