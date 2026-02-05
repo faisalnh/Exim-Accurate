@@ -99,12 +99,13 @@ export async function POST(req: NextRequest) {
 
     // Parse file based on extension
     const fileName = file.name.toLowerCase();
+    const format = fileName.endsWith(".csv") ? "csv" : "xlsx";
     let rows;
 
-    if (fileName.endsWith(".csv")) {
+    if (format === "csv") {
       const content = await file.text();
       rows = await parseCSV(content);
-    } else if (fileName.endsWith(".xlsx")) {
+    } else if (format === "xlsx") {
       const buffer = await file.arrayBuffer();
       rows = await parseXLSX(buffer);
     } else {
@@ -133,8 +134,12 @@ export async function POST(req: NextRequest) {
     const importJob = await prisma.importJob.create({
       data: {
         userId: session.user.id,
+        credentialId: credential.id,
         type: "inventory_adjustment",
         status: "running",
+        format,
+        fileName: file.name,
+        recordCount: rows.length,
       },
     });
 
@@ -204,6 +209,8 @@ export async function POST(req: NextRequest) {
           status: failedCount === 0 ? "done" : "error",
           completedAt: new Date(),
           errorMessage: errors.length > 0 ? errors.join("; ") : null,
+          successCount,
+          failedCount,
         },
       });
 

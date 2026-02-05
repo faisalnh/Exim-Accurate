@@ -70,25 +70,36 @@ model CheckoutItem {
 model ExportJob {
   id          String    @id @default(uuid())
   userId      String
+  credentialId String?
   type        String // "inventory_adjustment"
   startedAt   DateTime  @default(now())
   completedAt DateTime?
   status      String // pending, running, done, error
   resultUrl   String?
   errorMessage String?
+  format      String?
+  recordCount Int?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credential  AccurateCredentials?  @relation(fields: [credentialId], references: [id], onDelete: SetNull)
 }
 
 model ImportJob {
   id          String    @id @default(uuid())
   userId      String
+  credentialId String?
   type        String
   startedAt   DateTime  @default(now())
   completedAt DateTime?
   status      String
   resultUrl   String?
   errorMessage String?
+  format      String?
+  fileName    String?
+  recordCount Int?
+  successCount Int?
+  failedCount Int?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credential  AccurateCredentials?  @relation(fields: [credentialId], references: [id], onDelete: SetNull)
 }

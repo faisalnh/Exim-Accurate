@@ -45,63 +45,6 @@ import {
 import { ActivityCard, ActivityItem } from "@/components/ui/ActivityTimeline";
 import { EmptyState } from "@/components/ui/EmptyState";
 
-// Mock data for charts - in production, fetch from API
-const weeklyActivityData = [
-  { name: "Mon", exports: 12, imports: 8 },
-  { name: "Tue", exports: 19, imports: 15 },
-  { name: "Wed", exports: 8, imports: 12 },
-  { name: "Thu", exports: 25, imports: 18 },
-  { name: "Fri", exports: 32, imports: 24 },
-  { name: "Sat", exports: 5, imports: 3 },
-  { name: "Sun", exports: 2, imports: 1 },
-];
-
-const monthlyTrendData = [
-  { name: "Week 1", total: 156 },
-  { name: "Week 2", total: 234 },
-  { name: "Week 3", total: 189 },
-  { name: "Week 4", total: 312 },
-];
-
-// Mock activities - in production, fetch from API
-const mockActivities: ActivityItem[] = [
-  {
-    id: "1",
-    type: "export",
-    title: "Exported inventory adjustments",
-    description: "CSV file with 156 records",
-    timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15 mins ago
-    status: "success",
-    metadata: { count: 156 },
-  },
-  {
-    id: "2",
-    type: "import",
-    title: "Imported inventory data",
-    description: "XLSX file processed successfully",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-    status: "success",
-    metadata: { count: 89 },
-  },
-  {
-    id: "3",
-    type: "connect",
-    title: "Connected Accurate account",
-    description: "New API credentials added",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-    status: "success",
-  },
-  {
-    id: "4",
-    type: "export",
-    title: "Export job completed",
-    description: "JSON format, date range: Jan 1-15",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48), // 2 days ago
-    status: "success",
-    metadata: { count: 234 },
-  },
-];
-
 interface DashboardStats {
   totalExports: number;
   totalImports: number;
@@ -110,6 +53,17 @@ interface DashboardStats {
   exportsTrend: number;
   importsTrend: number;
   monthTrend: number;
+}
+
+interface WeeklyActivityPoint {
+  name: string;
+  exports: number;
+  imports: number;
+}
+
+interface MonthlyTrendPoint {
+  name: string;
+  total: number;
 }
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -167,25 +121,34 @@ export default function DashboardPage() {
     monthTrend: 0,
   });
   const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [weeklyActivityData, setWeeklyActivityData] = useState<
+    WeeklyActivityPoint[]
+  >([]);
+  const [monthlyTrendData, setMonthlyTrendData] = useState<
+    MonthlyTrendPoint[]
+  >([]);
+  const [monthTotal, setMonthTotal] = useState(0);
 
   useEffect(() => {
-    // Simulate loading data
     const loadData = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      try {
+        const response = await fetch("/api/dashboard/summary");
+        if (!response.ok) {
+          throw new Error("Failed to load dashboard data");
+        }
 
-      // In production, fetch real stats from API
-      setStats({
-        totalExports: 1234,
-        totalImports: 5678,
-        connectedAccounts: 3,
-        thisMonth: 89,
-        exportsTrend: 12,
-        importsTrend: 8,
-        monthTrend: 25,
-      });
-
-      setActivities(mockActivities);
-      setLoading(false);
+        const data = await response.json();
+        setStats(data.stats);
+        setWeeklyActivityData(data.weeklyActivityData || []);
+        setMonthlyTrendData(data.monthlyTrendData || []);
+        setMonthTotal(data.monthTotal || 0);
+        setActivities(data.activities || []);
+      } catch (error) {
+        console.error(error);
+        setActivities([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadData();
@@ -496,7 +459,7 @@ export default function DashboardPage() {
             <Group gap={4}>
               <IconArrowUpRight size={14} color="#40C057" />
               <Text size="sm" fw={600}>
-                891 operations
+                {monthTotal} operations
               </Text>
             </Group>
           </Group>

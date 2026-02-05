@@ -102,8 +102,10 @@ export async function POST(req: NextRequest) {
     const exportJob = await prisma.exportJob.create({
       data: {
         userId: session.user.id,
+        credentialId: credential.id,
         type: "inventory_adjustment",
         status: "running",
+        format,
       },
     });
 
@@ -148,6 +150,7 @@ export async function POST(req: NextRequest) {
         data: {
           status: "done",
           completedAt: new Date(),
+          recordCount: records.length,
         },
       });
 
