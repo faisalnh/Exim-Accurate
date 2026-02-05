@@ -22,7 +22,6 @@ import {
   IconUpload,
   IconShield,
   IconPlugConnected,
-  IconArrowRight,
   IconCheck,
   IconSparkles,
   IconRocket,
@@ -30,7 +29,6 @@ import {
   IconArrowsLeftRight,
   IconDeviceDesktop,
 } from "@tabler/icons-react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
@@ -79,15 +77,10 @@ const benefits = [
 ];
 
 export default function HomePage() {
-  const { data: session } = useSession();
   const router = useRouter();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
   const currentYear = new Date().getFullYear();
-
-  const primaryCta = () => {
-    router.push(session ? "/dashboard" : "/login");
-  };
 
   return (
     <Box
@@ -217,23 +210,9 @@ export default function HomePage() {
               <Button
                 variant="subtle"
                 size="sm"
-                onClick={() => router.push("/pricing")}
+                onClick={() => router.push("/terms")}
               >
-                Pricing
-              </Button>
-              <Button
-                variant="subtle"
-                size="sm"
-                onClick={() => router.push("/integration")}
-              >
-                Integrasi
-              </Button>
-              <Button
-                variant={session ? "light" : "filled"}
-                size="sm"
-                onClick={primaryCta}
-              >
-                {session ? "Dashboard" : "Masuk"}
+                Terms
               </Button>
             </Group>
           </Group>
@@ -297,29 +276,6 @@ export default function HomePage() {
 
           {/* CTA Buttons */}
           <Group gap="md" mt="md">
-            <Button
-              size="lg"
-              radius="md"
-              rightSection={<IconArrowRight size={18} />}
-              onClick={primaryCta}
-              style={{
-                background: "linear-gradient(135deg, #228BE6 0%, #1C7ED6 100%)",
-                boxShadow: "0 4px 14px rgba(34, 139, 230, 0.4)",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow =
-                  "0 6px 20px rgba(34, 139, 230, 0.5)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 14px rgba(34, 139, 230, 0.4)";
-              }}
-            >
-              {session ? "Masuk ke Dashboard" : "Mulai Sekarang"}
-            </Button>
             <Button
               size="lg"
               radius="md"
@@ -603,67 +559,6 @@ export default function HomePage() {
         </Container>
       </Box>
 
-      {/* CTA Section */}
-      <Container
-        size="lg"
-        py={{ base: 60, md: 80 }}
-        style={{ position: "relative", zIndex: 1 }}
-      >
-        <Card
-          padding="xl"
-          radius="xl"
-          style={{
-            background: isDark
-              ? "linear-gradient(135deg, rgba(34, 139, 230, 0.15) 0%, rgba(121, 80, 242, 0.15) 100%)"
-              : "linear-gradient(135deg, #228BE6 0%, #7950F2 100%)",
-            border: "none",
-            textAlign: "center",
-          }}
-        >
-          <Stack gap="lg" align="center">
-            <Title
-              order={2}
-              c={isDark ? "white" : "white"}
-              fz={{ base: 24, md: 32 }}
-            >
-              Siap untuk memulai?
-            </Title>
-            <Text
-              c={isDark ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.9)"}
-              maw={500}
-            >
-              Daftar sekarang dan mulai kelola inventory adjustment Accurate
-              Anda dengan lebih efisien.
-            </Text>
-            <Group gap="md" mt="md">
-              <Button
-                size="lg"
-                radius="md"
-                color={isDark ? "brand" : "white"}
-                variant={isDark ? "filled" : "white"}
-                c={isDark ? "white" : "brand"}
-                rightSection={<IconArrowRight size={18} />}
-                onClick={primaryCta}
-                style={{
-                  boxShadow: "0 4px 14px rgba(0, 0, 0, 0.2)",
-                }}
-              >
-                {session ? "Buka Dashboard" : "Mulai Gratis"}
-              </Button>
-              <Button
-                size="lg"
-                radius="md"
-                variant="outline"
-                color="white"
-                onClick={() => router.push("/terms")}
-              >
-                Syarat & Ketentuan
-              </Button>
-            </Group>
-          </Stack>
-        </Card>
-      </Container>
-
       {/* Footer */}
       <Box
         component="footer"
@@ -713,12 +608,6 @@ export default function HomePage() {
             <Group gap="md">
               <Anchor size="sm" c="dimmed" href="/terms">
                 Terms
-              </Anchor>
-              <Anchor size="sm" c="dimmed" href="/pricing">
-                Pricing
-              </Anchor>
-              <Anchor size="sm" c="dimmed" href="/integration">
-                Integration
               </Anchor>
             </Group>
           </Group>

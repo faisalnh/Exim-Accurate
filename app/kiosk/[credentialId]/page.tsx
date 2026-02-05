@@ -41,6 +41,8 @@ import {
   IconAlertCircle,
   IconPlus,
   IconMinus,
+  IconMaximize,
+  IconMinimize,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { PersistentScanner } from "@/components/PersistentScanner";
@@ -63,15 +65,25 @@ export default function KioskCheckoutPage() {
   const router = useRouter();
   const credentialId = params.credentialId as string;
 
+  const pageRef = useRef<HTMLDivElement>(null);
+
   // Flow step management
   const [currentStep, setCurrentStep] = useState<Step>("identify");
 
   // Scanner mode
-  const [useScanner, setUseScanner] = useState(false);
+  const [useScanner, setUseScanner] = useState(true);
+
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Refs for auto-focus
   const badgeInputRef = useRef<HTMLInputElement>(null);
   const itemInputRef = useRef<HTMLInputElement>(null);
+  const focusItemInput = useCallback(() => {
+    if (useScanner && currentStep === "scan" && itemInputRef.current) {
+      itemInputRef.current.focus();
+    }
+  }, [useScanner, currentStep]);
 
   // Staff identification state
   const [staffEmail, setStaffEmail] = useState("");
@@ -115,6 +127,24 @@ export default function KioskCheckoutPage() {
     document.addEventListener("focusout", handleFocusOut);
     return () => document.removeEventListener("focusout", handleFocusOut);
   }, [useScanner, currentStep]);
+
+  // Keep scanner input focused after lookups complete
+  useEffect(() => {
+    if (!lookingUp) {
+      setTimeout(focusItemInput, 50);
+    }
+  }, [lookingUp, focusItemInput]);
+
+  // Track fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
 
   // Parse staff info from email
   const parseStaffInfo = useCallback((email: string): StaffInfo | null => {
@@ -210,6 +240,7 @@ export default function KioskCheckoutPage() {
         });
       } catch (err: any) {
         notifications.show({
+          id: "item-not-found",
           title: "Item Not Found",
           message: err.message,
           color: "red",
@@ -331,6 +362,16 @@ export default function KioskCheckoutPage() {
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  const toggleFullscreen = () => {
+    // Use the document root for fullscreen to avoid black/blank renders on some browsers
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.();
+      return;
+    }
+
+    document.exitFullscreen?.();
+  };
+
   // Glass card style
   const glassStyle = {
     background: "rgba(255, 255, 255, 0.05)",
@@ -433,8 +474,15 @@ export default function KioskCheckoutPage() {
 
   return (
     <Box
+      ref={pageRef}
       p={{ base: "sm", md: "lg" }}
-      style={{ flex: 1, display: "flex", flexDirection: "column" }}
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
+        backgroundColor: "#050505",
+      }}
     >
       {/* Header */}
       <Group justify="space-between" mb="lg">
@@ -479,6 +527,24 @@ export default function KioskCheckoutPage() {
             }
           >
             {useScanner ? "Scanner Mode" : "Camera Mode"}
+          </Button>
+          <Button
+            variant="subtle"
+            color="gray"
+            onClick={toggleFullscreen}
+            leftSection={
+              isFullscreen ? (
+                <IconMinimize size={18} />
+              ) : (
+                <IconMaximize size={18} />
+              )
+            }
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            {isFullscreen ? "Exit Full Screen" : "Full Screen"}
           </Button>
           {cart.length > 0 && (
             <Badge

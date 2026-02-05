@@ -401,21 +401,15 @@ export default function LoginPage() {
                   component="button"
                   type="button"
                   fw={600}
-                  onClick={() => router.push("/")}
+                  onClick={() => router.push("/register")}
                 >
-                  Pelajari lebih lanjut
+                  Daftar di sini
                 </Anchor>
               </Text>
 
               <Group gap="xs" mt="sm">
                 <Anchor size="xs" c="dimmed" href="/terms">
                   Syarat & Ketentuan
-                </Anchor>
-                <Text size="xs" c="dimmed">
-                  •
-                </Text>
-                <Anchor size="xs" c="dimmed" href="/pricing">
-                  Pricing
                 </Anchor>
               </Group>
             </Stack>
