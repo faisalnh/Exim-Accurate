@@ -12,8 +12,10 @@ import {
   LoadingOverlay,
   Tooltip,
 } from "@mantine/core";
+import { openConfirmModal } from "@mantine/modals";
 import { useState, useEffect, useRef } from "react";
 import { IconTrash, IconCheck, IconKey } from "@tabler/icons-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { notifications } from "@mantine/notifications";
 import { useSearchParams } from "next/navigation";
 
@@ -77,11 +79,7 @@ export default function CredentialsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this credential?")) {
-      return;
-    }
-
+  const executeDelete = async (id: string) => {
     setLoadingDeleteId(id);
     try {
       const response = await fetch(`/api/credentials?id=${id}`, {
@@ -107,6 +105,21 @@ export default function CredentialsPage() {
       setLoadingDeleteId(null);
     }
   };
+
+  const openDeleteModal = (id: string) =>
+    openConfirmModal({
+      title: "Disconnect Account",
+      centered: true,
+      children: (
+        <Text size="sm">
+          Are you sure you want to disconnect this Accurate account? This action
+          cannot be undone.
+        </Text>
+      ),
+      labels: { confirm: "Disconnect", cancel: "Cancel" },
+      confirmProps: { color: "red" },
+      onConfirm: () => executeDelete(id),
+    });
 
   return (
     <Stack gap="md">
@@ -138,10 +151,13 @@ export default function CredentialsPage() {
         </Title>
 
         {credentials.length === 0 && !loading ? (
-          <Text c="dimmed">
-            No Accurate accounts connected yet. Click &quot;Connect
-            Accurate&quot; to get started.
-          </Text>
+          <EmptyState
+            variant="no-credentials"
+            action={{
+              label: "Connect Accurate",
+              onClick: () => (window.location.href = "/api/accurate/authorize"),
+            }}
+          />
         ) : (
           <Table>
             <Table.Thead>
@@ -165,7 +181,7 @@ export default function CredentialsPage() {
                       <Tooltip label="Disconnect account" withArrow>
                         <ActionIcon
                           color="red"
-                          onClick={() => handleDelete(cred.id)}
+                          onClick={() => openDeleteModal(cred.id)}
                           loading={loadingDeleteId === cred.id}
                           aria-label="Disconnect account"
                         >
