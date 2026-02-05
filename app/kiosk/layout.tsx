@@ -1,9 +1,22 @@
 import { ReactNode } from "react";
-import { MantineProvider, ColorSchemeScript } from "@mantine/core";
+import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import type { Metadata } from "next";
+import { Orbitron, Space_Grotesk } from "next/font/google";
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
+});
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-orbitron",
+});
 
 export const metadata: Metadata = {
   title: "Self Checkout Kiosk | Exima",
@@ -16,13 +29,11 @@ export default function KioskLayout({ children }: { children: ReactNode }) {
       <Notifications position="top-center" />
       <div
         data-mantine-color-scheme="dark"
+        className={`${spaceGrotesk.variable} ${orbitron.variable} kiosk-root`}
         style={{
           minHeight: "100vh",
           width: "100vw",
-          background:
-            "linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #0f172a 50%, #1e3a5f 75%, #0f172a 100%)",
-          backgroundSize: "400% 400%",
-          animation: "gradientShift 15s ease infinite",
+          background: "#05070f",
           display: "flex",
           flexDirection: "column",
           color: "white",
@@ -31,6 +42,42 @@ export default function KioskLayout({ children }: { children: ReactNode }) {
         }}
       >
         {/* Decorative background elements */}
+        <div
+          className="kiosk-gradient"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.18), transparent 45%), radial-gradient(circle at 80% 10%, rgba(167, 139, 250, 0.18), transparent 40%), radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.16), transparent 45%), linear-gradient(135deg, #05070f 0%, #0b1020 45%, #070b16 100%)",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          className="kiosk-grid"
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage:
+              "linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+            opacity: 0.3,
+            pointerEvents: "none",
+            maskImage:
+              "radial-gradient(circle at center, black 0%, rgba(0,0,0,0.4) 55%, transparent 80%)",
+          }}
+        />
+        <div
+          className="kiosk-scanlines"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 15%, transparent 25%, transparent 100%)",
+            mixBlendMode: "screen",
+            opacity: 0.4,
+            pointerEvents: "none",
+          }}
+        />
         <div
           style={{
             position: "absolute",
@@ -74,6 +121,20 @@ export default function KioskLayout({ children }: { children: ReactNode }) {
             pointerEvents: "none",
           }}
         />
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "75%",
+            height: "25%",
+            background:
+              "radial-gradient(ellipse at center, rgba(56, 189, 248, 0.25) 0%, transparent 70%)",
+            filter: "blur(70px)",
+            pointerEvents: "none",
+          }}
+        />
 
         {/* Content */}
         <div
@@ -92,12 +153,39 @@ export default function KioskLayout({ children }: { children: ReactNode }) {
         <style
           dangerouslySetInnerHTML={{
             __html: `
-                        @keyframes gradientShift {
-                            0% { background-position: 0% 50%; }
-                            50% { background-position: 100% 50%; }
-                            100% { background-position: 0% 50%; }
-                        }
-                    `,
+              .kiosk-root {
+                font-family: var(--font-space-grotesk);
+                letter-spacing: 0.01em;
+                --kiosk-panel: rgba(7, 12, 23, 0.82);
+                --kiosk-panel-strong: rgba(12, 18, 32, 0.92);
+                --kiosk-stroke: rgba(148, 163, 184, 0.16);
+                --kiosk-glow: rgba(56, 189, 248, 0.35);
+                --kiosk-accent: #60a5fa;
+                --kiosk-accent-2: #a78bfa;
+                --kiosk-success: #34d399;
+              }
+              .kiosk-heading {
+                font-family: var(--font-orbitron);
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+              }
+              .kiosk-gradient {
+                animation: gradientShift 18s ease infinite;
+                background-size: 140% 140%;
+              }
+              .kiosk-scanlines {
+                animation: scanlines 8s linear infinite;
+              }
+              @keyframes gradientShift {
+                0% { transform: scale(1); opacity: 0.9; }
+                50% { transform: scale(1.02); opacity: 1; }
+                100% { transform: scale(1); opacity: 0.9; }
+              }
+              @keyframes scanlines {
+                0% { transform: translateY(-30%); }
+                100% { transform: translateY(30%); }
+              }
+            `,
           }}
         />
       </div>

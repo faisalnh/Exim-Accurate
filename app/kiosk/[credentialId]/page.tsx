@@ -16,7 +16,6 @@ import {
   Loader,
   Box,
   Badge,
-  Paper,
   ScrollArea,
   Divider,
   rem,
@@ -374,16 +373,20 @@ export default function KioskCheckoutPage() {
 
   // Glass card style
   const glassStyle = {
-    background: "rgba(255, 255, 255, 0.05)",
-    backdropFilter: "blur(20px)",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-    borderRadius: rem(20),
+    background: "var(--kiosk-panel)",
+    backdropFilter: "blur(24px)",
+    border: "1px solid var(--kiosk-stroke)",
+    borderRadius: rem(22),
+    boxShadow: "0 25px 60px rgba(3, 8, 20, 0.55)",
   };
 
   // Checkout complete screen
   if (checkoutComplete) {
     return (
-      <Box p="xl" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <Box
+        p="xl"
+        style={{ flex: 1, display: "flex", flexDirection: "column" }}
+      >
         <Center style={{ flex: 1 }}>
           <Box p="xl" style={{ ...glassStyle, maxWidth: 500, width: "100%" }}>
             <Stack align="center" gap="xl" p="xl">
@@ -393,14 +396,16 @@ export default function KioskCheckoutPage() {
                   height: 100,
                   borderRadius: "50%",
                   background:
-                    "linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(16, 185, 129, 0.3) 100%)",
+                    "linear-gradient(135deg, rgba(34, 211, 153, 0.35) 0%, rgba(20, 184, 166, 0.35) 100%)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   animation: "successPulse 1s ease-out",
+                  border: "1px solid rgba(34, 211, 153, 0.4)",
+                  boxShadow: "0 0 30px rgba(34, 211, 153, 0.45)",
                 }}
               >
-                <IconCircleCheck size={60} color="#4ade80" />
+                <IconCircleCheck size={60} color="#34d399" />
               </Box>
 
               <Stack align="center" gap="sm">
@@ -416,9 +421,9 @@ export default function KioskCheckoutPage() {
                 <Box
                   p="md"
                   style={{
-                    background: "rgba(34, 197, 94, 0.1)",
+                    background: "rgba(34, 211, 153, 0.12)",
                     borderRadius: rem(12),
-                    border: "1px solid rgba(34, 197, 94, 0.3)",
+                    border: "1px solid rgba(34, 211, 153, 0.35)",
                   }}
                 >
                   <Text c="rgba(255,255,255,0.6)" size="sm" ta="center">
@@ -435,7 +440,7 @@ export default function KioskCheckoutPage() {
                   size="xl"
                   fullWidth
                   variant="gradient"
-                  gradient={{ from: "blue.5", to: "violet.5", deg: 135 }}
+                  gradient={{ from: "cyan.5", to: "indigo.6", deg: 135 }}
                   leftSection={<IconScan size={22} />}
                   onClick={handleNewSession}
                   h={60}
@@ -481,11 +486,22 @@ export default function KioskCheckoutPage() {
         display: "flex",
         flexDirection: "column",
         minHeight: "100vh",
-        backgroundColor: "#050505",
+        backgroundColor: "transparent",
+        position: "relative",
       }}
     >
+      <Box
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.12), transparent 40%), radial-gradient(circle at 90% 15%, rgba(167, 139, 250, 0.12), transparent 38%), radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.12), transparent 45%)",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
       {/* Header */}
-      <Group justify="space-between" mb="lg">
+      <Group justify="space-between" mb="lg" style={{ zIndex: 1 }}>
         <Group gap="md">
           <ActionIcon
             size="xl"
@@ -493,14 +509,15 @@ export default function KioskCheckoutPage() {
             color="gray"
             onClick={handleCancel}
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(12, 18, 32, 0.85)",
+              border: "1px solid var(--kiosk-stroke)",
+              boxShadow: "0 10px 25px rgba(3, 6, 14, 0.5)",
             }}
           >
             <IconHome size={22} />
           </ActionIcon>
           <Stack gap={0}>
-            <Title order={3} c="white">
+            <Title order={3} c="white" className="kiosk-heading">
               Self Checkout
             </Title>
             <Text c="rgba(255,255,255,0.5)" size="xs">
@@ -520,8 +537,8 @@ export default function KioskCheckoutPage() {
             style={
               !useScanner
                 ? {
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(12, 18, 32, 0.85)",
+                    border: "1px solid var(--kiosk-stroke)",
                   }
                 : {}
             }
@@ -540,8 +557,8 @@ export default function KioskCheckoutPage() {
               )
             }
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(12, 18, 32, 0.85)",
+              border: "1px solid var(--kiosk-stroke)",
             }}
           >
             {isFullscreen ? "Exit Full Screen" : "Full Screen"}
@@ -550,9 +567,12 @@ export default function KioskCheckoutPage() {
             <Badge
               size="xl"
               variant="gradient"
-              gradient={{ from: "blue.5", to: "violet.5", deg: 135 }}
+              gradient={{ from: "cyan.5", to: "indigo.6", deg: 135 }}
               leftSection={<IconShoppingCart size={16} />}
-              style={{ padding: "12px 16px" }}
+              style={{
+                padding: "12px 16px",
+                boxShadow: "0 0 20px rgba(56, 189, 248, 0.45)",
+              }}
             >
               {totalItems} item{totalItems !== 1 ? "s" : ""}
             </Badge>
@@ -561,7 +581,7 @@ export default function KioskCheckoutPage() {
       </Group>
 
       {/* Step Indicator */}
-      <Group justify="center" mb="xl">
+      <Group justify="center" mb="xl" style={{ zIndex: 1 }}>
         <StepIndicator
           step={1}
           label="Scan ID Card"
@@ -575,7 +595,7 @@ export default function KioskCheckoutPage() {
             height: 2,
             background:
               currentStep !== "identify"
-                ? "linear-gradient(90deg, #60a5fa, #a78bfa)"
+                ? "linear-gradient(90deg, #7dd3fc, #818cf8)"
                 : "rgba(255,255,255,0.2)",
             borderRadius: 1,
           }}
@@ -593,7 +613,7 @@ export default function KioskCheckoutPage() {
             height: 2,
             background:
               currentStep === "confirm"
-                ? "linear-gradient(90deg, #60a5fa, #a78bfa)"
+                ? "linear-gradient(90deg, #7dd3fc, #818cf8)"
                 : "rgba(255,255,255,0.2)",
             borderRadius: 1,
           }}
@@ -608,7 +628,9 @@ export default function KioskCheckoutPage() {
       </Group>
 
       {/* Main Content */}
-      <Box style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <Box
+        style={{ flex: 1, display: "flex", flexDirection: "column", zIndex: 1 }}
+      >
         {/* Step 1: Identify */}
         <Transition
           mounted={currentStep === "identify"}
@@ -623,20 +645,21 @@ export default function KioskCheckoutPage() {
               >
                 <Stack align="center" gap="xl" p="md">
                   <ThemeIcon
-                    size={80}
+                    size={86}
                     radius="xl"
                     variant="gradient"
-                    gradient={{ from: "blue.5", to: "violet.5", deg: 135 }}
+                    gradient={{ from: "cyan.4", to: "indigo.6", deg: 135 }}
+                    style={{ boxShadow: "0 0 25px rgba(56, 189, 248, 0.4)" }}
                   >
-                    <IconId size={40} />
+                    <IconId size={42} />
                   </ThemeIcon>
 
                   <Stack align="center" gap="xs">
-                    <Title order={2} c="white" ta="center">
-                      Scan Your ID Card
+                    <Title order={2} c="white" ta="center" className="kiosk-heading">
+                      Scan Your ID
                     </Title>
                     <Text c="rgba(255,255,255,0.6)" ta="center" size="lg">
-                      Hold your employee badge up to the scanner
+                      Hold your employee badge in front of the scanner.
                     </Text>
                   </Stack>
 
@@ -669,8 +692,8 @@ export default function KioskCheckoutPage() {
                     autoFocus={useScanner}
                     styles={{
                       input: {
-                        background: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.15)",
+                        background: "rgba(12, 18, 32, 0.85)",
+                        border: "1px solid var(--kiosk-stroke)",
                         color: "white",
                         "&::placeholder": { color: "rgba(255,255,255,0.4)" },
                       },
@@ -691,10 +714,10 @@ export default function KioskCheckoutPage() {
           {(styles) => (
             <Group grow align="stretch" style={{ ...styles, flex: 1 }} gap="lg">
               {/* Left: Scanner */}
-              <Box style={{ ...glassStyle, padding: rem(20), flex: 1 }}>
+              <Box style={{ ...glassStyle, padding: rem(22), flex: 1 }}>
                 <Stack gap="md" h="100%">
                   <Group justify="space-between">
-                    <Text c="white" fw={600} size="lg">
+                    <Text c="white" fw={600} size="lg" className="kiosk-heading">
                       Scan Products
                     </Text>
                     {lookingUp && (
@@ -735,8 +758,8 @@ export default function KioskCheckoutPage() {
                     autoFocus={useScanner}
                     styles={{
                       input: {
-                        background: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.15)",
+                        background: "rgba(12, 18, 32, 0.85)",
+                        border: "1px solid var(--kiosk-stroke)",
                         color: "white",
                         "&::placeholder": { color: "rgba(255,255,255,0.4)" },
                       },
@@ -746,15 +769,15 @@ export default function KioskCheckoutPage() {
                   <Box
                     p="md"
                     style={{
-                      background: "rgba(59, 130, 246, 0.1)",
+                      background: "rgba(56, 189, 248, 0.12)",
                       borderRadius: rem(12),
-                      border: "1px solid rgba(59, 130, 246, 0.2)",
+                      border: "1px solid rgba(56, 189, 248, 0.3)",
                     }}
                   >
                     <Group gap="sm">
-                      <IconCircleCheck size={20} color="#60a5fa" />
-                      <Text c="rgba(255,255,255,0.8)" size="sm">
-                        Items are automatically added to cart when scanned
+                      <IconCircleCheck size={20} color="#7dd3fc" />
+                      <Text c="rgba(255,255,255,0.82)" size="sm">
+                        Items are added automatically after each scan.
                       </Text>
                     </Group>
                   </Box>
@@ -772,15 +795,16 @@ export default function KioskCheckoutPage() {
                 }}
               >
                 <Group justify="space-between" mb="md">
-                  <Text c="white" fw={600} size="lg">
+                  <Text c="white" fw={600} size="lg" className="kiosk-heading">
                     Cart
                   </Text>
                   <Badge
                     variant="light"
                     color="blue"
                     style={{
-                      background: "rgba(59, 130, 246, 0.15)",
-                      color: "#60a5fa",
+                      background: "rgba(56, 189, 248, 0.15)",
+                      color: "#7dd3fc",
+                      border: "1px solid rgba(56, 189, 248, 0.25)",
                     }}
                   >
                     {cart.length} item{cart.length !== 1 ? "s" : ""}
@@ -797,13 +821,14 @@ export default function KioskCheckoutPage() {
                           variant="light"
                           color="gray"
                           style={{
-                            background: "rgba(255,255,255,0.05)",
+                            background: "rgba(12, 18, 32, 0.75)",
+                            border: "1px solid var(--kiosk-stroke)",
                           }}
                         >
                           <IconShoppingCart size={30} />
                         </ThemeIcon>
                         <Text c="rgba(255,255,255,0.5)" ta="center">
-                          Scan items to add them here
+                          Scan items to populate the cart.
                         </Text>
                       </Stack>
                     </Center>
@@ -814,9 +839,9 @@ export default function KioskCheckoutPage() {
                           key={idx}
                           p="sm"
                           style={{
-                            background: "rgba(255,255,255,0.03)",
+                            background: "rgba(12, 18, 32, 0.65)",
                             borderRadius: rem(12),
-                            border: "1px solid rgba(255,255,255,0.08)",
+                            border: "1px solid var(--kiosk-stroke)",
                           }}
                         >
                           <Group justify="space-between" align="center">
@@ -834,7 +859,8 @@ export default function KioskCheckoutPage() {
                                 color="gray"
                                 onClick={() => updateQuantity(idx, -1)}
                                 style={{
-                                  background: "rgba(255,255,255,0.05)",
+                                  background: "rgba(12, 18, 32, 0.85)",
+                                  border: "1px solid var(--kiosk-stroke)",
                                 }}
                               >
                                 <IconMinus size={14} />
@@ -855,8 +881,8 @@ export default function KioskCheckoutPage() {
                                 styles={{
                                   input: {
                                     textAlign: "center",
-                                    background: "rgba(255,255,255,0.05)",
-                                    border: "1px solid rgba(255,255,255,0.1)",
+                                    background: "rgba(12, 18, 32, 0.85)",
+                                    border: "1px solid var(--kiosk-stroke)",
                                     color: "white",
                                     fontWeight: 600,
                                   },
@@ -867,7 +893,8 @@ export default function KioskCheckoutPage() {
                                 color="gray"
                                 onClick={() => updateQuantity(idx, 1)}
                                 style={{
-                                  background: "rgba(255,255,255,0.05)",
+                                  background: "rgba(12, 18, 32, 0.85)",
+                                  border: "1px solid var(--kiosk-stroke)",
                                 }}
                               >
                                 <IconPlus size={14} />
@@ -878,6 +905,7 @@ export default function KioskCheckoutPage() {
                                 onClick={() => removeFromCart(idx)}
                                 style={{
                                   background: "rgba(239, 68, 68, 0.1)",
+                                  border: "1px solid rgba(239, 68, 68, 0.3)",
                                 }}
                               >
                                 <IconTrash size={16} />
@@ -907,7 +935,12 @@ export default function KioskCheckoutPage() {
                 style={{ ...glassStyle, maxWidth: 650, width: "100%" }}
               >
                 <Stack gap="xl" p="md">
-                  <Title order={2} c="white" ta="center">
+                  <Title
+                    order={2}
+                    c="white"
+                    ta="center"
+                    className="kiosk-heading"
+                  >
                     Confirm Checkout
                   </Title>
 
@@ -917,16 +950,19 @@ export default function KioskCheckoutPage() {
                   <Group
                     p="md"
                     style={{
-                      background: "rgba(59, 130, 246, 0.1)",
+                      background: "rgba(56, 189, 248, 0.12)",
                       borderRadius: rem(12),
-                      border: "1px solid rgba(59, 130, 246, 0.2)",
+                      border: "1px solid rgba(56, 189, 248, 0.3)",
                     }}
                   >
                     <ThemeIcon
                       size="xl"
                       radius="xl"
                       variant="gradient"
-                      gradient={{ from: "blue.5", to: "violet.5", deg: 135 }}
+                      gradient={{ from: "cyan.4", to: "indigo.6", deg: 135 }}
+                      style={{
+                        boxShadow: "0 0 18px rgba(56, 189, 248, 0.4)",
+                      }}
                     >
                       <IconUser size={24} />
                     </ThemeIcon>
@@ -972,8 +1008,9 @@ export default function KioskCheckoutPage() {
                             variant="light"
                             size="lg"
                             style={{
-                              background: "rgba(139, 92, 246, 0.15)",
-                              color: "#a78bfa",
+                              background: "rgba(167, 139, 250, 0.18)",
+                              color: "#c4b5fd",
+                              border: "1px solid rgba(167, 139, 250, 0.35)",
                             }}
                           >
                             ×{item.quantity}
@@ -989,7 +1026,7 @@ export default function KioskCheckoutPage() {
                     size="xl"
                     fullWidth
                     variant="gradient"
-                    gradient={{ from: "green.5", to: "teal.5", deg: 135 }}
+                    gradient={{ from: "emerald.5", to: "teal.4", deg: 135 }}
                     leftSection={<IconCheck size={24} />}
                     onClick={handleSubmit}
                     loading={submitting}
@@ -1006,7 +1043,7 @@ export default function KioskCheckoutPage() {
       </Box>
 
       {/* Navigation Footer */}
-      <Group justify="space-between" mt="lg">
+      <Group justify="space-between" mt="lg" style={{ zIndex: 1 }}>
         <Button
           size="lg"
           variant="subtle"
@@ -1014,8 +1051,8 @@ export default function KioskCheckoutPage() {
           leftSection={<IconX size={20} />}
           onClick={handleCancel}
           style={{
-            background: "rgba(239, 68, 68, 0.1)",
-            border: "1px solid rgba(239, 68, 68, 0.2)",
+            background: "rgba(239, 68, 68, 0.12)",
+            border: "1px solid rgba(239, 68, 68, 0.35)",
           }}
         >
           Cancel
@@ -1033,8 +1070,8 @@ export default function KioskCheckoutPage() {
               }
               disabled={submitting}
               style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(12, 18, 32, 0.85)",
+                border: "1px solid var(--kiosk-stroke)",
               }}
             >
               Back
@@ -1044,7 +1081,7 @@ export default function KioskCheckoutPage() {
             <Button
               size="lg"
               variant="gradient"
-              gradient={{ from: "blue.5", to: "violet.5", deg: 135 }}
+              gradient={{ from: "cyan.5", to: "indigo.6", deg: 135 }}
               rightSection={<IconArrowRight size={20} />}
               onClick={() => setCurrentStep("confirm")}
             >
@@ -1075,41 +1112,47 @@ function StepIndicator({
     <Group gap="sm">
       <Box
         style={{
-          width: 44,
-          height: 44,
-          borderRadius: "50%",
+          width: 54,
+          height: 54,
+          borderRadius: 18,
           background: completed
-            ? "linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%)"
+            ? "linear-gradient(135deg, rgba(56, 189, 248, 0.9) 0%, rgba(99, 102, 241, 0.9) 100%)"
             : active
-              ? "rgba(59, 130, 246, 0.3)"
-              : "rgba(255, 255, 255, 0.05)",
-          border: active
-            ? "2px solid #60a5fa"
-            : completed
-              ? "none"
-              : "1px solid rgba(255, 255, 255, 0.1)",
+              ? "rgba(12, 18, 32, 0.9)"
+              : "rgba(12, 18, 32, 0.6)",
+          border: completed
+            ? "1px solid rgba(125, 211, 252, 0.6)"
+            : "1px solid var(--kiosk-stroke)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           transition: "all 0.3s ease",
+          boxShadow: active
+            ? "0 0 20px rgba(56, 189, 248, 0.35)"
+            : "none",
         }}
       >
         {completed ? (
-          <IconCheck size={20} color="white" />
+          <IconCheck size={22} color="white" />
         ) : (
-          <Box style={{ color: active ? "#60a5fa" : "rgba(255,255,255,0.4)" }}>
+          <Box style={{ color: active ? "#7dd3fc" : "rgba(255,255,255,0.35)" }}>
             {icon}
           </Box>
         )}
       </Box>
-      <Text
-        c={active || completed ? "white" : "rgba(255,255,255,0.4)"}
-        fw={active ? 600 : 500}
-        size="sm"
-        visibleFrom="sm"
-      >
-        {label}
-      </Text>
+      <Stack gap={2}>
+        <Text c="rgba(255,255,255,0.45)" size="xs">
+          Step {step}
+        </Text>
+        <Text
+          c={active || completed ? "white" : "rgba(255,255,255,0.4)"}
+          fw={active ? 600 : 500}
+          size="sm"
+          visibleFrom="sm"
+        >
+          {label}
+        </Text>
+      </Stack>
     </Group>
   );
 }

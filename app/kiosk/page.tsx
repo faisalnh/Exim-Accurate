@@ -64,24 +64,27 @@ export default function KioskHomePage() {
         <Stack align="center" gap="xl">
           <Box
             style={{
-              width: 80,
-              height: 80,
+              width: 90,
+              height: 90,
               borderRadius: "50%",
-              background: "rgba(59, 130, 246, 0.2)",
+              background:
+                "radial-gradient(circle, rgba(56, 189, 248, 0.25), rgba(15, 23, 42, 0.1))",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              animation: "pulse 2s infinite",
+              border: "1px solid rgba(148, 163, 184, 0.25)",
+              boxShadow: "0 0 30px rgba(56, 189, 248, 0.35)",
+              animation: "pulse 2.4s infinite",
             }}
           >
             <Loader size="lg" color="blue" />
           </Box>
           <Stack align="center" gap="xs">
-            <Text c="white" size="xl" fw={600}>
-              Loading Kiosk
+            <Text c="white" size="xl" fw={600} className="kiosk-heading">
+              Loading Node
             </Text>
             <Text c="rgba(255,255,255,0.6)" size="sm">
-              Please wait...
+              Syncing secure session...
             </Text>
           </Stack>
         </Stack>
@@ -95,31 +98,33 @@ export default function KioskHomePage() {
         <Box
           p="xl"
           style={{
-            background: "rgba(255, 255, 255, 0.05)",
-            backdropFilter: "blur(20px)",
+            background: "var(--kiosk-panel)",
+            backdropFilter: "blur(24px)",
             borderRadius: rem(24),
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            maxWidth: 500,
-            width: "90%",
+            border: "1px solid var(--kiosk-stroke)",
+            maxWidth: 520,
+            width: "92%",
             textAlign: "center",
+            boxShadow: "0 25px 70px rgba(5, 8, 16, 0.65)",
           }}
         >
           <Stack align="center" gap="xl" p="xl">
             <ThemeIcon
-              size={100}
+              size={110}
               radius="xl"
               variant="gradient"
-              gradient={{ from: "red.6", to: "red.8", deg: 135 }}
+              gradient={{ from: "red.6", to: "pink.7", deg: 135 }}
+              style={{ boxShadow: "0 0 25px rgba(248, 113, 113, 0.45)" }}
             >
-              <IconBuildingStore size={50} />
+              <IconBuildingStore size={56} />
             </ThemeIcon>
             <Stack gap="sm">
-              <Title order={2} c="white">
-                No Accounts Available
+              <Title order={2} c="white" className="kiosk-heading">
+                No Accounts Synced
               </Title>
-              <Text c="rgba(255,255,255,0.6)" size="lg">
-                Please configure an Accurate account in the dashboard first
-                before using the kiosk.
+              <Text c="rgba(255,255,255,0.65)" size="lg">
+                Configure an Accurate account in the dashboard to activate this
+                kiosk.
               </Text>
             </Stack>
           </Stack>
@@ -131,18 +136,18 @@ export default function KioskHomePage() {
   const features = [
     {
       icon: <IconScan size={20} />,
-      title: "Scan ID Card",
-      description: "Start by scanning your employee badge",
+      title: "Scan Identity",
+      description: "Authenticate with your employee badge",
     },
     {
       icon: <IconShoppingCart size={20} />,
       title: "Scan Products",
-      description: "Items are automatically added to cart",
+      description: "Items appear instantly in the cart",
     },
     {
       icon: <IconUserCheck size={20} />,
       title: "Confirm & Checkout",
-      description: "Review and complete your transaction",
+      description: "Review items and complete checkout",
     },
   ];
 
@@ -157,34 +162,36 @@ export default function KioskHomePage() {
         <Group gap="sm">
           <Box
             style={{
-              width: 56,
-              height: 56,
+              width: 64,
+              height: 64,
               borderRadius: 16,
               background:
-                "linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%)",
+                "linear-gradient(135deg, rgba(56, 189, 248, 0.35) 0%, rgba(167, 139, 250, 0.35) 100%)",
               backdropFilter: "blur(10px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
+              border: "1px solid rgba(148, 163, 184, 0.25)",
+              boxShadow: "0 0 30px rgba(56, 189, 248, 0.35)",
             }}
           >
-            <IconBuildingStore size={28} color="white" />
+            <IconBuildingStore size={30} color="white" />
           </Box>
           <Stack gap={0}>
             <Text
               size="xl"
               fw={700}
               style={{
-                background: "linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%)",
+                background: "linear-gradient(135deg, #7dd3fc 0%, #a78bfa 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
+              className="kiosk-heading"
             >
               Self Checkout
             </Text>
             <Text size="xs" c="rgba(255,255,255,0.5)" fw={500}>
-              Inventory Management
+              Autonomous Checkout Terminal
             </Text>
           </Stack>
         </Group>
@@ -195,36 +202,37 @@ export default function KioskHomePage() {
             order={1}
             c="white"
             fw={800}
-            style={{ fontSize: rem(40), lineHeight: 1.2 }}
+            style={{ fontSize: rem(42), lineHeight: 1.1 }}
           >
-            Fast & Easy
+            Zero Friction
             <br />
             <span
               style={{
-                background: "linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%)",
+                background: "linear-gradient(135deg, #7dd3fc 0%, #a78bfa 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
             >
-              Self-Service Checkout
+              Self-Checkout Experience
             </span>
           </Title>
           <Text c="rgba(255,255,255,0.6)" size="lg">
-            Select an account below to start your checkout session
+            Choose a station profile to start your checkout session.
           </Text>
         </Stack>
 
         {/* Features */}
         <Group gap="xl" mt="md" justify="center" wrap="wrap">
           {features.map((feature, idx) => (
-            <Group key={idx} gap="sm" style={{ opacity: 0.8 }}>
+            <Group key={idx} gap="sm" style={{ opacity: 0.9 }}>
               <ThemeIcon
                 size={36}
                 radius="md"
                 variant="light"
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
-                  color: "white",
+                  backgroundColor: "rgba(56, 189, 248, 0.15)",
+                  color: "#e2e8f0",
+                  border: "1px solid rgba(56, 189, 248, 0.25)",
                 }}
               >
                 {feature.icon}
@@ -233,7 +241,7 @@ export default function KioskHomePage() {
                 <Text c="white" fw={600} size="sm">
                   {feature.title}
                 </Text>
-                <Text c="rgba(255,255,255,0.5)" size="xs">
+                <Text c="rgba(255,255,255,0.55)" size="xs">
                   {feature.description}
                 </Text>
               </Stack>
@@ -258,25 +266,27 @@ export default function KioskHomePage() {
               style={{
                 cursor: "pointer",
                 transition: "all 0.3s ease",
-                background: "rgba(255, 255, 255, 0.05)",
-                backdropFilter: "blur(20px)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
+                background: "var(--kiosk-panel)",
+                backdropFilter: "blur(24px)",
+                border: "1px solid var(--kiosk-stroke)",
                 animationDelay: `${index * 100}ms`,
+                boxShadow: "0 20px 40px rgba(4, 8, 16, 0.45)",
               }}
               onClick={() => router.push(`/kiosk/${cred.id}`)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform =
                   "translateY(-8px) scale(1.02)";
                 e.currentTarget.style.boxShadow =
-                  "0 25px 50px rgba(0, 0, 0, 0.3)";
-                e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.5)";
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                  "0 30px 70px rgba(2, 8, 20, 0.75)";
+                e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.5)";
+                e.currentTarget.style.background =
+                  "linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(12, 18, 32, 0.9) 100%)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0) scale(1)";
                 e.currentTarget.style.boxShadow = "";
-                e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)";
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                e.currentTarget.style.borderColor = "var(--kiosk-stroke)";
+                e.currentTarget.style.background = "var(--kiosk-panel)";
               }}
             >
               <Stack gap="md">
@@ -285,7 +295,8 @@ export default function KioskHomePage() {
                     size={52}
                     radius="xl"
                     variant="gradient"
-                    gradient={{ from: "blue.5", to: "violet.5", deg: 135 }}
+                    gradient={{ from: "cyan.4", to: "indigo.6", deg: 135 }}
+                    style={{ boxShadow: "0 0 20px rgba(56, 189, 248, 0.45)" }}
                   >
                     <IconBuildingStore size={26} />
                   </ThemeIcon>
@@ -294,8 +305,9 @@ export default function KioskHomePage() {
                     color="green"
                     size="sm"
                     style={{
-                      background: "rgba(34, 197, 94, 0.15)",
-                      color: "#4ade80",
+                      background: "rgba(16, 185, 129, 0.2)",
+                      color: "#34d399",
+                      border: "1px solid rgba(16, 185, 129, 0.4)",
                     }}
                   >
                     Active
@@ -306,7 +318,7 @@ export default function KioskHomePage() {
                   <Text c="white" fw={700} size="lg">
                     {cred.appKey}
                   </Text>
-                  <Text c="rgba(255,255,255,0.5)" size="sm">
+                  <Text c="rgba(255,255,255,0.55)" size="sm">
                     {cred.host || "Not configured"}
                   </Text>
                 </Stack>
@@ -315,11 +327,11 @@ export default function KioskHomePage() {
                   gap="xs"
                   style={{
                     marginTop: "auto",
-                    color: "rgba(255, 255, 255, 0.6)",
+                    color: "rgba(255, 255, 255, 0.65)",
                   }}
                 >
                   <Text size="sm" fw={500}>
-                    Start Session
+                    Launch Session
                   </Text>
                   <IconArrowRight size={16} />
                 </Group>
@@ -331,9 +343,9 @@ export default function KioskHomePage() {
 
       {/* Footer */}
       <Group justify="center" py="lg">
-        <Text c="rgba(255,255,255,0.4)" size="xs">
+        <Text c="rgba(255,255,255,0.45)" size="xs">
           Powered by{" "}
-          <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>
+          <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>
             Exima
           </span>{" "}
           • Accurate Integration
