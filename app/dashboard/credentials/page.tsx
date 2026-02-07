@@ -15,6 +15,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { IconTrash, IconCheck, IconKey } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
+import { modals } from "@mantine/modals";
 import { useSearchParams } from "next/navigation";
 
 interface Credential {
@@ -77,35 +78,46 @@ export default function CredentialsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this credential?")) {
-      return;
-    }
+  const handleDelete = (id: string) => {
+    modals.openConfirmModal({
+      title: "Disconnect Account",
+      children: (
+        <Text size="sm">
+          Are you sure you want to disconnect this Accurate account? This action
+          cannot be undone.
+        </Text>
+      ),
+      labels: { confirm: "Disconnect", cancel: "Cancel" },
+      confirmProps: { color: "red" },
+      onConfirm: async () => {
+        setLoadingDeleteId(id);
+        try {
+          const response = await fetch(`/api/credentials?id=${id}`, {
+            method: "DELETE",
+          });
 
-    setLoadingDeleteId(id);
-    try {
-      const response = await fetch(`/api/credentials?id=${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        notifications.show({
-          title: "Success",
-          message: "Credential deleted",
-          color: "green",
-          icon: <IconCheck size={16} />,
-        });
-        fetchCredentials();
-      }
-    } catch (err) {
-      notifications.show({
-        title: "Error",
-        message: "Failed to delete credential",
-        color: "red",
-      });
-    } finally {
-      setLoadingDeleteId(null);
-    }
+          if (response.ok) {
+            notifications.show({
+              title: "Success",
+              message: "Credential deleted",
+              color: "green",
+              icon: <IconCheck size={16} />,
+            });
+            fetchCredentials();
+          } else {
+            throw new Error("Failed to delete");
+          }
+        } catch (err) {
+          notifications.show({
+            title: "Error",
+            message: "Failed to delete credential",
+            color: "red",
+          });
+        } finally {
+          setLoadingDeleteId(null);
+        }
+      },
+    });
   };
 
   return (
