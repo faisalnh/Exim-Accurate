@@ -15,6 +15,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { IconTrash, IconCheck, IconKey } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
+import { modals } from "@mantine/modals";
 import { useSearchParams } from "next/navigation";
 
 interface Credential {
@@ -77,11 +78,22 @@ export default function CredentialsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this credential?")) {
-      return;
-    }
+  const openDeleteModal = (id: string) =>
+    modals.openConfirmModal({
+      title: "Disconnect Account",
+      centered: true,
+      children: (
+        <Text size="sm">
+          Are you sure you want to disconnect this Accurate account? This action
+          cannot be undone.
+        </Text>
+      ),
+      labels: { confirm: "Disconnect", cancel: "Cancel" },
+      confirmProps: { color: "red" },
+      onConfirm: () => handleDelete(id),
+    });
 
+  const handleDelete = async (id: string) => {
     setLoadingDeleteId(id);
     try {
       const response = await fetch(`/api/credentials?id=${id}`, {
@@ -165,7 +177,7 @@ export default function CredentialsPage() {
                       <Tooltip label="Disconnect account" withArrow>
                         <ActionIcon
                           color="red"
-                          onClick={() => handleDelete(cred.id)}
+                          onClick={() => openDeleteModal(cred.id)}
                           loading={loadingDeleteId === cred.id}
                           aria-label="Disconnect account"
                         >
