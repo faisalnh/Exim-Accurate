@@ -37,6 +37,7 @@ import {
     IconExternalLink,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 
 interface Credential {
@@ -53,7 +54,7 @@ interface CartItem {
 export default function SelfCheckoutPage() {
     const [credentials, setCredentials] = useState<Credential[]>([]);
     const [selectedCredential, setSelectedCredential] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
     // Camera Scanner state
@@ -103,6 +104,8 @@ export default function SelfCheckoutPage() {
             }
         } catch (err) {
             console.error("Failed to fetch credentials", err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -401,25 +404,36 @@ export default function SelfCheckoutPage() {
             <Paper p="md" withBorder pos="relative">
                 <LoadingOverlay visible={loading || submitting} />
 
-                <Stack gap="md">
-                    {error && (
-                        <Alert icon={<IconAlertCircle size={16} />} color="red" withCloseButton onClose={() => setError("")}>
-                            {error}
-                        </Alert>
-                    )}
-
-                    {/* Credential Selection */}
-                    <Select
-                        label="Accurate Account"
-                        placeholder="Select account"
-                        data={credentials.map((c) => ({ value: c.id, label: c.appKey }))}
-                        value={selectedCredential}
-                        onChange={setSelectedCredential}
-                        required
-                        size="lg"
+                {credentials.length === 0 && !loading ? (
+                    <EmptyState
+                        variant="no-credentials"
+                        title="No accounts connected"
+                        description="Connect your Accurate account to start using Self Checkout."
+                        action={{
+                            label: "Connect Accurate",
+                            onClick: () => (window.location.href = "/dashboard/credentials"),
+                        }}
                     />
+                ) : (
+                    <Stack gap="md">
+                        {error && (
+                            <Alert icon={<IconAlertCircle size={16} />} color="red" withCloseButton onClose={() => setError("")}>
+                                {error}
+                            </Alert>
+                        )}
 
-                    <Divider label="Scan Items" labelPosition="center" />
+                        {/* Credential Selection */}
+                        <Select
+                            label="Accurate Account"
+                            placeholder="Select account"
+                            data={credentials.map((c) => ({ value: c.id, label: c.appKey }))}
+                            value={selectedCredential}
+                            onChange={setSelectedCredential}
+                            required
+                            size="lg"
+                        />
+
+                        <Divider label="Scan Items" labelPosition="center" />
 
                     {/* Item Scanner */}
                     <Group align="flex-end" grow>
@@ -484,10 +498,9 @@ export default function SelfCheckoutPage() {
                         </Card>
                     )}
 
-                    {/* Cart Table */}
-                    {cart.length > 0 && (
-                        <>
-                            <Divider label="Cart" labelPosition="center" />
+                        {/* Cart Table */}
+                        <Divider label="Cart" labelPosition="center" />
+                        {cart.length > 0 ? (
                             <Table striped highlightOnHover>
                                 <Table.Thead>
                                     <Table.Tr>
@@ -520,10 +533,15 @@ export default function SelfCheckoutPage() {
                                     ))}
                                 </Table.Tbody>
                             </Table>
-                        </>
-                    )}
+                        ) : (
+                            <EmptyState
+                                variant="empty-cart"
+                                size="sm"
+                                description="Scan items or use camera to add them to your cart"
+                            />
+                        )}
 
-                    <Divider label="Staff Identification" labelPosition="center" />
+                        <Divider label="Staff Identification" labelPosition="center" />
 
                     {/* Staff Badge Scanner */}
                     <TextInput
@@ -605,7 +623,8 @@ export default function SelfCheckoutPage() {
                             </Text>
                         </Center>
                     )}
-                </Stack>
+                    </Stack>
+                )}
             </Paper>
         </Stack>
     );
