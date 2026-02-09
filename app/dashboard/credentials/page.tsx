@@ -15,6 +15,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { IconTrash, IconCheck, IconKey } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
+import { modals } from "@mantine/modals";
 import { useSearchParams } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -78,11 +79,23 @@ export default function CredentialsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this credential?")) {
-      return;
-    }
+  const handleDelete = (id: string) => {
+    modals.openConfirmModal({
+      title: "Disconnect Account",
+      centered: true,
+      children: (
+        <Text size="sm">
+          Are you sure you want to disconnect this account? This action cannot be
+          undone.
+        </Text>
+      ),
+      labels: { confirm: "Disconnect", cancel: "Cancel" },
+      confirmProps: { color: "red" },
+      onConfirm: () => performDelete(id),
+    });
+  };
 
+  const performDelete = async (id: string) => {
     setLoadingDeleteId(id);
     try {
       const response = await fetch(`/api/credentials?id=${id}`, {
