@@ -124,17 +124,27 @@ export default function DashboardPage() {
   const [weeklyActivityData, setWeeklyActivityData] = useState<
     WeeklyActivityPoint[]
   >([]);
-  const [monthlyTrendData, setMonthlyTrendData] = useState<
-    MonthlyTrendPoint[]
-  >([]);
+  const [monthlyTrendData, setMonthlyTrendData] = useState<MonthlyTrendPoint[]>(
+    [],
+  );
   const [monthTotal, setMonthTotal] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch("/api/dashboard/summary");
+        const response = await fetch("/api/dashboard/summary", {
+          cache: "no-store",
+          credentials: "include",
+        });
+
+        if (response.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
+
         if (!response.ok) {
-          throw new Error("Failed to load dashboard data");
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error ?? "Failed to load dashboard data");
         }
 
         const data = await response.json();
