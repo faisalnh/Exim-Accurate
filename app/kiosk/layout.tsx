@@ -1,10 +1,10 @@
 import { ReactNode } from "react";
 import { MantineProvider } from "@mantine/core";
-import { Notifications } from "@mantine/notifications";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import type { Metadata } from "next";
 import { Orbitron, Space_Grotesk } from "next/font/google";
+import { KioskNotifications } from "./kiosk-notifications";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 export default function KioskLayout({ children }: { children: ReactNode }) {
   return (
     <MantineProvider forceColorScheme="dark">
-      <Notifications position="top-center" />
+      <KioskNotifications />
       <div
         data-mantine-color-scheme="dark"
         className={`${spaceGrotesk.variable} ${orbitron.variable} kiosk-root`}

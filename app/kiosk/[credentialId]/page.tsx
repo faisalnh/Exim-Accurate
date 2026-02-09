@@ -45,6 +45,7 @@ import {
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { PersistentScanner } from "@/components/PersistentScanner";
+import { kioskNotificationsStore } from "../kiosk-notifications";
 
 interface CartItem {
   itemCode: string;
@@ -182,7 +183,7 @@ export default function KioskCheckoutPage() {
         color: "green",
         icon: <IconCircleCheck size={16} />,
         autoClose: 2000,
-      });
+      }, kioskNotificationsStore);
 
       // Auto advance to scan step after a short delay
       setTimeout(() => setCurrentStep("scan"), 500);
@@ -236,7 +237,7 @@ export default function KioskCheckoutPage() {
           color: "green",
           icon: <IconPackage size={16} />,
           autoClose: 1500,
-        });
+        }, kioskNotificationsStore);
       } catch (err: any) {
         notifications.show({
           id: "item-not-found",
@@ -245,7 +246,7 @@ export default function KioskCheckoutPage() {
           color: "red",
           icon: <IconAlertCircle size={16} />,
           autoClose: 3000,
-        });
+        }, kioskNotificationsStore);
       } finally {
         setLookingUp(false);
       }
@@ -330,13 +331,13 @@ export default function KioskCheckoutPage() {
         message: `Adjustment created successfully`,
         color: "green",
         autoClose: 5000,
-      });
+      }, kioskNotificationsStore);
     } catch (err: any) {
       notifications.show({
         title: "Checkout Failed",
         message: err.message,
         color: "red",
-      });
+      }, kioskNotificationsStore);
     } finally {
       setSubmitting(false);
     }
