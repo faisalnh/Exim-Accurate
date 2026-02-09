@@ -16,6 +16,7 @@ import { useState, useEffect, useRef } from "react";
 import { IconTrash, IconCheck, IconKey } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { useSearchParams } from "next/navigation";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface Credential {
   id: string;
@@ -138,10 +139,15 @@ export default function CredentialsPage() {
         </Title>
 
         {credentials.length === 0 && !loading ? (
-          <Text c="dimmed">
-            No Accurate accounts connected yet. Click &quot;Connect
-            Accurate&quot; to get started.
-          </Text>
+          <EmptyState
+            variant="no-credentials"
+            title="No accounts connected"
+            description="Connect your Accurate account to get started."
+            action={{
+              label: "Connect Accurate",
+              onClick: () => (window.location.href = "/api/accurate/authorize"),
+            }}
+          />
         ) : (
           <Table>
             <Table.Thead>
