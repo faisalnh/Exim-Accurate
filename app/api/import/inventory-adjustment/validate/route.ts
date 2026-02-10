@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Tidak diizinkan" }, { status: 401 });
   }
 
   try {
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
     if (!file || !credentialId) {
       return NextResponse.json(
-        { error: "File and credential ID are required" },
+        { error: "File dan ID kredensial wajib diisi" },
         { status: 400 },
       );
     }
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     if (!credential || !credential.host || !credential.dbId) {
       return NextResponse.json(
-        { error: "Credential not found or not properly configured. Please reconnect to Accurate." },
+        { error: "Kredensial tidak ditemukan atau belum dikonfigurasi dengan benar. Silakan hubungkan ulang ke Accurate." },
         { status: 404 },
       );
     }
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const clientSecret = process.env.ACCURATE_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      throw new Error("Missing ACCURATE_CLIENT_ID or ACCURATE_CLIENT_SECRET environment variables");
+      throw new Error("Variabel lingkungan ACCURATE_CLIENT_ID atau ACCURATE_CLIENT_SECRET belum diatur");
     }
 
     let currentAccessToken = credential.apiToken;
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       } catch (tokenError: any) {
         console.error("[validate] Token refresh failed:", tokenError.message);
         return NextResponse.json(
-          { error: "Session expired. Please reconnect to Accurate." },
+          { error: "Sesi kedaluwarsa. Silakan hubungkan ulang ke Accurate." },
           { status: 401 }
         );
       }
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       rows = await parseXLSX(buffer);
     } else {
       return NextResponse.json(
-        { error: "Unsupported file format. Please use CSV or XLSX" },
+        { error: "Format file tidak didukung. Gunakan CSV atau XLSX" },
         { status: 400 },
       );
     }
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: err.message || "Kesalahan server internal" },
       { status: 500 },
     );
   }

@@ -29,13 +29,13 @@ export function ThemeToggle() {
   const isDark = computedColorScheme === "dark";
 
   return (
-    <Tooltip label={isDark ? "Light mode" : "Dark mode"} position="bottom">
+    <Tooltip label={isDark ? "Mode terang" : "Mode gelap"} position="bottom">
       <ActionIcon
         onClick={() => setColorScheme(isDark ? "light" : "dark")}
         variant="subtle"
         size="lg"
         radius="md"
-        aria-label="Toggle color scheme"
+        aria-label="Ganti skema warna"
         style={{
           transition: "all 0.2s ease",
         }}
@@ -70,7 +70,7 @@ export function ThemeSegmentedControl({
           label: (
             <Group gap={6} wrap="nowrap">
               <IconSun size={16} />
-              <span>Light</span>
+              <span>Terang</span>
             </Group>
           ),
         },
@@ -79,7 +79,7 @@ export function ThemeSegmentedControl({
           label: (
             <Group gap={6} wrap="nowrap">
               <IconMoon size={16} />
-              <span>Dark</span>
+              <span>Gelap</span>
             </Group>
           ),
         },
@@ -88,7 +88,7 @@ export function ThemeSegmentedControl({
           label: (
             <Group gap={6} wrap="nowrap">
               <IconDeviceDesktop size={16} />
-              <span>Auto</span>
+              <span>Otomatis</span>
             </Group>
           ),
         },
@@ -114,12 +114,12 @@ export function ThemeMenu() {
   return (
     <Menu position="bottom-end" withArrow shadow="md">
       <Menu.Target>
-        <Tooltip label="Change theme" position="bottom">
+        <Tooltip label="Ubah tema" position="bottom">
           <ActionIcon
             variant="subtle"
             size="lg"
             radius="md"
-            aria-label="Open theme menu"
+            aria-label="Buka menu tema"
           >
             {getIcon()}
           </ActionIcon>
@@ -127,7 +127,7 @@ export function ThemeMenu() {
       </Menu.Target>
 
       <Menu.Dropdown>
-        <Menu.Label>Appearance</Menu.Label>
+        <Menu.Label>Tampilan</Menu.Label>
         <Menu.Item
           leftSection={<IconSun size={16} />}
           onClick={() => setColorScheme("light")}
@@ -144,7 +144,7 @@ export function ThemeMenu() {
             )
           }
         >
-          Light
+          Terang
         </Menu.Item>
         <Menu.Item
           leftSection={<IconMoon size={16} />}
@@ -162,7 +162,7 @@ export function ThemeMenu() {
             )
           }
         >
-          Dark
+          Gelap
         </Menu.Item>
         <Menu.Item
           leftSection={<IconDeviceDesktop size={16} />}
@@ -180,7 +180,7 @@ export function ThemeMenu() {
             )
           }
         >
-          System
+          Sistem
         </Menu.Item>
       </Menu.Dropdown>
     </Menu>
@@ -199,20 +199,20 @@ export function ThemeCard() {
     {
       value: "light" as const,
       icon: <IconSun size={24} />,
-      label: "Light",
-      description: "Always use light mode",
+      label: "Terang",
+      description: "Selalu gunakan mode terang",
     },
     {
       value: "dark" as const,
       icon: <IconMoon size={24} />,
-      label: "Dark",
-      description: "Always use dark mode",
+      label: "Gelap",
+      description: "Selalu gunakan mode gelap",
     },
     {
       value: "auto" as const,
       icon: <IconDeviceDesktop size={24} />,
-      label: "System",
-      description: "Follow system preference",
+      label: "Sistem",
+      description: "Ikuti preferensi sistem",
     },
   ];
 
@@ -220,7 +220,7 @@ export function ThemeCard() {
     <Paper p="md" radius="lg" withBorder>
       <Group gap="xs" mb="md">
         <IconPalette size={20} />
-        <Text fw={600}>Theme</Text>
+        <Text fw={600}>Tema</Text>
       </Group>
 
       <Group gap="sm">

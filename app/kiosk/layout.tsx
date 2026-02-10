@@ -19,8 +19,8 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: "Self Checkout Kiosk | Exima",
-  description: "Self-service inventory checkout station",
+  title: "Kiosk Self Checkout | Exima",
+  description: "Stasiun checkout inventaris mandiri",
 };
 
 export default function KioskLayout({ children }: { children: ReactNode }) {

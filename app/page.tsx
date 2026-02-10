@@ -31,6 +31,7 @@ import {
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { LanguageSelect } from "@/components/ui/LanguageSelect";
 
 const features = [
   {
@@ -59,7 +60,7 @@ const features = [
   },
   {
     icon: <IconDeviceDesktop size={28} />,
-    title: "Kiosk Mode (Self Checkout)",
+    title: "Mode Kiosk (Checkout Mandiri)",
     description:
       "Mode kios untuk pemindaian mandiri, cocok di gudang/outlet sehingga tim bisa input adjustment tanpa login berulang.",
     color: "teal",
@@ -69,11 +70,11 @@ const features = [
 
 const benefits = [
   "Gratis 100%, tanpa biaya tersembunyi",
-  "Dashboard responsif dan modern",
+  "Dasbor responsif dan modern",
   "Notifikasi real-time status job",
   "Mendukung multi-akun Accurate",
   "Validasi data sebelum impor",
-  "Export dalam berbagai format",
+  "Ekspor dalam berbagai format",
 ];
 
 export default function HomePage() {
@@ -206,13 +207,14 @@ export default function HomePage() {
             </Group>
 
             <Group gap="sm">
+              <LanguageSelect />
               <ThemeToggle />
               <Button
                 variant="subtle"
                 size="sm"
                 onClick={() => router.push("/terms")}
               >
-                Terms
+                Syarat
               </Button>
             </Group>
           </Group>
@@ -237,7 +239,7 @@ export default function HomePage() {
               cursor: "default",
             }}
           >
-            Gratis 100% · Open Source
+            Gratis 100% · Sumber Terbuka
           </Badge>
 
           {/* Heading */}
@@ -262,7 +264,7 @@ export default function HomePage() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Inventory Adjustment
+                Penyesuaian Persediaan
               </Text>{" "}
               Accurate
             </Title>
@@ -288,7 +290,7 @@ export default function HomePage() {
                 )
               }
             >
-              View on GitHub
+              Lihat di GitHub
             </Button>
           </Group>
 
@@ -296,15 +298,15 @@ export default function HomePage() {
           <Group gap="xl" mt="xl" c="dimmed">
             <Group gap="xs">
               <IconCheck size={18} color="var(--mantine-color-green-6)" />
-              <Text size="sm">No credit card required</Text>
+              <Text size="sm">Tanpa kartu kredit</Text>
             </Group>
             <Group gap="xs">
               <IconCheck size={18} color="var(--mantine-color-green-6)" />
-              <Text size="sm">Self-hosted</Text>
+              <Text size="sm">Bisa self-host</Text>
             </Group>
             <Group gap="xs">
               <IconCheck size={18} color="var(--mantine-color-green-6)" />
-              <Text size="sm">Accurate App Market verified</Text>
+              <Text size="sm">Terverifikasi Accurate App Market</Text>
             </Group>
           </Group>
         </Stack>
@@ -477,9 +479,9 @@ export default function HomePage() {
                         <IconRocket size={24} color="white" />
                       </ThemeIcon>
                       <Stack gap={0}>
-                        <Text fw={600}>Quick Start</Text>
+                        <Text fw={600}>Mulai Cepat</Text>
                         <Text size="xs" c="dimmed">
-                          Self-host via Docker
+                          Self-host lewat Docker
                         </Text>
                       </Stack>
                     </Group>
@@ -504,7 +506,9 @@ export default function HomePage() {
                             1
                           </Text>
                         </Box>
-                        <Text size="sm">Clone repo & copy .env.example</Text>
+                        <Text size="sm">
+                          Clone repositori & salin .env.example
+                        </Text>
                       </Group>
                       <Group gap="xs">
                         <Box
@@ -601,13 +605,13 @@ export default function HomePage() {
                 >
                   MAD Labs by Millennia World School
                 </Anchor>
-                . All rights reserved.
+                . Seluruh hak cipta dilindungi.
               </Text>
             </Group>
 
             <Group gap="md">
               <Anchor size="sm" c="dimmed" href="/terms">
-                Terms
+                Syarat
               </Anchor>
             </Group>
           </Group>

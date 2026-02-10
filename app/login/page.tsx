@@ -21,6 +21,7 @@ import {
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { LanguageSelect } from "@/components/ui/LanguageSelect";
 import {
   IconAlertCircle,
   IconShield,
@@ -35,16 +36,16 @@ const features = [
   {
     icon: <IconFileExport size={20} />,
     title: "Ekspor Massal",
-    description: "Export ke CSV, XLSX, atau JSON",
+    description: "Ekspor ke CSV, XLSX, atau JSON",
   },
   {
     icon: <IconFileImport size={20} />,
     title: "Impor Massal",
-    description: "Import dengan validasi otomatis",
+    description: "Impor dengan validasi otomatis",
   },
   {
     icon: <IconPlugConnected size={20} />,
-    title: "OAuth Integration",
+    title: "Integrasi OAuth",
     description: "Koneksi aman ke Accurate",
   },
   {
@@ -76,13 +77,13 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setError("Email atau password tidak valid");
       } else {
         router.push("/dashboard");
         router.refresh();
       }
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      setError("Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -217,13 +218,13 @@ export default function LoginPage() {
             <Group gap="xs">
               <IconCheck size={16} color="rgba(255, 255, 255, 0.8)" />
               <Text size="xs" c="rgba(255, 255, 255, 0.8)">
-                Self-hosted
+                Bisa self-host
               </Text>
             </Group>
             <Group gap="xs">
               <IconCheck size={16} color="rgba(255, 255, 255, 0.8)" />
               <Text size="xs" c="rgba(255, 255, 255, 0.8)">
-                Open Source
+                Sumber Terbuka
               </Text>
             </Group>
           </Group>
@@ -242,6 +243,10 @@ export default function LoginPage() {
       >
         <Container size={420} w="100%">
           <Stack gap="xl">
+            <Group justify="flex-end">
+              <LanguageSelect />
+            </Group>
+
             {/* Mobile Logo */}
             <Group gap="sm" hiddenFrom="md" justify="center">
               <Box

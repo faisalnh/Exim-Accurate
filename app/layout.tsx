@@ -6,8 +6,8 @@ import { Providers } from "@/lib/providers";
 import { ColorSchemeScript } from "@mantine/core";
 
 export const metadata = {
-  title: "Exima - Export/Import Manager for Accurate",
-  description: "Manage inventory adjustments for Accurate Online",
+  title: "Exima - Manajer Ekspor/Impor untuk Accurate",
+  description: "Kelola inventory adjustment untuk Accurate Online",
 };
 
 export default function RootLayout({
@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="id" suppressHydrationWarning>
       <head>
         <ColorSchemeScript defaultColorScheme="light" />
       </head>

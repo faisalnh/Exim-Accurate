@@ -46,6 +46,7 @@ import {
 import { notifications } from "@mantine/notifications";
 import { PersistentScanner } from "@/components/PersistentScanner";
 import { kioskNotificationsStore } from "../kiosk-notifications";
+import { LanguageSelect } from "@/components/ui/LanguageSelect";
 
 interface CartItem {
   itemCode: string;
@@ -177,13 +178,16 @@ export default function KioskCheckoutPage() {
       setStaffInfo(info);
       setScanInput("");
 
-      notifications.show({
-        title: "ID Card Scanned",
-        message: `Welcome, ${info?.name || trimmedEmail}!`,
-        color: "green",
-        icon: <IconCircleCheck size={16} />,
-        autoClose: 2000,
-      }, kioskNotificationsStore);
+      notifications.show(
+        {
+          title: "Kartu ID Terdeteksi",
+          message: `Selamat datang, ${info?.name || trimmedEmail}!`,
+          color: "green",
+          icon: <IconCircleCheck size={16} />,
+          autoClose: 2000,
+        },
+        kioskNotificationsStore,
+      );
 
       // Auto advance to scan step after a short delay
       setTimeout(() => setCurrentStep("scan"), 500);
@@ -206,7 +210,7 @@ export default function KioskCheckoutPage() {
 
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || "Item not found");
+          throw new Error(data.error || "Barang tidak ditemukan");
         }
 
         const item = await response.json();
@@ -231,22 +235,28 @@ export default function KioskCheckoutPage() {
           ];
         });
 
-        notifications.show({
-          title: "Item Added",
-          message: item.itemName,
-          color: "green",
-          icon: <IconPackage size={16} />,
-          autoClose: 1500,
-        }, kioskNotificationsStore);
+        notifications.show(
+          {
+            title: "Barang Ditambahkan",
+            message: item.itemName,
+            color: "green",
+            icon: <IconPackage size={16} />,
+            autoClose: 1500,
+          },
+          kioskNotificationsStore,
+        );
       } catch (err: any) {
-        notifications.show({
-          id: "item-not-found",
-          title: "Item Not Found",
-          message: err.message,
-          color: "red",
-          icon: <IconAlertCircle size={16} />,
-          autoClose: 3000,
-        }, kioskNotificationsStore);
+        notifications.show(
+          {
+            id: "item-not-found",
+            title: "Barang Tidak Ditemukan",
+            message: err.message,
+            color: "red",
+            icon: <IconAlertCircle size={16} />,
+            autoClose: 3000,
+          },
+          kioskNotificationsStore,
+        );
       } finally {
         setLookingUp(false);
       }
@@ -319,25 +329,31 @@ export default function KioskCheckoutPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Checkout failed");
+        throw new Error(data.error || "Checkout gagal");
       }
 
       const result = await response.json();
       setAdjustmentNumber(result.adjustmentNumber || result.adjustmentId);
       setCheckoutComplete(true);
 
-      notifications.show({
-        title: "Checkout Complete!",
-        message: `Adjustment created successfully`,
-        color: "green",
-        autoClose: 5000,
-      }, kioskNotificationsStore);
+      notifications.show(
+        {
+          title: "Checkout Selesai!",
+          message: "Adjustment berhasil dibuat",
+          color: "green",
+          autoClose: 5000,
+        },
+        kioskNotificationsStore,
+      );
     } catch (err: any) {
-      notifications.show({
-        title: "Checkout Failed",
-        message: err.message,
-        color: "red",
-      }, kioskNotificationsStore);
+      notifications.show(
+        {
+          title: "Checkout Gagal",
+          message: err.message,
+          color: "red",
+        },
+        kioskNotificationsStore,
+      );
     } finally {
       setSubmitting(false);
     }
@@ -384,10 +400,7 @@ export default function KioskCheckoutPage() {
   // Checkout complete screen
   if (checkoutComplete) {
     return (
-      <Box
-        p="xl"
-        style={{ flex: 1, display: "flex", flexDirection: "column" }}
-      >
+      <Box p="xl" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         <Center style={{ flex: 1 }}>
           <Box p="xl" style={{ ...glassStyle, maxWidth: 500, width: "100%" }}>
             <Stack align="center" gap="xl" p="xl">
@@ -411,10 +424,10 @@ export default function KioskCheckoutPage() {
 
               <Stack align="center" gap="sm">
                 <Title order={2} c="white" ta="center">
-                  Checkout Complete!
+                  Checkout Selesai!
                 </Title>
                 <Text c="rgba(255,255,255,0.6)" ta="center" size="lg">
-                  Your items have been processed successfully.
+                  Barang Anda sudah berhasil diproses.
                 </Text>
               </Stack>
 
@@ -428,7 +441,7 @@ export default function KioskCheckoutPage() {
                   }}
                 >
                   <Text c="rgba(255,255,255,0.6)" size="sm" ta="center">
-                    Adjustment Number
+                    Nomor Adjustment
                   </Text>
                   <Text c="white" fw={700} size="xl" ta="center">
                     #{adjustmentNumber}
@@ -446,7 +459,7 @@ export default function KioskCheckoutPage() {
                   onClick={handleNewSession}
                   h={60}
                 >
-                  Start New Session
+                  Mulai Sesi Baru
                 </Button>
                 <Button
                   size="lg"
@@ -456,7 +469,7 @@ export default function KioskCheckoutPage() {
                   leftSection={<IconHome size={20} />}
                   onClick={handleCancel}
                 >
-                  Return to Home
+                  Kembali ke Beranda
                 </Button>
               </Stack>
             </Stack>
@@ -519,15 +532,16 @@ export default function KioskCheckoutPage() {
           </ActionIcon>
           <Stack gap={0}>
             <Title order={3} c="white" className="kiosk-heading">
-              Self Checkout
+              Checkout Mandiri
             </Title>
             <Text c="rgba(255,255,255,0.5)" size="xs">
-              {staffInfo?.name || "Please scan your ID card"}
+              {staffInfo?.name || "Silakan scan kartu ID Anda"}
             </Text>
           </Stack>
         </Group>
 
         <Group gap="md">
+          <LanguageSelect size="xs" />
           <Button
             variant={useScanner ? "filled" : "subtle"}
             color={useScanner ? "green" : "gray"}
@@ -544,7 +558,7 @@ export default function KioskCheckoutPage() {
                 : {}
             }
           >
-            {useScanner ? "Scanner Mode" : "Camera Mode"}
+            {useScanner ? "Mode Pemindai" : "Mode Kamera"}
           </Button>
           <Button
             variant="subtle"
@@ -562,7 +576,7 @@ export default function KioskCheckoutPage() {
               border: "1px solid var(--kiosk-stroke)",
             }}
           >
-            {isFullscreen ? "Exit Full Screen" : "Full Screen"}
+            {isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
           </Button>
           {cart.length > 0 && (
             <Badge
@@ -575,7 +589,7 @@ export default function KioskCheckoutPage() {
                 boxShadow: "0 0 20px rgba(56, 189, 248, 0.45)",
               }}
             >
-              {totalItems} item{totalItems !== 1 ? "s" : ""}
+              {totalItems} barang
             </Badge>
           )}
         </Group>
@@ -585,7 +599,7 @@ export default function KioskCheckoutPage() {
       <Group justify="center" mb="xl" style={{ zIndex: 1 }}>
         <StepIndicator
           step={1}
-          label="Scan ID Card"
+          label="Scan Kartu ID"
           icon={<IconId size={18} />}
           active={currentStep === "identify"}
           completed={currentStep === "scan" || currentStep === "confirm"}
@@ -603,7 +617,7 @@ export default function KioskCheckoutPage() {
         />
         <StepIndicator
           step={2}
-          label="Scan Products"
+          label="Scan Produk"
           icon={<IconScan size={18} />}
           active={currentStep === "scan"}
           completed={currentStep === "confirm"}
@@ -621,7 +635,7 @@ export default function KioskCheckoutPage() {
         />
         <StepIndicator
           step={3}
-          label="Confirm"
+          label="Konfirmasi"
           icon={<IconCheck size={18} />}
           active={currentStep === "confirm"}
           completed={false}
@@ -656,11 +670,16 @@ export default function KioskCheckoutPage() {
                   </ThemeIcon>
 
                   <Stack align="center" gap="xs">
-                    <Title order={2} c="white" ta="center" className="kiosk-heading">
-                      Scan Your ID
+                    <Title
+                      order={2}
+                      c="white"
+                      ta="center"
+                      className="kiosk-heading"
+                    >
+                      Scan ID Anda
                     </Title>
                     <Text c="rgba(255,255,255,0.6)" ta="center" size="lg">
-                      Hold your employee badge in front of the scanner.
+                      Arahkan kartu staf Anda ke depan scanner.
                     </Text>
                   </Stack>
 
@@ -677,8 +696,8 @@ export default function KioskCheckoutPage() {
                     ref={badgeInputRef}
                     placeholder={
                       useScanner
-                        ? "Waiting for badge scan..."
-                        : "Or type your email manually..."
+                        ? "Menunggu scan kartu..."
+                        : "Atau ketik email secara manual..."
                     }
                     value={scanInput}
                     onChange={(e) => setScanInput(e.target.value)}
@@ -718,14 +737,19 @@ export default function KioskCheckoutPage() {
               <Box style={{ ...glassStyle, padding: rem(22), flex: 1 }}>
                 <Stack gap="md" h="100%">
                   <Group justify="space-between">
-                    <Text c="white" fw={600} size="lg" className="kiosk-heading">
-                      Scan Products
+                    <Text
+                      c="white"
+                      fw={600}
+                      size="lg"
+                      className="kiosk-heading"
+                    >
+                      Scan Produk
                     </Text>
                     {lookingUp && (
                       <Group gap="xs">
                         <Loader size="xs" color="blue" />
                         <Text c="rgba(255,255,255,0.6)" size="sm">
-                          Looking up...
+                          Mencari...
                         </Text>
                       </Group>
                     )}
@@ -743,8 +767,8 @@ export default function KioskCheckoutPage() {
                     ref={itemInputRef}
                     placeholder={
                       useScanner
-                        ? "Scan item barcode..."
-                        : "Or type item code and press Enter..."
+                        ? "Scan barcode barang..."
+                        : "Atau ketik kode barang lalu Enter..."
                     }
                     value={scanInput}
                     onChange={(e) => setScanInput(e.target.value)}
@@ -778,7 +802,7 @@ export default function KioskCheckoutPage() {
                     <Group gap="sm">
                       <IconCircleCheck size={20} color="#7dd3fc" />
                       <Text c="rgba(255,255,255,0.82)" size="sm">
-                        Items are added automatically after each scan.
+                        Barang akan otomatis ditambahkan setiap selesai scan.
                       </Text>
                     </Group>
                   </Box>
@@ -797,7 +821,7 @@ export default function KioskCheckoutPage() {
               >
                 <Group justify="space-between" mb="md">
                   <Text c="white" fw={600} size="lg" className="kiosk-heading">
-                    Cart
+                    Keranjang
                   </Text>
                   <Badge
                     variant="light"
@@ -808,7 +832,7 @@ export default function KioskCheckoutPage() {
                       border: "1px solid rgba(56, 189, 248, 0.25)",
                     }}
                   >
-                    {cart.length} item{cart.length !== 1 ? "s" : ""}
+                    {cart.length} barang
                   </Badge>
                 </Group>
 
@@ -829,7 +853,7 @@ export default function KioskCheckoutPage() {
                           <IconShoppingCart size={30} />
                         </ThemeIcon>
                         <Text c="rgba(255,255,255,0.5)" ta="center">
-                          Scan items to populate the cart.
+                          Scan barang untuk mengisi keranjang.
                         </Text>
                       </Stack>
                     </Center>
@@ -942,7 +966,7 @@ export default function KioskCheckoutPage() {
                     ta="center"
                     className="kiosk-heading"
                   >
-                    Confirm Checkout
+                    Konfirmasi Checkout
                   </Title>
 
                   <Divider color="rgba(255,255,255,0.1)" />
@@ -973,7 +997,7 @@ export default function KioskCheckoutPage() {
                       </Text>
                       {staffInfo?.dept && (
                         <Text c="rgba(255,255,255,0.6)" size="sm">
-                          Department: {staffInfo.dept}
+                          Departemen: {staffInfo.dept}
                         </Text>
                       )}
                       <Text c="rgba(255,255,255,0.5)" size="sm">
@@ -985,7 +1009,7 @@ export default function KioskCheckoutPage() {
                   <Divider
                     label={
                       <Text c="rgba(255,255,255,0.5)" size="sm">
-                        Items ({totalItems} total)
+                        Barang ({totalItems} total)
                       </Text>
                     }
                     labelPosition="center"
@@ -1034,7 +1058,7 @@ export default function KioskCheckoutPage() {
                     h={60}
                     styles={{ label: { fontSize: 18, fontWeight: 600 } }}
                   >
-                    Complete Checkout
+                    Selesaikan Checkout
                   </Button>
                 </Stack>
               </Box>
@@ -1056,7 +1080,7 @@ export default function KioskCheckoutPage() {
             border: "1px solid rgba(239, 68, 68, 0.35)",
           }}
         >
-          Cancel
+          Batal
         </Button>
 
         <Group gap="md">
@@ -1075,7 +1099,7 @@ export default function KioskCheckoutPage() {
                 border: "1px solid var(--kiosk-stroke)",
               }}
             >
-              Back
+              Kembali
             </Button>
           )}
           {currentStep === "scan" && cart.length > 0 && (
@@ -1086,7 +1110,7 @@ export default function KioskCheckoutPage() {
               rightSection={<IconArrowRight size={20} />}
               onClick={() => setCurrentStep("confirm")}
             >
-              Review & Checkout
+              Tinjau & Checkout
             </Button>
           )}
         </Group>
@@ -1128,9 +1152,7 @@ function StepIndicator({
           alignItems: "center",
           justifyContent: "center",
           transition: "all 0.3s ease",
-          boxShadow: active
-            ? "0 0 20px rgba(56, 189, 248, 0.35)"
-            : "none",
+          boxShadow: active ? "0 0 20px rgba(56, 189, 248, 0.35)" : "none",
         }}
       >
         {completed ? (
@@ -1143,7 +1165,7 @@ function StepIndicator({
       </Box>
       <Stack gap={2}>
         <Text c="rgba(255,255,255,0.45)" size="xs">
-          Step {step}
+          Langkah {step}
         </Text>
         <Text
           c={active || completed ? "white" : "rgba(255,255,255,0.4)"}

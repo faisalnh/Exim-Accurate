@@ -26,6 +26,7 @@ export {
   ThemeMenu,
   ThemeCard,
 } from "./ThemeToggle";
+export { LanguageSelect } from "./LanguageSelect";
 export {
   Stepper,
   StepperContent,

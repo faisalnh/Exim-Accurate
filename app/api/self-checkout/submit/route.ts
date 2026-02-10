@@ -50,28 +50,28 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ error: "Tidak diizinkan" }, { status: 401 });
     }
 
     let body: CheckoutRequest;
     try {
         body = await req.json();
     } catch {
-        return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+        return NextResponse.json({ error: "Body request tidak valid" }, { status: 400 });
     }
 
     const { credentialId, staffEmail, items } = body;
 
     if (!credentialId) {
-        return NextResponse.json({ error: "Credential ID is required" }, { status: 400 });
+        return NextResponse.json({ error: "ID kredensial wajib diisi" }, { status: 400 });
     }
 
     if (!staffEmail || !staffEmail.includes("@")) {
-        return NextResponse.json({ error: "Valid staff email is required" }, { status: 400 });
+        return NextResponse.json({ error: "Email staf yang valid wajib diisi" }, { status: 400 });
     }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-        return NextResponse.json({ error: "At least one item is required" }, { status: 400 });
+        return NextResponse.json({ error: "Minimal satu barang wajib diisi" }, { status: 400 });
     }
 
     try {
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (!credential) {
-            return NextResponse.json({ error: "Credential not found" }, { status: 404 });
+            return NextResponse.json({ error: "Kredensial tidak ditemukan" }, { status: 404 });
         }
 
         // Parse staff info from email
@@ -148,18 +148,18 @@ export async function POST(req: NextRequest) {
                     } else {
                         await prisma.checkoutSession.update({
                             where: { id: checkoutSession.id },
-                            data: { status: "failed", errorMessage: "Session expired" },
+                            data: { status: "failed", errorMessage: "Sesi kedaluwarsa" },
                         });
-                        throw new Error("Session expired. Please reconnect to Accurate.");
+                        throw new Error("Sesi kedaluwarsa. Silakan hubungkan ulang ke Accurate.");
                     }
                 }
             } else {
                 await prisma.checkoutSession.update({
                     where: { id: checkoutSession.id },
-                    data: { status: "failed", errorMessage: "Credential not configured" },
+                    data: { status: "failed", errorMessage: "Kredensial belum dikonfigurasi" },
                 });
                 return NextResponse.json(
-                    { error: "Credential not fully configured. Please reconnect to Accurate." },
+                    { error: "Kredensial belum dikonfigurasi lengkap. Silakan hubungkan ulang ke Accurate." },
                     { status: 400 }
                 );
             }
@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("[self-checkout/submit] Error:", error);
         return NextResponse.json(
-            { error: error.message || "Failed to submit checkout" },
+            { error: error.message || "Gagal mengirim checkout" },
             { status: 500 }
         );
     }

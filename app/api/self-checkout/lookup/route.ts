@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ error: "Tidak diizinkan" }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -19,11 +19,11 @@ export async function GET(req: NextRequest) {
     const credentialId = searchParams.get("credentialId");
 
     if (!code) {
-        return NextResponse.json({ error: "Item code is required" }, { status: 400 });
+        return NextResponse.json({ error: "Kode barang wajib diisi" }, { status: 400 });
     }
 
     if (!credentialId) {
-        return NextResponse.json({ error: "Credential ID is required" }, { status: 400 });
+        return NextResponse.json({ error: "ID kredensial wajib diisi" }, { status: 400 });
     }
 
     try {
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
         });
 
         if (!credential) {
-            return NextResponse.json({ error: "Credential not found" }, { status: 404 });
+            return NextResponse.json({ error: "Kredensial tidak ditemukan" }, { status: 404 });
         }
 
         // Ensure we have a valid session
@@ -82,12 +82,12 @@ export async function GET(req: NextRequest) {
                             data: { host, session: newSession },
                         });
                     } else {
-                        throw new Error("Session expired. Please reconnect to Accurate.");
+                        throw new Error("Sesi kedaluwarsa. Silakan hubungkan ulang ke Accurate.");
                     }
                 }
             } else {
                 return NextResponse.json(
-                    { error: "Credential not fully configured. Please reconnect to Accurate." },
+                    { error: "Kredensial belum dikonfigurasi lengkap. Silakan hubungkan ulang ke Accurate." },
                     { status: 400 }
                 );
             }
@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
         );
 
         if (!item) {
-            return NextResponse.json({ error: "Item not found", code }, { status: 404 });
+            return NextResponse.json({ error: "Barang tidak ditemukan", code }, { status: 404 });
         }
 
         return NextResponse.json({
@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
     } catch (error: any) {
         console.error("[self-checkout/lookup] Error:", error);
         return NextResponse.json(
-            { error: error.message || "Failed to lookup item" },
+            { error: error.message || "Gagal mencari barang" },
             { status: 500 }
         );
     }

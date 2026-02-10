@@ -55,47 +55,46 @@ const variantConfig: Record<
 > = {
   "no-data": {
     icon: <IconDatabase size={48} stroke={1.5} />,
-    title: "No data yet",
-    description: "Start by adding some data to see it displayed here.",
+    title: "Belum ada data",
+    description: "Mulai dengan menambahkan data agar tampil di sini.",
   },
   "no-results": {
     icon: <IconSearch size={48} stroke={1.5} />,
-    title: "No results found",
+    title: "Hasil tidak ditemukan",
     description:
-      "Try adjusting your search or filter criteria to find what you're looking for.",
+      "Coba ubah pencarian atau filter untuk menemukan data yang Anda cari.",
   },
   "no-connection": {
     icon: <IconCloudOff size={48} stroke={1.5} />,
-    title: "Connection error",
+    title: "Kesalahan koneksi",
     description:
-      "Unable to connect to the server. Please check your internet connection and try again.",
+      "Tidak dapat terhubung ke server. Periksa koneksi internet lalu coba lagi.",
   },
   "empty-folder": {
     icon: <IconFolderOff size={48} stroke={1.5} />,
-    title: "This folder is empty",
-    description: "Upload files or create new items to get started.",
+    title: "Folder ini kosong",
+    description: "Unggah file atau buat item baru untuk memulai.",
   },
   "empty-cart": {
     icon: <IconShoppingCartOff size={48} stroke={1.5} />,
-    title: "Your cart is empty",
-    description: "Scan items to add them to your cart.",
+    title: "Keranjang Anda kosong",
+    description: "Scan barang untuk menambahkannya ke keranjang.",
   },
   "no-credentials": {
     icon: <IconPlugConnectedX size={48} stroke={1.5} />,
-    title: "No accounts connected",
-    description:
-      "Connect your Accurate account to start importing and exporting data.",
+    title: "Belum ada akun terhubung",
+    description: "Hubungkan akun Accurate untuk mulai impor dan ekspor data.",
   },
   error: {
     icon: <IconFileOff size={48} stroke={1.5} />,
-    title: "Something went wrong",
+    title: "Terjadi kesalahan",
     description:
-      "An unexpected error occurred. Please try again or contact support.",
+      "Terjadi kesalahan tak terduga. Silakan coba lagi atau hubungi dukungan.",
   },
   custom: {
     icon: <IconInbox size={48} stroke={1.5} />,
-    title: "Nothing here",
-    description: "This section is empty.",
+    title: "Tidak ada isi",
+    description: "Bagian ini kosong.",
   },
 };
 

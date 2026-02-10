@@ -16,6 +16,7 @@ import {
 } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { LanguageSelect } from "@/components/ui/LanguageSelect";
 
 export default function TermsPage() {
   const router = useRouter();
@@ -85,13 +86,14 @@ export default function TermsPage() {
             </Group>
 
             <Group gap="sm">
+              <LanguageSelect />
               <ThemeToggle />
               <Button
                 variant="subtle"
                 size="sm"
                 onClick={() => router.push("/terms")}
               >
-                Terms
+                Syarat
               </Button>
               <Button
                 variant="filled"
@@ -108,7 +110,7 @@ export default function TermsPage() {
       <Container size="md" py={{ base: "xl", md: 60 }}>
         <Stack gap="lg">
           <Badge size="md" variant="light" color="blue" w="fit-content">
-            Terms
+            Syarat
           </Badge>
           <Title order={1}>Syarat & Ketentuan</Title>
           <Text c="dimmed">
@@ -145,8 +147,8 @@ export default function TermsPage() {
                 kredensial jika sudah tidak digunakan.
               </List.Item>
               <List.Item>
-                Layanan disediakan apa adanya (&quot;as-is&quot;) tanpa jaminan; gunakan
-                dengan mempertimbangkan kebijakan internal perusahaan Anda.
+                Layanan disediakan apa adanya tanpa jaminan; gunakan dengan
+                mempertimbangkan kebijakan internal perusahaan Anda.
               </List.Item>
             </List>
           </Card>
@@ -215,16 +217,16 @@ export default function TermsPage() {
                 >
                   MAD Labs by Millennia World School
                 </Anchor>
-                . All rights reserved.
+                . Seluruh hak cipta dilindungi.
               </Text>
             </Group>
 
             <Group gap="md">
               <Anchor size="sm" c="dimmed" href="/">
-                Home
+                Beranda
               </Anchor>
               <Anchor size="sm" c="dimmed" href="/login">
-                Login
+                Masuk
               </Anchor>
             </Group>
           </Group>

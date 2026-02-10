@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -28,7 +29,7 @@ export async function GET() {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Tidak diizinkan" }, { status: 401 });
     }
 
     const userId = session.user.id;
@@ -95,8 +96,6 @@ export async function GET() {
           status: true,
           startedAt: true,
           completedAt: true,
-          format: true,
-          recordCount: true,
         },
       }),
       prisma.importJob.findMany({
@@ -109,11 +108,6 @@ export async function GET() {
           status: true,
           startedAt: true,
           completedAt: true,
-          format: true,
-          fileName: true,
-          recordCount: true,
-          successCount: true,
-          failedCount: true,
         },
       }),
     ]);
@@ -162,7 +156,7 @@ export async function GET() {
       const date = new Date(weekStart);
       date.setDate(weekStart.getDate() + i);
       weeklyMap.set(dateKey(date), {
-        name: date.toLocaleDateString("en-US", { weekday: "short" }),
+        name: date.toLocaleDateString("id-ID", { weekday: "short" }),
         exports: 0,
         imports: 0,
       });
@@ -201,10 +195,10 @@ export async function GET() {
     });
 
     const monthlyBuckets = [
-      { name: "Week 1", total: 0 },
-      { name: "Week 2", total: 0 },
-      { name: "Week 3", total: 0 },
-      { name: "Week 4", total: 0 },
+      { name: "Minggu 1", total: 0 },
+      { name: "Minggu 2", total: 0 },
+      { name: "Minggu 3", total: 0 },
+      { name: "Minggu 4", total: 0 },
     ];
 
     const bucketIndex = (date: Date) => {
@@ -225,23 +219,14 @@ export async function GET() {
 
     const activities = [
       ...recentExports.map((job) => {
-        const descriptionParts: string[] = [];
-        if (job.format) descriptionParts.push(job.format.toUpperCase());
-        if (job.recordCount !== null && job.recordCount !== undefined) {
-          descriptionParts.push(`${job.recordCount} records`);
-        }
-
         return {
           id: job.id,
           type: "export",
           title:
             job.type === "inventory_adjustment"
-              ? "Exported inventory adjustments"
-              : `Exported ${job.type}`,
-          description:
-            descriptionParts.length > 0
-              ? descriptionParts.join(" · ")
-              : undefined,
+              ? "Ekspor penyesuaian persediaan"
+              : `Ekspor ${job.type}`,
+          description: undefined,
           timestamp: job.completedAt ?? job.startedAt,
           status:
             job.status === "done"
@@ -249,40 +234,18 @@ export async function GET() {
               : job.status === "error"
                 ? "error"
                 : "pending",
-          metadata:
-            job.recordCount !== null && job.recordCount !== undefined
-              ? { count: job.recordCount }
-              : undefined,
+          metadata: undefined,
         };
       }),
       ...recentImports.map((job) => {
-        const descriptionParts: string[] = [];
-        if (job.fileName) descriptionParts.push(job.fileName);
-        if (job.recordCount !== null && job.recordCount !== undefined) {
-          descriptionParts.push(`${job.recordCount} rows`);
-        }
-        if (
-          job.successCount !== null &&
-          job.successCount !== undefined &&
-          job.failedCount !== null &&
-          job.failedCount !== undefined
-        ) {
-          descriptionParts.push(
-            `Success ${job.successCount} / Failed ${job.failedCount}`,
-          );
-        }
-
         return {
           id: job.id,
           type: "import",
           title:
             job.type === "inventory_adjustment"
-              ? "Imported inventory adjustments"
-              : `Imported ${job.type}`,
-          description:
-            descriptionParts.length > 0
-              ? descriptionParts.join(" · ")
-              : undefined,
+              ? "Impor penyesuaian persediaan"
+              : `Impor ${job.type}`,
+          description: undefined,
           timestamp: job.completedAt ?? job.startedAt,
           status:
             job.status === "done"
@@ -290,10 +253,7 @@ export async function GET() {
               : job.status === "error"
                 ? "error"
                 : "pending",
-          metadata:
-            job.recordCount !== null && job.recordCount !== undefined
-              ? { count: job.recordCount }
-              : undefined,
+          metadata: undefined,
         };
       }),
     ]
@@ -311,9 +271,23 @@ export async function GET() {
       activities,
     });
   } catch (error) {
-    console.error("Failed to build dashboard summary", error);
+    console.error("Gagal menyusun ringkasan dasbor", error);
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P1001"
+    ) {
+      return NextResponse.json(
+        { error: "Database tidak dapat diakses. Coba lagi beberapa saat." },
+        { status: 503 },
+      );
+    }
+
+    const detail =
+      error instanceof Error
+        ? error.message
+        : "Terjadi kesalahan tidak terduga";
     return NextResponse.json(
-      { error: "Failed to load dashboard summary" },
+      { error: `Gagal memuat ringkasan dasbor: ${detail}` },
       { status: 500 },
     );
   }

@@ -23,6 +23,7 @@ import {
   IconShoppingCart,
   IconUserCheck,
 } from "@tabler/icons-react";
+import { LanguageSelect } from "@/components/ui/LanguageSelect";
 
 interface Credential {
   id: string;
@@ -81,10 +82,10 @@ export default function KioskHomePage() {
           </Box>
           <Stack align="center" gap="xs">
             <Text c="white" size="xl" fw={600} className="kiosk-heading">
-              Loading Node
+              Memuat Node
             </Text>
             <Text c="rgba(255,255,255,0.6)" size="sm">
-              Syncing secure session...
+              Menyinkronkan sesi aman...
             </Text>
           </Stack>
         </Stack>
@@ -120,11 +121,11 @@ export default function KioskHomePage() {
             </ThemeIcon>
             <Stack gap="sm">
               <Title order={2} c="white" className="kiosk-heading">
-                No Accounts Synced
+                Belum Ada Akun Tersinkron
               </Title>
               <Text c="rgba(255,255,255,0.65)" size="lg">
-                Configure an Accurate account in the dashboard to activate this
-                kiosk.
+                Konfigurasikan akun Accurate di dasbor untuk mengaktifkan kiosk
+                ini.
               </Text>
             </Stack>
           </Stack>
@@ -136,18 +137,18 @@ export default function KioskHomePage() {
   const features = [
     {
       icon: <IconScan size={20} />,
-      title: "Scan Identity",
-      description: "Authenticate with your employee badge",
+      title: "Scan Identitas",
+      description: "Autentikasi dengan kartu staf",
     },
     {
       icon: <IconShoppingCart size={20} />,
-      title: "Scan Products",
-      description: "Items appear instantly in the cart",
+      title: "Scan Produk",
+      description: "Barang langsung masuk ke keranjang",
     },
     {
       icon: <IconUserCheck size={20} />,
-      title: "Confirm & Checkout",
-      description: "Review items and complete checkout",
+      title: "Konfirmasi & Checkout",
+      description: "Tinjau barang lalu selesaikan checkout",
     },
   ];
 
@@ -156,6 +157,10 @@ export default function KioskHomePage() {
       p={{ base: "md", sm: "xl" }}
       style={{ flex: 1, display: "flex", flexDirection: "column" }}
     >
+      <Group justify="flex-end" mb="md">
+        <LanguageSelect size="xs" />
+      </Group>
+
       {/* Header */}
       <Stack align="center" gap="xl" py="xl">
         {/* Logo */}
@@ -188,10 +193,10 @@ export default function KioskHomePage() {
               }}
               className="kiosk-heading"
             >
-              Self Checkout
+              Checkout Mandiri
             </Text>
             <Text size="xs" c="rgba(255,255,255,0.5)" fw={500}>
-              Autonomous Checkout Terminal
+              Terminal Checkout Mandiri
             </Text>
           </Stack>
         </Group>
@@ -204,7 +209,7 @@ export default function KioskHomePage() {
             fw={800}
             style={{ fontSize: rem(42), lineHeight: 1.1 }}
           >
-            Zero Friction
+            Tanpa Hambatan
             <br />
             <span
               style={{
@@ -213,11 +218,11 @@ export default function KioskHomePage() {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              Self-Checkout Experience
+              Pengalaman Self-Checkout
             </span>
           </Title>
           <Text c="rgba(255,255,255,0.6)" size="lg">
-            Choose a station profile to start your checkout session.
+            Pilih profil stasiun untuk memulai sesi checkout.
           </Text>
         </Stack>
 
@@ -310,7 +315,7 @@ export default function KioskHomePage() {
                       border: "1px solid rgba(16, 185, 129, 0.4)",
                     }}
                   >
-                    Active
+                    Aktif
                   </Badge>
                 </Group>
 
@@ -319,7 +324,7 @@ export default function KioskHomePage() {
                     {cred.appKey}
                   </Text>
                   <Text c="rgba(255,255,255,0.55)" size="sm">
-                    {cred.host || "Not configured"}
+                    {cred.host || "Belum dikonfigurasi"}
                   </Text>
                 </Stack>
 
@@ -331,7 +336,7 @@ export default function KioskHomePage() {
                   }}
                 >
                   <Text size="sm" fw={500}>
-                    Launch Session
+                    Mulai Sesi
                   </Text>
                   <IconArrowRight size={16} />
                 </Group>
@@ -344,11 +349,11 @@ export default function KioskHomePage() {
       {/* Footer */}
       <Group justify="center" py="lg">
         <Text c="rgba(255,255,255,0.45)" size="xs">
-          Powered by{" "}
+          Ditenagai oleh{" "}
           <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>
             Exima
           </span>{" "}
-          • Accurate Integration
+          • Integrasi Accurate
         </Text>
       </Group>
 

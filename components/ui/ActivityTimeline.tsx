@@ -66,50 +66,50 @@ const typeConfig: Record<
   export: {
     icon: <IconFileExport size={16} />,
     color: "blue",
-    label: "Export",
+    label: "Ekspor",
   },
   import: {
     icon: <IconFileImport size={16} />,
     color: "green",
-    label: "Import",
+    label: "Impor",
   },
   connect: {
     icon: <IconPlugConnected size={16} />,
     color: "violet",
-    label: "Connected",
+    label: "Terhubung",
   },
   disconnect: {
     icon: <IconPlugConnectedX size={16} />,
     color: "gray",
-    label: "Disconnected",
+    label: "Terputus",
   },
   error: {
     icon: <IconX size={16} />,
     color: "red",
-    label: "Error",
+    label: "Kesalahan",
   },
   success: {
     icon: <IconCheck size={16} />,
     color: "teal",
-    label: "Success",
+    label: "Berhasil",
   },
   pending: {
     icon: <IconClock size={16} />,
     color: "yellow",
-    label: "Pending",
+    label: "Menunggu",
   },
   warning: {
     icon: <IconAlertTriangle size={16} />,
     color: "orange",
-    label: "Warning",
+    label: "Peringatan",
   },
 };
 
 const statusConfig: Record<ActivityStatus, { color: string; label: string }> = {
-  success: { color: "green", label: "Completed" },
-  error: { color: "red", label: "Failed" },
-  pending: { color: "yellow", label: "In Progress" },
-  warning: { color: "orange", label: "Warning" },
+  success: { color: "green", label: "Selesai" },
+  error: { color: "red", label: "Gagal" },
+  pending: { color: "yellow", label: "Berjalan" },
+  warning: { color: "orange", label: "Peringatan" },
 };
 
 function formatRelativeTime(date: Date | string): string {
@@ -122,13 +122,13 @@ function formatRelativeTime(date: Date | string): string {
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffSeconds < 60) {
-    return "Just now";
+    return "Baru saja";
   } else if (diffMinutes < 60) {
-    return `${diffMinutes}m ago`;
+    return `${diffMinutes}m lalu`;
   } else if (diffHours < 24) {
-    return `${diffHours}h ago`;
+    return `${diffHours}j lalu`;
   } else if (diffDays < 7) {
-    return `${diffDays}d ago`;
+    return `${diffDays}h lalu`;
   } else {
     return then.toLocaleDateString();
   }
@@ -139,7 +139,7 @@ export function ActivityTimeline({
   maxItems = 5,
   showViewAll = true,
   onViewAll,
-  emptyMessage = "No recent activity",
+  emptyMessage = "Tidak ada aktivitas terbaru",
 }: ActivityTimelineProps) {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
@@ -223,7 +223,7 @@ export function ActivityTimeline({
                         •
                       </Text>
                       <Text size="xs" c="dimmed">
-                        {activity.metadata.count} items
+                        {activity.metadata.count} item
                       </Text>
                     </>
                   )}
@@ -232,12 +232,8 @@ export function ActivityTimeline({
                       <Text size="xs" c="dimmed">
                         •
                       </Text>
-                      <Anchor
-                        href={activity.metadata.link}
-                        size="xs"
-                        fw={500}
-                      >
-                        {activity.metadata.linkText || "View details"}
+                      <Anchor href={activity.metadata.link} size="xs" fw={500}>
+                        {activity.metadata.linkText || "Lihat detail"}
                       </Anchor>
                     </>
                   )}
@@ -257,7 +253,7 @@ export function ActivityTimeline({
             fw={500}
             onClick={onViewAll}
           >
-            View all {activities.length} activities
+            Lihat semua {activities.length} aktivitas
           </Anchor>
         </Box>
       )}
@@ -283,7 +279,7 @@ export function CompactActivityList({
   if (activities.length === 0) {
     return (
       <Text c="dimmed" size="sm" ta="center" py="md">
-        No recent activity
+        Tidak ada aktivitas terbaru
       </Text>
     );
   }
@@ -312,7 +308,12 @@ export function CompactActivityList({
               e.currentTarget.style.backgroundColor = "transparent";
             }}
           >
-            <ThemeIcon size={28} radius="xl" color={config.color} variant="light">
+            <ThemeIcon
+              size={28}
+              radius="xl"
+              color={config.color}
+              variant="light"
+            >
               {config.icon}
             </ThemeIcon>
             <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
@@ -340,7 +341,7 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({
-  title = "Recent Activity",
+  title = "Aktivitas Terbaru",
   activities,
   maxItems = 5,
   onViewAll,
@@ -375,7 +376,7 @@ export function ActivityCard({
             fw={500}
             onClick={onViewAll}
           >
-            View all
+            Lihat semua
           </Anchor>
         )}
       </Group>

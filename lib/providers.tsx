@@ -5,14 +5,17 @@ import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
 import { SessionProvider } from "next-auth/react";
 import { theme } from "./theme";
+import { LanguageProvider } from "./language";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
-      <MantineProvider theme={theme} defaultColorScheme="light">
-        <Notifications position="top-right" />
-        <ModalsProvider>{children}</ModalsProvider>
-      </MantineProvider>
-    </SessionProvider>
+    <LanguageProvider>
+      <SessionProvider>
+        <MantineProvider theme={theme} defaultColorScheme="light">
+          <Notifications position="top-right" />
+          <ModalsProvider>{children}</ModalsProvider>
+        </MantineProvider>
+      </SessionProvider>
+    </LanguageProvider>
   );
 }

@@ -67,18 +67,18 @@ interface PreviewRecord {
 const steps: Step[] = [
   {
     id: "select-account",
-    title: "Select Account",
-    description: "Choose Accurate account",
+    title: "Pilih Akun",
+    description: "Pilih akun Accurate",
   },
   {
     id: "configure",
-    title: "Configure",
-    description: "Set date range & format",
+    title: "Konfigurasi",
+    description: "Atur rentang tanggal & format",
   },
   {
     id: "preview",
-    title: "Preview & Export",
-    description: "Review and download",
+    title: "Pratinjau & Ekspor",
+    description: "Tinjau dan unduh",
   },
 ];
 
@@ -86,21 +86,21 @@ const formatOptions = [
   {
     value: "csv",
     label: "CSV",
-    description: "Comma-separated values",
+    description: "Nilai dipisahkan koma",
     icon: <IconFileTypeCsv size={24} />,
     color: "green",
   },
   {
     value: "xlsx",
     label: "Excel (XLSX)",
-    description: "Microsoft Excel format",
+    description: "Format Microsoft Excel",
     icon: <IconFileTypeXls size={24} />,
     color: "blue",
   },
   {
     value: "json",
     label: "JSON",
-    description: "JavaScript Object Notation",
+    description: "Notasi Objek JavaScript",
     icon: <IconFileCode size={24} />,
     color: "orange",
   },
@@ -152,12 +152,12 @@ export default function ExportInventoryAdjustmentPage() {
 
   const handleExport = async () => {
     if (!selectedCredential) {
-      setError("Please select a credential");
+      setError("Silakan pilih kredensial");
       return;
     }
 
     if (!dateRange[0] || !dateRange[1]) {
-      setError("Please select a date range");
+      setError("Silakan pilih rentang tanggal");
       return;
     }
 
@@ -178,7 +178,7 @@ export default function ExportInventoryAdjustmentPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Export failed");
+        throw new Error(data.error || "Ekspor gagal");
       }
 
       // Get filename from Content-Disposition header
@@ -198,15 +198,15 @@ export default function ExportInventoryAdjustmentPage() {
       document.body.removeChild(a);
 
       notifications.show({
-        title: "Export Successful",
-        message: `Downloaded ${filename}`,
+        title: "Ekspor Berhasil",
+        message: `${filename} berhasil diunduh`,
         color: "green",
         icon: <IconCheck size={16} />,
       });
     } catch (err: any) {
       setError(err.message);
       notifications.show({
-        title: "Export Failed",
+        title: "Ekspor Gagal",
         message: err.message,
         color: "red",
         icon: <IconAlertCircle size={16} />,
@@ -238,7 +238,7 @@ export default function ExportInventoryAdjustmentPage() {
         setTotalRecords(data.total || data.preview?.length || 0);
       } else {
         const data = await response.json();
-        throw new Error(data.error || "Failed to fetch preview");
+        throw new Error(data.error || "Gagal memuat pratinjau");
       }
     } catch (err: any) {
       setError(err.message);
@@ -277,14 +277,14 @@ export default function ExportInventoryAdjustmentPage() {
             <ThemeIcon size={32} radius="md" variant="light" color="brand">
               <IconFileExport size={18} />
             </ThemeIcon>
-            <Title order={2}>Export Inventory Adjustment</Title>
+            <Title order={2}>Ekspor Penyesuaian Persediaan</Title>
           </Group>
           <Text c="dimmed" size="sm">
-            Export your inventory adjustment data to CSV, Excel, or JSON format
+            Ekspor data inventory adjustment ke format CSV, Excel, atau JSON
           </Text>
         </Box>
         <Badge size="lg" variant="light" color="blue">
-          Step {activeStep + 1} of {steps.length}
+          Langkah {activeStep + 1} dari {steps.length}
         </Badge>
       </Group>
 
@@ -328,20 +328,20 @@ export default function ExportInventoryAdjustmentPage() {
           {(styles) => (
             <Box style={styles}>
               <StepperCard
-                title="Select Accurate Account"
-                description="Choose which account to export data from"
+                title="Pilih Akun Accurate"
+                description="Pilih akun sumber data ekspor"
               >
                 {loadingCredentials ? (
                   <Stack gap="md" py="xl" align="center">
-                    <Text c="dimmed">Loading accounts...</Text>
+                    <Text c="dimmed">Memuat akun...</Text>
                   </Stack>
                 ) : credentials.length === 0 ? (
                   <EmptyState
                     variant="no-credentials"
-                    title="No accounts connected"
-                    description="Connect your Accurate account first to export data"
+                    title="Belum ada akun terhubung"
+                    description="Hubungkan akun Accurate terlebih dahulu untuk ekspor"
                     action={{
-                      label: "Connect Account",
+                      label: "Hubungkan Akun",
                       onClick: () =>
                         (window.location.href = "/dashboard/credentials"),
                     }}
@@ -397,7 +397,7 @@ export default function ExportInventoryAdjustmentPage() {
                             {cred.appKey}
                           </Text>
                           <Text size="xs" c="dimmed" mt={4}>
-                            Click to select
+                            Klik untuk memilih
                           </Text>
                         </Paper>
                       );
@@ -416,8 +416,8 @@ export default function ExportInventoryAdjustmentPage() {
               <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
                 {/* Date Range Card */}
                 <StepperCard
-                  title="Date Range"
-                  description="Select the date range for your export"
+                  title="Rentang Tanggal"
+                  description="Pilih rentang tanggal untuk ekspor"
                 >
                   <Stack gap="md">
                     <Group gap="sm">
@@ -426,18 +426,18 @@ export default function ExportInventoryAdjustmentPage() {
                       </ThemeIcon>
                       <Box>
                         <Text size="sm" fw={500}>
-                          Transaction Date Range
+                          Rentang Tanggal Transaksi
                         </Text>
                         <Text size="xs" c="dimmed">
-                          Filter adjustments by their transaction date
+                          Filter penyesuaian berdasarkan tanggal transaksi
                         </Text>
                       </Box>
                     </Group>
 
                     <DatePickerInput
                       type="range"
-                      label="Select Date Range"
-                      placeholder="Pick start and end date"
+                      label="Pilih Rentang Tanggal"
+                      placeholder="Pilih tanggal awal dan akhir"
                       value={dateRange}
                       onChange={setDateRange}
                       size="md"
@@ -454,16 +454,16 @@ export default function ExportInventoryAdjustmentPage() {
                         icon={<IconInfoCircle size={16} />}
                       >
                         <Text size="sm">
-                          Exporting data from{" "}
+                          Mengekspor data dari{" "}
                           <strong>
                             {dayjs(dateRange[0]).format("DD MMM YYYY")}
                           </strong>{" "}
-                          to{" "}
+                          hingga{" "}
                           <strong>
                             {dayjs(dateRange[1]).format("DD MMM YYYY")}
                           </strong>{" "}
                           ({dayjs(dateRange[1]).diff(dateRange[0], "day") + 1}{" "}
-                          days)
+                          hari)
                         </Text>
                       </Alert>
                     )}
@@ -472,8 +472,8 @@ export default function ExportInventoryAdjustmentPage() {
 
                 {/* Format Card */}
                 <StepperCard
-                  title="Export Format"
-                  description="Choose your preferred file format"
+                  title="Format Ekspor"
+                  description="Pilih format file yang diinginkan"
                 >
                   <Stack gap="md">
                     {formatOptions.map((option) => {
@@ -562,7 +562,7 @@ export default function ExportInventoryAdjustmentPage() {
                   <Group justify="space-between" align="flex-start" wrap="wrap">
                     <Stack gap="md">
                       <Text size="lg" fw={600}>
-                        Export Summary
+                        Ringkasan Ekspor
                       </Text>
                       <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
                         <Group gap="sm">
@@ -576,7 +576,7 @@ export default function ExportInventoryAdjustmentPage() {
                           </ThemeIcon>
                           <Box>
                             <Text size="xs" c="dimmed">
-                              Account
+                              Akun
                             </Text>
                             <Text size="sm" fw={600}>
                               {selectedCredentialData?.appKey || "-"}
@@ -595,7 +595,7 @@ export default function ExportInventoryAdjustmentPage() {
                           </ThemeIcon>
                           <Box>
                             <Text size="xs" c="dimmed">
-                              Date Range
+                              Rentang Tanggal
                             </Text>
                             <Text size="sm" fw={600}>
                               {dateRange[0] && dateRange[1]
@@ -644,18 +644,18 @@ export default function ExportInventoryAdjustmentPage() {
                         boxShadow: "0 4px 14px rgba(34, 139, 230, 0.4)",
                       }}
                     >
-                      Download Export
+                      Unduh Hasil Ekspor
                     </Button>
                   </Group>
                 </Paper>
 
                 {/* Preview Section */}
                 <StepperCard
-                  title="Data Preview"
+                  title="Pratinjau Data"
                   description={
                     totalRecords !== null
-                      ? `Showing first 20 of ${totalRecords} records`
-                      : "Preview of your export data"
+                      ? `Menampilkan 20 data pertama dari ${totalRecords} data`
+                      : "Pratinjau data ekspor Anda"
                   }
                 >
                   <Group justify="flex-end" mb="md">
@@ -666,19 +666,19 @@ export default function ExportInventoryAdjustmentPage() {
                       onClick={fetchPreview}
                       loading={previewLoading}
                     >
-                      Refresh Preview
+                      Muat Ulang Pratinjau
                     </Button>
                   </Group>
 
                   {previewLoading ? (
                     <Stack gap="md" py="xl" align="center">
-                      <Text c="dimmed">Loading preview...</Text>
+                      <Text c="dimmed">Memuat pratinjau...</Text>
                     </Stack>
                   ) : preview.length === 0 ? (
                     <EmptyState
                       variant="no-data"
-                      title="No data to preview"
-                      description="No inventory adjustments found for the selected date range"
+                      title="Tidak ada data untuk dipratinjau"
+                      description="Tidak ada inventory adjustment pada rentang tanggal yang dipilih"
                       size="sm"
                     />
                   ) : (
@@ -698,14 +698,14 @@ export default function ExportInventoryAdjustmentPage() {
                       >
                         <Table.Thead>
                           <Table.Tr>
-                            <Table.Th>Adjustment #</Table.Th>
-                            <Table.Th>Date</Table.Th>
-                            <Table.Th>Item Name</Table.Th>
-                            <Table.Th>Item Code</Table.Th>
-                            <Table.Th>Type</Table.Th>
-                            <Table.Th>Quantity</Table.Th>
-                            <Table.Th>Unit</Table.Th>
-                            <Table.Th>Warehouse</Table.Th>
+                            <Table.Th>No. Penyesuaian</Table.Th>
+                            <Table.Th>Tanggal</Table.Th>
+                            <Table.Th>Nama Barang</Table.Th>
+                            <Table.Th>Kode Barang</Table.Th>
+                            <Table.Th>Tipe</Table.Th>
+                            <Table.Th>Kuantitas</Table.Th>
+                            <Table.Th>Satuan</Table.Th>
+                            <Table.Th>Gudang</Table.Th>
                           </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>
@@ -785,7 +785,7 @@ export default function ExportInventoryAdjustmentPage() {
             onClick={handleBack}
             disabled={activeStep === 0}
           >
-            Back
+            Kembali
           </Button>
 
           <Group gap="sm">
@@ -797,7 +797,7 @@ export default function ExportInventoryAdjustmentPage() {
                 disabled={!canProceedToStep3}
                 color="green"
               >
-                Export Now
+                Ekspor Sekarang
               </Button>
             ) : (
               <Button
@@ -808,7 +808,7 @@ export default function ExportInventoryAdjustmentPage() {
                   (activeStep === 1 && !canProceedToStep3)
                 }
               >
-                Continue
+                Lanjut
               </Button>
             )}
           </Group>

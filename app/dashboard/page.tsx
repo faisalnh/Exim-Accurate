@@ -144,7 +144,7 @@ export default function DashboardPage() {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.error ?? "Failed to load dashboard data");
+          throw new Error(errorData?.error ?? "Gagal memuat data dasbor");
         }
 
         const data = await response.json();
@@ -175,9 +175,9 @@ export default function DashboardPage() {
       <Group justify="space-between" align="flex-end">
         <Box>
           <Text size="sm" c="dimmed" mb={4}>
-            Welcome back 👋
+            Selamat datang kembali 👋
           </Text>
-          <Title order={2}>Dashboard</Title>
+          <Title order={2}>Dasbor</Title>
         </Box>
         <Badge
           size="lg"
@@ -194,7 +194,7 @@ export default function DashboardPage() {
             />
           }
         >
-          All systems operational
+          Semua sistem operasional
         </Badge>
       </Group>
 
@@ -210,41 +210,41 @@ export default function DashboardPage() {
         ) : (
           <>
             <StatsCard
-              title="Total Exports"
+              title="Total Ekspor"
               value={stats.totalExports.toLocaleString()}
-              description="All time export operations"
+              description="Seluruh operasi ekspor"
               trend={{
                 value: stats.exportsTrend,
-                label: "vs last month",
+                label: "vs bulan lalu",
               }}
               icon={<IconFileExport size={26} />}
               color="brand"
             />
             <StatsCard
-              title="Total Imports"
+              title="Total Impor"
               value={stats.totalImports.toLocaleString()}
-              description="All time import operations"
+              description="Seluruh operasi impor"
               trend={{
                 value: stats.importsTrend,
-                label: "vs last month",
+                label: "vs bulan lalu",
               }}
               icon={<IconFileImport size={26} />}
               color="success"
             />
             <StatsCard
-              title="Connected Accounts"
+              title="Akun Terhubung"
               value={stats.connectedAccounts}
-              description="Active Accurate accounts"
+              description="Akun Accurate aktif"
               icon={<IconPlugConnected size={26} />}
               color="violet"
             />
             <StatsCard
-              title="This Month"
-              value={`${stats.thisMonth} jobs`}
-              description="Export & import operations"
+              title="Bulan Ini"
+              value={`${stats.thisMonth} pekerjaan`}
+              description="Operasi ekspor & impor"
               trend={{
                 value: stats.monthTrend,
-                label: "vs last month",
+                label: "vs bulan lalu",
               }}
               icon={<IconCalendarStats size={26} />}
               color="accent"
@@ -260,7 +260,7 @@ export default function DashboardPage() {
             <ThemeIcon size={24} radius="md" variant="light" color="brand">
               <IconActivity size={14} />
             </ThemeIcon>
-            <Text fw={600}>Quick Actions</Text>
+            <Text fw={600}>Aksi Cepat</Text>
           </Group>
         </Group>
         <QuickActions actions={defaultQuickActions} />
@@ -284,10 +284,10 @@ export default function DashboardPage() {
               <ThemeIcon size={24} radius="md" variant="light" color="brand">
                 <IconDatabase size={14} />
               </ThemeIcon>
-              <Text fw={600}>Weekly Activity</Text>
+              <Text fw={600}>Aktivitas Mingguan</Text>
             </Group>
             <Anchor size="xs" fw={500}>
-              View details
+              Lihat detail
             </Anchor>
           </Group>
 
@@ -342,7 +342,7 @@ export default function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="exports"
-                    name="Exports"
+                    name="Ekspor"
                     stroke="#228BE6"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -351,7 +351,7 @@ export default function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="imports"
-                    name="Imports"
+                    name="Impor"
                     stroke="#40C057"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -373,7 +373,7 @@ export default function DashboardPage() {
                 }}
               />
               <Text size="xs" c="dimmed">
-                Exports
+                Ekspor
               </Text>
             </Group>
             <Group gap="xs">
@@ -386,7 +386,7 @@ export default function DashboardPage() {
                 }}
               />
               <Text size="xs" c="dimmed">
-                Imports
+                Impor
               </Text>
             </Group>
           </Group>
@@ -408,10 +408,10 @@ export default function DashboardPage() {
               <ThemeIcon size={24} radius="md" variant="light" color="accent">
                 <IconCalendarStats size={14} />
               </ThemeIcon>
-              <Text fw={600}>Monthly Trend</Text>
+              <Text fw={600}>Tren Bulanan</Text>
             </Group>
             <Badge size="sm" variant="light" color="teal">
-              +25% growth
+              +25% pertumbuhan
             </Badge>
           </Group>
 
@@ -453,7 +453,7 @@ export default function DashboardPage() {
                   <Tooltip content={<CustomTooltip />} />
                   <Bar
                     dataKey="total"
-                    name="Total Operations"
+                    name="Total Operasi"
                     fill="url(#colorBar)"
                     radius={[4, 4, 0, 0]}
                   />
@@ -464,12 +464,12 @@ export default function DashboardPage() {
 
           <Group justify="space-between" mt="md">
             <Text size="xs" c="dimmed">
-              Total this month
+              Total bulan ini
             </Text>
             <Group gap={4}>
               <IconArrowUpRight size={14} color="#40C057" />
               <Text size="sm" fw={600}>
-                {monthTotal} operations
+                {monthTotal} operasi
               </Text>
             </Group>
           </Group>
@@ -489,10 +489,10 @@ export default function DashboardPage() {
           </Paper>
         ) : activities.length > 0 ? (
           <ActivityCard
-            title="Recent Activity"
+            title="Aktivitas Terbaru"
             activities={activities}
             maxItems={5}
-            onViewAll={() => console.log("View all activities")}
+            onViewAll={() => console.log("Lihat semua aktivitas")}
           />
         ) : (
           <Paper
@@ -507,10 +507,10 @@ export default function DashboardPage() {
           >
             <EmptyState
               variant="no-data"
-              title="No activity yet"
-              description="Your export and import operations will appear here"
+              title="Belum ada aktivitas"
+              description="Operasi ekspor dan impor Anda akan muncul di sini"
               action={{
-                label: "Start Export",
+                label: "Mulai Ekspor",
                 onClick: () =>
                   (window.location.href =
                     "/dashboard/export/inventory-adjustment"),

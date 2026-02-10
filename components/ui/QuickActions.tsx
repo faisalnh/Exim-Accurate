@@ -31,7 +31,15 @@ export interface QuickAction {
   icon: ReactNode;
   href?: string;
   onClick?: () => void;
-  color?: "brand" | "accent" | "success" | "danger" | "violet" | "cyan" | "teal" | "grape";
+  color?:
+    | "brand"
+    | "accent"
+    | "success"
+    | "danger"
+    | "violet"
+    | "cyan"
+    | "teal"
+    | "grape";
   badge?: string;
   disabled?: boolean;
 }
@@ -44,42 +52,50 @@ interface QuickActionsProps {
 const colorMap: Record<string, { bg: string; bgDark: string; icon: string }> = {
   brand: {
     bg: "linear-gradient(135deg, #E7F5FF 0%, #D0EBFF 100%)",
-    bgDark: "linear-gradient(135deg, rgba(34, 139, 230, 0.15) 0%, rgba(28, 126, 214, 0.1) 100%)",
+    bgDark:
+      "linear-gradient(135deg, rgba(34, 139, 230, 0.15) 0%, rgba(28, 126, 214, 0.1) 100%)",
     icon: "#228BE6",
   },
   accent: {
     bg: "linear-gradient(135deg, #FFF4E6 0%, #FFE8CC 100%)",
-    bgDark: "linear-gradient(135deg, rgba(255, 146, 43, 0.15) 0%, rgba(253, 126, 20, 0.1) 100%)",
+    bgDark:
+      "linear-gradient(135deg, rgba(255, 146, 43, 0.15) 0%, rgba(253, 126, 20, 0.1) 100%)",
     icon: "#FD7E14",
   },
   success: {
     bg: "linear-gradient(135deg, #EBFBEE 0%, #D3F9D8 100%)",
-    bgDark: "linear-gradient(135deg, rgba(81, 207, 102, 0.15) 0%, rgba(64, 192, 87, 0.1) 100%)",
+    bgDark:
+      "linear-gradient(135deg, rgba(81, 207, 102, 0.15) 0%, rgba(64, 192, 87, 0.1) 100%)",
     icon: "#40C057",
   },
   danger: {
     bg: "linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%)",
-    bgDark: "linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(250, 82, 82, 0.1) 100%)",
+    bgDark:
+      "linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(250, 82, 82, 0.1) 100%)",
     icon: "#FA5252",
   },
   violet: {
     bg: "linear-gradient(135deg, #F3F0FF 0%, #E5DBFF 100%)",
-    bgDark: "linear-gradient(135deg, rgba(132, 94, 247, 0.15) 0%, rgba(121, 80, 242, 0.1) 100%)",
+    bgDark:
+      "linear-gradient(135deg, rgba(132, 94, 247, 0.15) 0%, rgba(121, 80, 242, 0.1) 100%)",
     icon: "#7950F2",
   },
   cyan: {
     bg: "linear-gradient(135deg, #E3FAFC 0%, #C5F6FA 100%)",
-    bgDark: "linear-gradient(135deg, rgba(34, 184, 207, 0.15) 0%, rgba(21, 170, 191, 0.1) 100%)",
+    bgDark:
+      "linear-gradient(135deg, rgba(34, 184, 207, 0.15) 0%, rgba(21, 170, 191, 0.1) 100%)",
     icon: "#15AABF",
   },
   teal: {
     bg: "linear-gradient(135deg, #E6FCF5 0%, #C3FAE8 100%)",
-    bgDark: "linear-gradient(135deg, rgba(32, 201, 151, 0.15) 0%, rgba(18, 184, 134, 0.1) 100%)",
+    bgDark:
+      "linear-gradient(135deg, rgba(32, 201, 151, 0.15) 0%, rgba(18, 184, 134, 0.1) 100%)",
     icon: "#12B886",
   },
   grape: {
     bg: "linear-gradient(135deg, #F8F0FC 0%, #F3D9FA 100%)",
-    bgDark: "linear-gradient(135deg, rgba(190, 75, 219, 0.15) 0%, rgba(174, 62, 201, 0.1) 100%)",
+    bgDark:
+      "linear-gradient(135deg, rgba(190, 75, 219, 0.15) 0%, rgba(174, 62, 201, 0.1) 100%)",
     icon: "#BE4BDB",
   },
 };
@@ -88,32 +104,32 @@ const colorMap: Record<string, { bg: string; bgDark: string; icon: string }> = {
 export const defaultQuickActions: QuickAction[] = [
   {
     id: "export",
-    title: "New Export",
-    description: "Export inventory adjustments to CSV, XLSX, or JSON",
+    title: "Ekspor Baru",
+    description: "Ekspor inventory adjustment ke CSV, XLSX, atau JSON",
     icon: <IconFileExport size={24} />,
     href: "/dashboard/export/inventory-adjustment",
     color: "brand",
   },
   {
     id: "import",
-    title: "New Import",
-    description: "Import inventory adjustments from your files",
+    title: "Impor Baru",
+    description: "Impor inventory adjustment dari file Anda",
     icon: <IconFileImport size={24} />,
     href: "/dashboard/import/inventory-adjustment",
     color: "success",
   },
   {
     id: "self-checkout",
-    title: "Self Checkout",
-    description: "Scan items for quick inventory checkout",
+    title: "Checkout Mandiri",
+    description: "Scan barang untuk checkout inventaris dengan cepat",
     icon: <IconScan size={24} />,
     href: "/dashboard/self-checkout",
     color: "accent",
   },
   {
     id: "credentials",
-    title: "Manage Accounts",
-    description: "Connect or manage Accurate accounts",
+    title: "Kelola Akun",
+    description: "Hubungkan atau kelola akun Accurate",
     icon: <IconPlugConnected size={24} />,
     href: "/dashboard/credentials",
     color: "violet",
@@ -181,7 +197,9 @@ function QuickActionTile({ action }: QuickActionTileProps) {
               radius="xl"
               variant="light"
               style={{
-                backgroundColor: isDark ? `${colors.icon}25` : `${colors.icon}20`,
+                backgroundColor: isDark
+                  ? `${colors.icon}25`
+                  : `${colors.icon}20`,
                 color: colors.icon,
               }}
             >
@@ -300,7 +318,9 @@ export function CompactQuickActions({
                 radius="md"
                 variant="light"
                 style={{
-                  backgroundColor: isDark ? `${colors.icon}20` : `${colors.icon}15`,
+                  backgroundColor: isDark
+                    ? `${colors.icon}20`
+                    : `${colors.icon}15`,
                   color: colors.icon,
                 }}
               >
@@ -316,7 +336,10 @@ export function CompactQuickActions({
                   </Text>
                 )}
               </Stack>
-              <IconArrowRight size={16} color={isDark ? "#909296" : "#868E96"} />
+              <IconArrowRight
+                size={16}
+                color={isDark ? "#909296" : "#868E96"}
+              />
             </Group>
           </UnstyledButton>
         );

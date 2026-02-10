@@ -67,41 +67,45 @@ interface ValidatedRow {
 const steps: Step[] = [
   {
     id: "select-account",
-    title: "Select Account",
-    description: "Choose Accurate account",
+    title: "Pilih Akun",
+    description: "Pilih akun Accurate",
   },
   {
     id: "upload",
-    title: "Upload File",
-    description: "Upload CSV or Excel",
+    title: "Unggah File",
+    description: "Unggah CSV atau Excel",
   },
   {
     id: "validate",
-    title: "Validate & Import",
-    description: "Review and confirm",
+    title: "Validasi & Impor",
+    description: "Tinjau dan konfirmasi",
   },
 ];
 
 const templateColumns = [
-  { name: "itemCode", required: true, description: "Item code from Accurate" },
+  {
+    name: "itemCode",
+    required: true,
+    description: "Kode barang dari Accurate",
+  },
   {
     name: "type",
     required: true,
-    description: "Penambahan or Pengurangan",
+    description: "Penambahan atau Pengurangan",
   },
-  { name: "quantity", required: true, description: "Positive number" },
-  { name: "unit", required: true, description: "Unit name" },
-  { name: "adjustmentDate", required: true, description: "YYYY-MM-DD format" },
+  { name: "quantity", required: true, description: "Angka positif" },
+  { name: "unit", required: true, description: "Nama satuan" },
+  { name: "adjustmentDate", required: true, description: "Format YYYY-MM-DD" },
   {
     name: "referenceNumber",
     required: false,
-    description: "Optional reference (Adjustment No)",
+    description: "Referensi opsional (No. Adjustment)",
   },
-  { name: "warehouse", required: false, description: "Warehouse name" },
+  { name: "warehouse", required: false, description: "Nama gudang" },
   {
     name: "description",
     required: false,
-    description: "Adjustment description",
+    description: "Deskripsi adjustment",
   },
 ];
 
@@ -152,12 +156,12 @@ export default function ImportInventoryAdjustmentPage() {
 
   const handleValidate = async () => {
     if (!selectedCredential) {
-      setError("Please select a credential");
+      setError("Silakan pilih kredensial");
       return;
     }
 
     if (!file) {
-      setError("Please select a file");
+      setError("Silakan pilih file");
       return;
     }
 
@@ -182,7 +186,7 @@ export default function ImportInventoryAdjustmentPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Validation failed");
+        throw new Error(data.error || "Validasi gagal");
       }
 
       const result = await response.json();
@@ -191,15 +195,15 @@ export default function ImportInventoryAdjustmentPage() {
 
       if (result.valid) {
         notifications.show({
-          title: "Validation Successful",
-          message: `All ${result.results.length} rows are valid and ready to import`,
+          title: "Validasi Berhasil",
+          message: `Semua ${result.results.length} baris valid dan siap diimpor`,
           color: "green",
           icon: <IconCheck size={16} />,
         });
       } else {
         notifications.show({
-          title: "Validation Issues Found",
-          message: `Found ${result.errors.length} errors that need to be fixed`,
+          title: "Masalah Validasi Ditemukan",
+          message: `Ditemukan ${result.errors.length} kesalahan yang harus diperbaiki`,
           color: "orange",
           icon: <IconAlertCircle size={16} />,
         });
@@ -207,7 +211,7 @@ export default function ImportInventoryAdjustmentPage() {
     } catch (err: any) {
       setError(err.message);
       notifications.show({
-        title: "Validation Failed",
+        title: "Validasi Gagal",
         message: err.message,
         color: "red",
         icon: <IconX size={16} />,
@@ -223,7 +227,7 @@ export default function ImportInventoryAdjustmentPage() {
     }
 
     if (validationErrors.length > 0) {
-      setError("Please fix validation errors before importing");
+      setError("Perbaiki kesalahan validasi sebelum mengimpor");
       return;
     }
 
@@ -243,7 +247,7 @@ export default function ImportInventoryAdjustmentPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Import failed");
+        throw new Error(data.error || "Impor gagal");
       }
 
       const result = await response.json();
@@ -251,24 +255,24 @@ export default function ImportInventoryAdjustmentPage() {
 
       if (result.success && result.failedCount === 0) {
         notifications.show({
-          title: "Import Successful",
-          message: `Successfully imported all ${result.successCount} adjustments to Accurate`,
+          title: "Impor Berhasil",
+          message: `Berhasil mengimpor semua ${result.successCount} adjustment ke Accurate`,
           color: "green",
           icon: <IconCheck size={16} />,
           autoClose: 5000,
         });
       } else if (result.successCount > 0) {
         notifications.show({
-          title: "Import Partially Successful",
-          message: `Imported ${result.successCount} adjustments, but ${result.failedCount} failed.`,
+          title: "Impor Berhasil Sebagian",
+          message: `${result.successCount} adjustment berhasil diimpor, ${result.failedCount} gagal.`,
           color: "orange",
           icon: <IconAlertCircle size={16} />,
           autoClose: 5000,
         });
       } else {
         notifications.show({
-          title: "Import Failed",
-          message: `Failed to import adjustments. ${result.failedCount} errors found.`,
+          title: "Impor Gagal",
+          message: `Gagal mengimpor adjustment. Ditemukan ${result.failedCount} kesalahan.`,
           color: "red",
           icon: <IconX size={16} />,
         });
@@ -276,7 +280,7 @@ export default function ImportInventoryAdjustmentPage() {
     } catch (err: any) {
       setError(err.message);
       notifications.show({
-        title: "Import Failed",
+        title: "Impor Gagal",
         message: err.message,
         color: "red",
         icon: <IconX size={16} />,
@@ -327,14 +331,14 @@ export default function ImportInventoryAdjustmentPage() {
             <ThemeIcon size={32} radius="md" variant="light" color="green">
               <IconFileImport size={18} />
             </ThemeIcon>
-            <Title order={2}>Import Inventory Adjustment</Title>
+            <Title order={2}>Impor Penyesuaian Persediaan</Title>
           </Group>
           <Text c="dimmed" size="sm">
-            Import inventory adjustment data from CSV or Excel files
+            Impor data inventory adjustment dari file CSV atau Excel
           </Text>
         </Box>
         <Badge size="lg" variant="light" color="green">
-          Step {activeStep + 1} of {steps.length}
+          Langkah {activeStep + 1} dari {steps.length}
         </Badge>
       </Group>
 
@@ -378,20 +382,20 @@ export default function ImportInventoryAdjustmentPage() {
           {(styles) => (
             <Box style={styles}>
               <StepperCard
-                title="Select Accurate Account"
-                description="Choose which account to import data to"
+                title="Pilih Akun Accurate"
+                description="Pilih akun tujuan impor data"
               >
                 {loadingCredentials ? (
                   <Stack gap="md" py="xl" align="center">
-                    <Text c="dimmed">Loading accounts...</Text>
+                    <Text c="dimmed">Memuat akun...</Text>
                   </Stack>
                 ) : credentials.length === 0 ? (
                   <EmptyState
                     variant="no-credentials"
-                    title="No accounts connected"
-                    description="Connect your Accurate account first to import data"
+                    title="Belum ada akun terhubung"
+                    description="Hubungkan akun Accurate terlebih dahulu untuk impor"
                     action={{
-                      label: "Connect Account",
+                      label: "Hubungkan Akun",
                       onClick: () =>
                         (window.location.href = "/dashboard/credentials"),
                     }}
@@ -447,7 +451,7 @@ export default function ImportInventoryAdjustmentPage() {
                             {cred.appKey}
                           </Text>
                           <Text size="xs" c="dimmed" mt={4}>
-                            Click to select
+                            Klik untuk memilih
                           </Text>
                         </Paper>
                       );
@@ -466,8 +470,8 @@ export default function ImportInventoryAdjustmentPage() {
               <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
                 {/* Upload Card */}
                 <StepperCard
-                  title="Upload File"
-                  description="Select your CSV or Excel file"
+                  title="Unggah File"
+                  description="Pilih file CSV atau Excel Anda"
                 >
                   <Stack gap="lg">
                     <FileDropzone
@@ -476,8 +480,8 @@ export default function ImportInventoryAdjustmentPage() {
                       accept=".csv,.xlsx"
                       maxSize={10 * 1024 * 1024}
                       value={file}
-                      title="Drop your file here or click to browse"
-                      description="Supports CSV and Excel (XLSX) files"
+                      title="Tarik file ke sini atau klik untuk memilih"
+                      description="Mendukung file CSV dan Excel (XLSX)"
                     />
 
                     <Divider />
@@ -488,13 +492,13 @@ export default function ImportInventoryAdjustmentPage() {
                           <IconSettings size={14} />
                         </ThemeIcon>
                         <Text size="sm" fw={600}>
-                          Import Options
+                          Opsi Impor
                         </Text>
                       </Group>
 
                       <Checkbox
-                        label="Use Automatic Numbering"
-                        description="If checked, Accurate will generate the adjustment number automatically"
+                        label="Gunakan Penomoran Otomatis"
+                        description="Jika dicentang, Accurate akan membuat nomor adjustment otomatis"
                         checked={useAutoNumbering}
                         onChange={(event) =>
                           setUseAutoNumbering(event.currentTarget.checked)
@@ -510,8 +514,8 @@ export default function ImportInventoryAdjustmentPage() {
 
                 {/* Template Info Card */}
                 <StepperCard
-                  title="Template Format"
-                  description="Required columns for your import file"
+                  title="Format Templat"
+                  description="Kolom yang wajib ada pada file impor"
                 >
                   <Stack gap="md">
                     <Alert
@@ -521,8 +525,8 @@ export default function ImportInventoryAdjustmentPage() {
                       icon={<IconInfoCircle size={16} />}
                     >
                       <Text size="sm">
-                        Your file must contain the required columns listed
-                        below. Column names should match exactly.
+                        File Anda harus memiliki kolom wajib berikut. Nama kolom
+                        harus sama persis.
                       </Text>
                     </Alert>
 
@@ -551,7 +555,7 @@ export default function ImportInventoryAdjustmentPage() {
                                   variant={col.required ? "filled" : "light"}
                                   color={col.required ? "blue" : "gray"}
                                 >
-                                  {col.required ? "Required" : "Optional"}
+                                  {col.required ? "Wajib" : "Opsional"}
                                 </Badge>
                                 <Text size="sm" fw={600} ff="monospace">
                                   {col.name}
@@ -586,7 +590,7 @@ export default function ImportInventoryAdjustmentPage() {
                         URL.revokeObjectURL(url);
                       }}
                     >
-                      Download Template
+                      Unduh Template
                     </Button>
                   </Stack>
                 </StepperCard>
@@ -616,7 +620,7 @@ export default function ImportInventoryAdjustmentPage() {
                   <Group justify="space-between" align="flex-start" wrap="wrap">
                     <Stack gap="md">
                       <Text size="lg" fw={600}>
-                        Import Summary
+                        Ringkasan Impor
                       </Text>
                       <SimpleGrid cols={{ base: 1, sm: 4 }} spacing="lg">
                         <Group gap="sm">
@@ -630,7 +634,7 @@ export default function ImportInventoryAdjustmentPage() {
                           </ThemeIcon>
                           <Box>
                             <Text size="xs" c="dimmed">
-                              Account
+                              Akun
                             </Text>
                             <Text size="sm" fw={600}>
                               {selectedCredentialData?.appKey || "-"}
@@ -668,7 +672,7 @@ export default function ImportInventoryAdjustmentPage() {
                           </ThemeIcon>
                           <Box>
                             <Text size="xs" c="dimmed">
-                              Valid Rows
+                              Baris Valid
                             </Text>
                             <Text size="sm" fw={600} c="green">
                               {validRowsCount}
@@ -687,7 +691,7 @@ export default function ImportInventoryAdjustmentPage() {
                           </ThemeIcon>
                           <Box>
                             <Text size="xs" c="dimmed">
-                              Invalid Rows
+                              Baris Tidak Valid
                             </Text>
                             <Text size="sm" fw={600} c="red">
                               {invalidRowsCount}
@@ -704,7 +708,7 @@ export default function ImportInventoryAdjustmentPage() {
                         loading={validating}
                         leftSection={<IconListCheck size={16} />}
                       >
-                        Re-validate
+                        Validasi Ulang
                       </Button>
                       <Button
                         size="lg"
@@ -719,7 +723,7 @@ export default function ImportInventoryAdjustmentPage() {
                             : undefined,
                         }}
                       >
-                        Import to Accurate
+                        Impor ke Accurate
                       </Button>
                     </Group>
                   </Group>
@@ -746,16 +750,16 @@ export default function ImportInventoryAdjustmentPage() {
                     }
                     title={
                       importResults.failedCount === 0
-                        ? "Import Completed Successfully"
+                        ? "Impor Berhasil"
                         : importResults.successCount > 0
-                          ? "Import Partially Completed"
-                          : "Import Failed"
+                          ? "Impor Berhasil Sebagian"
+                          : "Impor Gagal"
                     }
                   >
                     <Stack gap="sm">
                       <Text size="sm">
-                        Successfully imported:{" "}
-                        <strong>{importResults.successCount}</strong> | Failed:{" "}
+                        Berhasil diimpor:{" "}
+                        <strong>{importResults.successCount}</strong> | Gagal:{" "}
                         <strong>{importResults.failedCount}</strong>
                       </Text>
 
@@ -766,8 +770,8 @@ export default function ImportInventoryAdjustmentPage() {
                           ))}
                           {importResults.errors.length > 5 && (
                             <List.Item>
-                              ...and {importResults.errors.length - 5} more
-                              errors
+                              ...dan {importResults.errors.length - 5} kesalahan
+                              lainnya
                             </List.Item>
                           )}
                         </List>
@@ -779,7 +783,7 @@ export default function ImportInventoryAdjustmentPage() {
                         onClick={handleReset}
                         w="fit-content"
                       >
-                        Import Another File
+                        Impor File Lain
                       </Button>
                     </Stack>
                   </Alert>
@@ -792,7 +796,7 @@ export default function ImportInventoryAdjustmentPage() {
                     color="red"
                     variant="light"
                     radius="md"
-                    title={`${validationErrors.length} Validation Errors`}
+                    title={`${validationErrors.length} Kesalahan Validasi`}
                   >
                     <List size="sm" spacing="xs">
                       {validationErrors.slice(0, 10).map((err, idx) => (
@@ -800,7 +804,8 @@ export default function ImportInventoryAdjustmentPage() {
                       ))}
                       {validationErrors.length > 10 && (
                         <List.Item>
-                          ...and {validationErrors.length - 10} more errors
+                          ...dan {validationErrors.length - 10} kesalahan
+                          lainnya
                         </List.Item>
                       )}
                     </List>
@@ -809,23 +814,23 @@ export default function ImportInventoryAdjustmentPage() {
 
                 {/* Validation Preview */}
                 <StepperCard
-                  title="Data Preview"
+                  title="Pratinjau Data"
                   description={
                     isValidationComplete
-                      ? `${validatedRows.length} rows loaded • ${validRowsCount} valid • ${invalidRowsCount} invalid`
-                      : "Validation results will appear here"
+                      ? `${validatedRows.length} baris dimuat • ${validRowsCount} valid • ${invalidRowsCount} tidak valid`
+                      : "Hasil validasi akan tampil di sini"
                   }
                 >
                   {validating ? (
                     <Stack gap="md" py="xl" align="center">
-                      <Text c="dimmed">Validating your file...</Text>
+                      <Text c="dimmed">Memvalidasi file Anda...</Text>
                       <Progress value={100} size="sm" animated w={200} />
                     </Stack>
                   ) : !isValidationComplete ? (
                     <EmptyState
                       variant="no-data"
-                      title="No validation results"
-                      description="Click 'Re-validate' to check your file"
+                      title="Belum ada hasil validasi"
+                      description="Klik 'Validasi Ulang' untuk memeriksa file"
                       size="sm"
                     />
                   ) : (
@@ -846,13 +851,13 @@ export default function ImportInventoryAdjustmentPage() {
                         <Table.Thead>
                           <Table.Tr>
                             <Table.Th w={80}>Status</Table.Th>
-                            <Table.Th>Item Code</Table.Th>
-                            <Table.Th>Item Name</Table.Th>
-                            <Table.Th>Type</Table.Th>
-                            <Table.Th>Quantity</Table.Th>
-                            <Table.Th>Unit</Table.Th>
-                            <Table.Th>Date</Table.Th>
-                            <Table.Th>Warehouse</Table.Th>
+                            <Table.Th>Kode Barang</Table.Th>
+                            <Table.Th>Nama Barang</Table.Th>
+                            <Table.Th>Tipe</Table.Th>
+                            <Table.Th>Kuantitas</Table.Th>
+                            <Table.Th>Satuan</Table.Th>
+                            <Table.Th>Tanggal</Table.Th>
+                            <Table.Th>Gudang</Table.Th>
                           </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>
@@ -884,7 +889,7 @@ export default function ImportInventoryAdjustmentPage() {
                                     color="red"
                                     leftSection={<IconX size={10} />}
                                   >
-                                    Invalid
+                                    Tidak Valid
                                   </Badge>
                                 )}
                               </Table.Td>
@@ -955,7 +960,7 @@ export default function ImportInventoryAdjustmentPage() {
             onClick={handleBack}
             disabled={activeStep === 0}
           >
-            Back
+            Kembali
           </Button>
 
           <Group gap="sm">
@@ -967,7 +972,7 @@ export default function ImportInventoryAdjustmentPage() {
                 disabled={!canImport}
                 color="green"
               >
-                Import Now
+                Impor Sekarang
               </Button>
             ) : (
               <Button
@@ -979,7 +984,7 @@ export default function ImportInventoryAdjustmentPage() {
                   (activeStep === 1 && !canProceedToStep3)
                 }
               >
-                {activeStep === 1 ? "Validate & Continue" : "Continue"}
+                {activeStep === 1 ? "Validasi & Lanjut" : "Lanjut"}
               </Button>
             )}
           </Group>

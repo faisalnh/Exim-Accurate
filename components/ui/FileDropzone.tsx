@@ -60,9 +60,9 @@ function getFileIcon(filename: string): ReactNode {
 }
 
 function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 Bytes";
+  if (bytes === 0) return "0 B";
   const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
@@ -76,7 +76,7 @@ export function FileDropzone({
   loading = false,
   value,
   error,
-  title = "Drop file here or click to upload",
+  title = "Tarik file ke sini atau klik untuk unggah",
   description,
   icon,
   showPreview = true,
@@ -96,14 +96,17 @@ export function FileDropzone({
 
       // Check file size
       if (file.size > maxSize) {
-        setLocalError(`File size exceeds ${formatFileSize(maxSize)} limit`);
+        setLocalError(`Ukuran file melebihi batas ${formatFileSize(maxSize)}`);
         return false;
       }
 
       // Check file type
       if (accept) {
-        const acceptedTypes = accept.split(",").map((t) => t.trim().toLowerCase());
-        const fileExtension = "." + (file.name.split(".").pop()?.toLowerCase() || "");
+        const acceptedTypes = accept
+          .split(",")
+          .map((t) => t.trim().toLowerCase());
+        const fileExtension =
+          "." + (file.name.split(".").pop()?.toLowerCase() || "");
         const fileMimeType = file.type.toLowerCase();
 
         const isAccepted = acceptedTypes.some((type) => {
@@ -118,14 +121,14 @@ export function FileDropzone({
         });
 
         if (!isAccepted) {
-          setLocalError(`File type not accepted. Accepted: ${accept}`);
+          setLocalError(`Jenis file tidak didukung. Diterima: ${accept}`);
           return false;
         }
       }
 
       return true;
     },
-    [accept, maxSize]
+    [accept, maxSize],
   );
 
   const handleFileSelect = useCallback(
@@ -134,7 +137,7 @@ export function FileDropzone({
         onFileSelect(file);
       }
     },
-    [validateFile, onFileSelect]
+    [validateFile, onFileSelect],
   );
 
   const handleDragEnter = useCallback(
@@ -145,7 +148,7 @@ export function FileDropzone({
         setIsDragging(true);
       }
     },
-    [disabled, loading]
+    [disabled, loading],
   );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -172,7 +175,7 @@ export function FileDropzone({
         handleFileSelect(files[0]);
       }
     },
-    [disabled, loading, handleFileSelect]
+    [disabled, loading, handleFileSelect],
   );
 
   const handleClick = useCallback(() => {
@@ -190,7 +193,7 @@ export function FileDropzone({
       // Reset input value so same file can be selected again
       e.target.value = "";
     },
-    [handleFileSelect]
+    [handleFileSelect],
   );
 
   const handleRemove = useCallback(
@@ -199,30 +202,26 @@ export function FileDropzone({
       setLocalError(null);
       onFileRemove?.();
     },
-    [onFileRemove]
+    [onFileRemove],
   );
 
   const getBorderColor = () => {
     if (displayError) return "var(--mantine-color-red-6)";
     if (isDragging) return "var(--mantine-color-brand-6)";
     if (value) return "var(--mantine-color-green-6)";
-    return isDark ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-3)";
+    return isDark
+      ? "var(--mantine-color-dark-4)"
+      : "var(--mantine-color-gray-3)";
   };
 
   const getBackgroundColor = () => {
     if (isDragging) {
-      return isDark
-        ? "rgba(34, 139, 230, 0.1)"
-        : "rgba(34, 139, 230, 0.05)";
+      return isDark ? "rgba(34, 139, 230, 0.1)" : "rgba(34, 139, 230, 0.05)";
     }
     if (value) {
-      return isDark
-        ? "rgba(64, 192, 87, 0.05)"
-        : "rgba(64, 192, 87, 0.03)";
+      return isDark ? "rgba(64, 192, 87, 0.05)" : "rgba(64, 192, 87, 0.03)";
     }
-    return isDark
-      ? "rgba(255, 255, 255, 0.02)"
-      : "rgba(0, 0, 0, 0.01)";
+    return isDark ? "rgba(255, 255, 255, 0.02)" : "rgba(0, 0, 0, 0.01)";
   };
 
   // Show file preview if a file is selected
@@ -240,12 +239,7 @@ export function FileDropzone({
         >
           <Group justify="space-between" wrap="nowrap">
             <Group gap="md" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-              <ThemeIcon
-                size={48}
-                radius="md"
-                variant="light"
-                color="green"
-              >
+              <ThemeIcon size={48} radius="md" variant="light" color="green">
                 {getFileIcon(value.name)}
               </ThemeIcon>
               <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
@@ -268,7 +262,7 @@ export function FileDropzone({
                   <Group gap={4}>
                     <IconCheck size={14} color="var(--mantine-color-green-6)" />
                     <Text size="xs" c="green">
-                      Ready to process
+                      Siap diproses
                     </Text>
                   </Group>
                 )}
@@ -280,7 +274,7 @@ export function FileDropzone({
                 size="sm"
                 radius="xl"
                 onClick={handleRemove}
-                aria-label="Remove file"
+                aria-label="Hapus file"
               />
             )}
           </Group>
@@ -355,13 +349,14 @@ export function FileDropzone({
 
           <Stack gap={4} align="center">
             <Text size="md" fw={600} c={isDragging ? "brand" : undefined}>
-              {isDragging ? "Drop file here" : title}
+              {isDragging ? "Letakkan file di sini" : title}
             </Text>
             <Text size="sm" c="dimmed">
-              {description || `Supported formats: ${accept.replace(/\./g, "").toUpperCase()}`}
+              {description ||
+                `Format didukung: ${accept.replace(/\./g, "").toUpperCase()}`}
             </Text>
             <Text size="xs" c="dimmed">
-              Max file size: {formatFileSize(maxSize)}
+              Ukuran file maksimum: {formatFileSize(maxSize)}
             </Text>
           </Stack>
         </Stack>
@@ -389,7 +384,7 @@ export function CompactDropzone({
   onFileSelect,
   accept = ".csv,.xlsx",
   disabled = false,
-  placeholder = "Click or drop file",
+  placeholder = "Klik atau letakkan file",
   value,
 }: CompactDropzoneProps) {
   const { colorScheme } = useMantineColorScheme();
@@ -448,8 +443,8 @@ export function CompactDropzone({
             isDragging
               ? "var(--mantine-color-brand-6)"
               : isDark
-              ? "var(--mantine-color-dark-4)"
-              : "var(--mantine-color-gray-4)"
+                ? "var(--mantine-color-dark-4)"
+                : "var(--mantine-color-gray-4)"
           }`,
           borderRadius: rem(8),
           cursor: disabled ? "not-allowed" : "pointer",

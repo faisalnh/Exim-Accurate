@@ -8,7 +8,7 @@ import { getBaseUrl } from "@/lib/url";
 function redirectWithStatus(req: NextRequest, search: string) {
   const baseUrl = getBaseUrl(req);
   return NextResponse.redirect(
-    new URL(`/dashboard/credentials?${search}`, baseUrl)
+    new URL(`/dashboard/credentials?${search}`, baseUrl),
   );
 }
 
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   if (!session?.user) {
     const baseUrl = getBaseUrl(req);
     return NextResponse.redirect(
-      new URL("/login?callbackUrl=/dashboard/credentials", baseUrl)
+      new URL("/login?callbackUrl=/dashboard/credentials", baseUrl),
     );
   }
 
@@ -28,14 +28,14 @@ export async function GET(req: NextRequest) {
   if (error) {
     return redirectWithStatus(
       req,
-      `status=error&message=${encodeURIComponent(error)}`
+      `status=error&message=${encodeURIComponent(error)}`,
     );
   }
 
   if (!code) {
     return redirectWithStatus(
       req,
-      "status=error&message=Missing%20authorization%20code"
+      "status=error&message=Kode%20otorisasi%20tidak%20ditemukan",
     );
   }
 
@@ -45,16 +45,24 @@ export async function GET(req: NextRequest) {
   const appKey = process.env.ACCURATE_APP_KEY;
   const signatureSecret = process.env.ACCURATE_SIGNATURE_SECRET;
 
-  if (!clientId || !clientSecret || !redirectUri || !appKey || !signatureSecret) {
+  if (
+    !clientId ||
+    !clientSecret ||
+    !redirectUri ||
+    !appKey ||
+    !signatureSecret
+  ) {
     return redirectWithStatus(
       req,
-      "status=error&message=Accurate%20OAuth%20env%20vars%20missing"
+      "status=error&message=Variabel%20lingkungan%20OAuth%20Accurate%20belum%20lengkap",
     );
   }
 
   try {
     // Use Basic Auth for client credentials as per OAuth 2.0 spec
-    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
+      "base64",
+    );
 
     const tokenResponse = await fetch(
       "https://account.accurate.id/oauth/token",
@@ -62,33 +70,40 @@ export async function GET(req: NextRequest) {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "Authorization": `Basic ${credentials}`,
+          Authorization: `Basic ${credentials}`,
         },
         body: new URLSearchParams({
           grant_type: "authorization_code",
           code,
           redirect_uri: redirectUri,
         }),
-      }
+      },
     );
 
     if (!tokenResponse.ok) {
       const text = await tokenResponse.text();
-      throw new Error(text || "Failed to exchange code for token");
+      throw new Error(text || "Gagal menukar kode menjadi token");
     }
 
     const tokenJson = await tokenResponse.json();
-    console.log("[OAuth callback] Token response:", JSON.stringify(tokenJson, null, 2));
+    console.log(
+      "[OAuth callback] Token response:",
+      JSON.stringify(tokenJson, null, 2),
+    );
 
     const apiToken =
       tokenJson.access_token || tokenJson.api_token || tokenJson.token;
     const refreshToken = tokenJson.refresh_token;
 
     if (!apiToken) {
-      throw new Error("API token not found in token response");
+      throw new Error("Token API tidak ditemukan pada respons token");
     }
 
-    const { host, session: accurateSession, dbId } = await resolveHost(apiToken);
+    const {
+      host,
+      session: accurateSession,
+      dbId,
+    } = await resolveHost(apiToken);
 
     await prisma.accurateCredentials.create({
       data: {
@@ -105,10 +120,10 @@ export async function GET(req: NextRequest) {
 
     return redirectWithStatus(req, "status=connected");
   } catch (err: any) {
-    const message = err?.message || "Unexpected OAuth error";
+    const message = err?.message || "Kesalahan OAuth tidak terduga";
     return redirectWithStatus(
       req,
-      `status=error&message=${encodeURIComponent(message)}`
+      `status=error&message=${encodeURIComponent(message)}`,
     );
   }
 }

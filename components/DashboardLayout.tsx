@@ -34,6 +34,7 @@ import {
   IconExternalLink,
 } from "@tabler/icons-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { LanguageSelect } from "@/components/ui/LanguageSelect";
 
 interface NavItem {
   label: string;
@@ -50,33 +51,33 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    label: "Dashboard",
+    label: "Dasbor",
     icon: <IconDashboard size={20} />,
     href: "/dashboard",
   },
   {
-    label: "Inventory Adjustment",
+    label: "Penyesuaian Persediaan",
     icon: <IconAdjustments size={20} />,
     children: [
       {
-        label: "Export (Get data)",
+        label: "Ekspor (Ambil data)",
         icon: <IconFileExport size={16} />,
         href: "/dashboard/export/inventory-adjustment",
       },
       {
-        label: "Import (Input data)",
+        label: "Impor (Input data)",
         icon: <IconFileImport size={16} />,
         href: "/dashboard/import/inventory-adjustment",
       },
     ],
   },
   {
-    label: "Self Checkout",
+    label: "Checkout Mandiri",
     icon: <IconScan size={20} />,
     href: "/dashboard/self-checkout",
   },
   {
-    label: "Accurate Credentials",
+    label: "Kredensial Accurate",
     icon: <IconKey size={20} />,
     href: "/dashboard/credentials",
   },
@@ -101,7 +102,7 @@ function UserMenu() {
   };
 
   const getUserName = (email?: string | null) => {
-    if (!email) return "User";
+    if (!email) return "Pengguna";
     const localPart = email.split("@")[0];
     return localPart
       .split(/[._-]/)
@@ -145,26 +146,26 @@ function UserMenu() {
       </Menu.Target>
 
       <Menu.Dropdown>
-        <Menu.Label>Account</Menu.Label>
+        <Menu.Label>Akun</Menu.Label>
         <Menu.Item
           leftSection={<IconUser size={16} />}
           onClick={() => router.push("/dashboard/profile")}
         >
-          Profile
+          Profil
         </Menu.Item>
         <Menu.Item
           leftSection={<IconSettings size={16} />}
           onClick={() => router.push("/dashboard/settings")}
         >
-          Settings
+          Pengaturan
         </Menu.Item>
         <Menu.Divider />
-        <Menu.Label>Links</Menu.Label>
+        <Menu.Label>Tautan</Menu.Label>
         <Menu.Item
           leftSection={<IconExternalLink size={16} />}
           onClick={() => window.open("/kiosk", "_blank")}
         >
-          Open Kiosk Mode
+          Buka Mode Kiosk
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item
@@ -172,7 +173,7 @@ function UserMenu() {
           color="red"
           onClick={handleSignOut}
         >
-          Sign out
+          Keluar
         </Menu.Item>
       </Menu.Dropdown>
     </Menu>
@@ -267,6 +268,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </Group>
 
           <Group gap="sm">
+            <LanguageSelect />
             <ThemeToggle />
             <UserMenu />
           </Group>
@@ -427,11 +429,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               }}
             />
             <Text size="xs" fw={500}>
-              Connected to Accurate
+              Terhubung ke Accurate
             </Text>
           </Group>
           <Text size="xs" c="dimmed">
-            API Status: Operational
+            Status API: Operasional
           </Text>
         </Box>
       </AppShell.Navbar>

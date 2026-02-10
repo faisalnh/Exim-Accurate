@@ -92,28 +92,26 @@ export function Stepper({
   const getStepColor = (stepIndex: number) => {
     if (isStepCompleted(stepIndex)) return "var(--mantine-color-green-6)";
     if (isStepActive(stepIndex)) return "var(--mantine-color-brand-6)";
-    return isDark ? "var(--mantine-color-dark-3)" : "var(--mantine-color-gray-4)";
+    return isDark
+      ? "var(--mantine-color-dark-3)"
+      : "var(--mantine-color-gray-4)";
   };
 
   const getStepBgColor = (stepIndex: number) => {
     if (isStepCompleted(stepIndex)) {
-      return isDark
-        ? "rgba(64, 192, 87, 0.15)"
-        : "rgba(64, 192, 87, 0.1)";
+      return isDark ? "rgba(64, 192, 87, 0.15)" : "rgba(64, 192, 87, 0.1)";
     }
     if (isStepActive(stepIndex)) {
-      return isDark
-        ? "rgba(34, 139, 230, 0.15)"
-        : "rgba(34, 139, 230, 0.1)";
+      return isDark ? "rgba(34, 139, 230, 0.15)" : "rgba(34, 139, 230, 0.1)";
     }
-    return isDark
-      ? "rgba(255, 255, 255, 0.05)"
-      : "rgba(0, 0, 0, 0.03)";
+    return isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)";
   };
 
   const getLineColor = (stepIndex: number) => {
     if (isStepCompleted(stepIndex)) return "var(--mantine-color-green-6)";
-    return isDark ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-3)";
+    return isDark
+      ? "var(--mantine-color-dark-4)"
+      : "var(--mantine-color-gray-3)";
   };
 
   const renderStepIcon = (step: Step, index: number) => {
@@ -315,9 +313,9 @@ export function StepperNavigation({
   onNext,
   onPrev,
   onComplete,
-  nextLabel = "Next",
-  prevLabel = "Back",
-  completeLabel = "Complete",
+  nextLabel = "Lanjut",
+  prevLabel = "Kembali",
+  completeLabel = "Selesai",
   nextDisabled = false,
   loading = false,
   children,
@@ -366,7 +364,11 @@ interface StepperCardProps {
   description?: string;
 }
 
-export function StepperCard({ children, title, description }: StepperCardProps) {
+export function StepperCard({
+  children,
+  title,
+  description,
+}: StepperCardProps) {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
 

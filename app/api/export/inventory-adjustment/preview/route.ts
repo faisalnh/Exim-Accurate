@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Tidak diizinkan" }, { status: 401 });
   }
 
   try {
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
     if (!credentialId || !startDate || !endDate) {
       return NextResponse.json(
-        { error: "Missing required parameters" },
+        { error: "Parameter wajib belum lengkap" },
         { status: 400 }
       );
     }
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     if (!credential || !credential.host || !credential.dbId) {
       return NextResponse.json(
-        { error: "Credential not found or not properly configured. Please reconnect to Accurate." },
+        { error: "Kredensial tidak ditemukan atau belum dikonfigurasi dengan benar. Silakan hubungkan ulang ke Accurate." },
         { status: 404 }
       );
     }
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     const clientSecret = process.env.ACCURATE_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      throw new Error("Missing ACCURATE_CLIENT_ID or ACCURATE_CLIENT_SECRET environment variables");
+      throw new Error("Variabel lingkungan ACCURATE_CLIENT_ID atau ACCURATE_CLIENT_SECRET belum diatur");
     }
 
     let currentAccessToken = credential.apiToken;
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
       } catch (tokenError: any) {
         console.error("[preview] Token refresh failed:", tokenError.message);
         return NextResponse.json(
-          { error: "Session expired. Please reconnect to Accurate." },
+          { error: "Sesi kedaluwarsa. Silakan hubungkan ulang ke Accurate." },
           { status: 401 }
         );
       }
@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
   } catch (err: any) {
     console.error("[preview] Error:", err);
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: err.message || "Kesalahan server internal" },
       { status: 500 }
     );
   }
