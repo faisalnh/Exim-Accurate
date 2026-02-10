@@ -4,11 +4,16 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
+import { id } from "./translations/id";
+import { en } from "./translations/en";
 
-export type AppLanguage = "id";
+export type AppLanguage = "id" | "en";
+
+const translations = { id, en };
 
 export interface LanguageOption {
   value: AppLanguage;
@@ -19,48 +24,55 @@ const STORAGE_KEY = "exima.language";
 
 const languageOptions: LanguageOption[] = [
   { value: "id", label: "Bahasa Indonesia" },
+  { value: "en", label: "English" },
 ];
 
 interface LanguageContextValue {
   language: AppLanguage;
   options: LanguageOption[];
   setLanguage: (value: string | null) => void;
+  t: typeof id;
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<AppLanguage>(() => {
-    if (typeof window === "undefined") {
-      return "id";
-    }
+  const [language, setLanguageState] = useState<AppLanguage>("id");
 
+  useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      return stored === "id" ? "id" : "id";
-    } catch {
-      return "id";
-    }
-  });
-
-  const setLanguage = useCallback((value: string | null) => {
-    if (value !== "id") {
-      return;
-    }
-
-    setLanguageState("id");
-    try {
-      localStorage.setItem(STORAGE_KEY, "id");
+      if (stored === "en" || stored === "id") {
+        setLanguageState(stored as AppLanguage);
+      }
     } catch {
       // Ignore localStorage access errors in restricted environments.
     }
   }, []);
+
+  const setLanguage = useCallback((value: string | null) => {
+    if (value !== "id" && value !== "en") {
+      return;
+    }
+
+    setLanguageState(value);
+    try {
+      localStorage.setItem(STORAGE_KEY, value);
+    } catch {
+      // Ignore localStorage access errors in restricted environments.
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   const contextValue = useMemo(
     () => ({
       language,
       options: languageOptions,
       setLanguage,
+      t: translations[language],
     }),
     [language, setLanguage],
   );

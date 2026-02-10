@@ -42,6 +42,7 @@ import {
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { Stepper, StepperCard, type Step } from "@/components/ui";
+import { useLanguage } from "@/lib/language";
 import { FileDropzone } from "@/components/ui/FileDropzone";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -64,53 +65,74 @@ interface ValidatedRow {
   errors: string[];
 }
 
-const steps: Step[] = [
-  {
-    id: "select-account",
-    title: "Pilih Akun",
-    description: "Pilih akun Accurate",
-  },
-  {
-    id: "upload",
-    title: "Unggah File",
-    description: "Unggah CSV atau Excel",
-  },
-  {
-    id: "validate",
-    title: "Validasi & Impor",
-    description: "Tinjau dan konfirmasi",
-  },
-];
-
-const templateColumns = [
-  {
-    name: "itemCode",
-    required: true,
-    description: "Kode barang dari Accurate",
-  },
-  {
-    name: "type",
-    required: true,
-    description: "Penambahan atau Pengurangan",
-  },
-  { name: "quantity", required: true, description: "Angka positif" },
-  { name: "unit", required: true, description: "Nama satuan" },
-  { name: "adjustmentDate", required: true, description: "Format YYYY-MM-DD" },
-  {
-    name: "referenceNumber",
-    required: false,
-    description: "Referensi opsional (No. Adjustment)",
-  },
-  { name: "warehouse", required: false, description: "Nama gudang" },
-  {
-    name: "description",
-    required: false,
-    description: "Deskripsi adjustment",
-  },
-];
-
 export default function ImportInventoryAdjustmentPage() {
+  const { t, language } = useLanguage();
   const { colorScheme } = useMantineColorScheme();
+
+  const steps: Step[] = [
+    {
+      id: "select-account",
+      title: t.inventoryAdjustment.import.steps.selectAccount,
+      description: t.inventoryAdjustment.import.steps.selectAccountDesc,
+    },
+    {
+      id: "upload",
+      title: t.inventoryAdjustment.import.steps.upload,
+      description: t.inventoryAdjustment.import.steps.uploadDesc,
+    },
+    {
+      id: "validate",
+      title: t.inventoryAdjustment.import.steps.review,
+      description: t.inventoryAdjustment.import.steps.reviewDesc,
+    },
+  ];
+
+  const templateColumns = [
+    {
+      name: "date",
+      required: true,
+      description: t.inventoryAdjustment.import.upload.template.columns.date,
+    },
+    {
+      name: "number",
+      required: false,
+      description: t.inventoryAdjustment.import.upload.template.columns.number,
+    },
+    {
+      name: "description",
+      required: false,
+      description:
+        t.inventoryAdjustment.import.upload.template.columns.description,
+    },
+    {
+      name: "itemNo",
+      required: true,
+      description: t.inventoryAdjustment.import.upload.template.columns.itemNo,
+    },
+    {
+      name: "quantity",
+      required: true,
+      description:
+        t.inventoryAdjustment.import.upload.template.columns.quantity,
+    },
+    {
+      name: "unit",
+      required: true,
+      description: t.inventoryAdjustment.import.upload.template.columns.unit,
+    },
+    {
+      name: "warehouse",
+      required: false,
+      description:
+        t.inventoryAdjustment.import.upload.template.columns.warehouse,
+    },
+    {
+      name: "detailDescription",
+      required: false,
+      description:
+        t.inventoryAdjustment.import.upload.template.columns.detailDescription,
+    },
+  ];
   const isDark = colorScheme === "dark";
 
   const [activeStep, setActiveStep] = useState(0);
@@ -328,17 +350,18 @@ export default function ImportInventoryAdjustmentPage() {
       <Group justify="space-between" align="flex-start">
         <Box>
           <Group gap="sm" mb={4}>
-            <ThemeIcon size={32} radius="md" variant="light" color="green">
+            <ThemeIcon size={32} radius="md" variant="light" color="brand">
               <IconFileImport size={18} />
             </ThemeIcon>
-            <Title order={2}>Impor Penyesuaian Persediaan</Title>
+            <Title order={2}>{t.inventoryAdjustment.import.title}</Title>
           </Group>
           <Text c="dimmed" size="sm">
-            Impor data inventory adjustment dari file CSV atau Excel
+            {t.inventoryAdjustment.import.description}
           </Text>
         </Box>
-        <Badge size="lg" variant="light" color="green">
-          Langkah {activeStep + 1} dari {steps.length}
+        <Badge size="lg" variant="light" color="blue">
+          {language === "id" ? "Langkah" : "Step"} {activeStep + 1} /{" "}
+          {steps.length}
         </Badge>
       </Group>
 
@@ -382,20 +405,24 @@ export default function ImportInventoryAdjustmentPage() {
           {(styles) => (
             <Box style={styles}>
               <StepperCard
-                title="Pilih Akun Accurate"
-                description="Pilih akun tujuan impor data"
+                title={t.inventoryAdjustment.import.steps.selectAccount}
+                description={
+                  t.inventoryAdjustment.import.steps.selectAccountDesc
+                }
               >
                 {loadingCredentials ? (
                   <Stack gap="md" py="xl" align="center">
-                    <Text c="dimmed">Memuat akun...</Text>
+                    <Text c="dimmed">{t.common.processing}</Text>
                   </Stack>
                 ) : credentials.length === 0 ? (
                   <EmptyState
                     variant="no-credentials"
-                    title="Belum ada akun terhubung"
-                    description="Hubungkan akun Accurate terlebih dahulu untuk impor"
+                    title={t.dashboard.emptyState.noCredentials.title}
+                    description={
+                      t.dashboard.emptyState.noCredentials.description
+                    }
                     action={{
-                      label: "Hubungkan Akun",
+                      label: t.dashboard.credentials.connectButton,
                       onClick: () =>
                         (window.location.href = "/dashboard/credentials"),
                     }}
@@ -451,7 +478,9 @@ export default function ImportInventoryAdjustmentPage() {
                             {cred.appKey}
                           </Text>
                           <Text size="xs" c="dimmed" mt={4}>
-                            Klik untuk memilih
+                            {language === "id"
+                              ? "Klik untuk memilih"
+                              : "Click to select"}
                           </Text>
                         </Paper>
                       );
@@ -470,8 +499,12 @@ export default function ImportInventoryAdjustmentPage() {
               <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
                 {/* Upload Card */}
                 <StepperCard
-                  title="Unggah File"
-                  description="Pilih file CSV atau Excel Anda"
+                  title={language === "id" ? "Unggah File" : "Upload Your File"}
+                  description={
+                    language === "id"
+                      ? "Pilih file CSV atau Excel Anda"
+                      : "Select your CSV or Excel file"
+                  }
                 >
                   <Stack gap="lg">
                     <FileDropzone
@@ -480,8 +513,16 @@ export default function ImportInventoryAdjustmentPage() {
                       accept=".csv,.xlsx"
                       maxSize={10 * 1024 * 1024}
                       value={file}
-                      title="Tarik file ke sini atau klik untuk memilih"
-                      description="Mendukung file CSV dan Excel (XLSX)"
+                      title={
+                        language === "id"
+                          ? "Tarik file ke sini atau klik untuk memilih"
+                          : "Drop file here or click to choose"
+                      }
+                      description={
+                        language === "id"
+                          ? "Mendukung file CSV dan Excel (XLSX)"
+                          : "Supports CSV and Excel (XLSX) files"
+                      }
                     />
 
                     <Divider />
@@ -492,13 +533,21 @@ export default function ImportInventoryAdjustmentPage() {
                           <IconSettings size={14} />
                         </ThemeIcon>
                         <Text size="sm" fw={600}>
-                          Opsi Impor
+                          {language === "id" ? "Opsi Impor" : "Import Options"}
                         </Text>
                       </Group>
 
                       <Checkbox
-                        label="Gunakan Penomoran Otomatis"
-                        description="Jika dicentang, Accurate akan membuat nomor adjustment otomatis"
+                        label={
+                          language === "id"
+                            ? "Gunakan Penomoran Otomatis"
+                            : "Use Auto Numbering"
+                        }
+                        description={
+                          language === "id"
+                            ? "Jika dicentang, Accurate akan membuat nomor adjustment otomatis"
+                            : "When enabled, Accurate will auto-generate adjustment numbers"
+                        }
                         checked={useAutoNumbering}
                         onChange={(event) =>
                           setUseAutoNumbering(event.currentTarget.checked)
@@ -708,7 +757,7 @@ export default function ImportInventoryAdjustmentPage() {
                         loading={validating}
                         leftSection={<IconListCheck size={16} />}
                       >
-                        Validasi Ulang
+                        {language === "id" ? "Validasi Ulang" : "Revalidate"}
                       </Button>
                       <Button
                         size="lg"
@@ -723,7 +772,9 @@ export default function ImportInventoryAdjustmentPage() {
                             : undefined,
                         }}
                       >
-                        Impor ke Accurate
+                        {language === "id"
+                          ? "Impor ke Accurate"
+                          : "Import to Accurate"}
                       </Button>
                     </Group>
                   </Group>
@@ -750,16 +801,25 @@ export default function ImportInventoryAdjustmentPage() {
                     }
                     title={
                       importResults.failedCount === 0
-                        ? "Impor Berhasil"
+                        ? language === "id"
+                          ? "Impor Berhasil"
+                          : "Import Successful"
                         : importResults.successCount > 0
-                          ? "Impor Berhasil Sebagian"
-                          : "Impor Gagal"
+                          ? language === "id"
+                            ? "Impor Berhasil Sebagian"
+                            : "Import Partially Successful"
+                          : language === "id"
+                            ? "Impor Gagal"
+                            : "Import Failed"
                     }
                   >
                     <Stack gap="sm">
                       <Text size="sm">
-                        Berhasil diimpor:{" "}
-                        <strong>{importResults.successCount}</strong> | Gagal:{" "}
+                        {language === "id"
+                          ? "Berhasil diimpor:"
+                          : "Successfully imported:"}{" "}
+                        <strong>{importResults.successCount}</strong> |{" "}
+                        {language === "id" ? "Gagal" : "Failed"}:{" "}
                         <strong>{importResults.failedCount}</strong>
                       </Text>
 
@@ -770,8 +830,9 @@ export default function ImportInventoryAdjustmentPage() {
                           ))}
                           {importResults.errors.length > 5 && (
                             <List.Item>
-                              ...dan {importResults.errors.length - 5} kesalahan
-                              lainnya
+                              {language === "id"
+                                ? `...dan ${importResults.errors.length - 5} kesalahan lainnya`
+                                : `...and ${importResults.errors.length - 5} more errors`}
                             </List.Item>
                           )}
                         </List>
@@ -814,23 +875,37 @@ export default function ImportInventoryAdjustmentPage() {
 
                 {/* Validation Preview */}
                 <StepperCard
-                  title="Pratinjau Data"
+                  title={language === "id" ? "Pratinjau Data" : "Data Preview"}
                   description={
                     isValidationComplete
                       ? `${validatedRows.length} baris dimuat • ${validRowsCount} valid • ${invalidRowsCount} tidak valid`
-                      : "Hasil validasi akan tampil di sini"
+                      : language === "id"
+                        ? "Hasil validasi akan tampil di sini"
+                        : "Validation results will appear here"
                   }
                 >
                   {validating ? (
                     <Stack gap="md" py="xl" align="center">
-                      <Text c="dimmed">Memvalidasi file Anda...</Text>
+                      <Text c="dimmed">
+                        {language === "id"
+                          ? "Memvalidasi file Anda..."
+                          : "Validating your file..."}
+                      </Text>
                       <Progress value={100} size="sm" animated w={200} />
                     </Stack>
                   ) : !isValidationComplete ? (
                     <EmptyState
                       variant="no-data"
-                      title="Belum ada hasil validasi"
-                      description="Klik 'Validasi Ulang' untuk memeriksa file"
+                      title={
+                        language === "id"
+                          ? "Belum ada hasil validasi"
+                          : "No validation results yet"
+                      }
+                      description={
+                        language === "id"
+                          ? "Klik 'Validasi Ulang' untuk memeriksa file"
+                          : "Click 'Revalidate' to check your file"
+                      }
                       size="sm"
                     />
                   ) : (
@@ -960,31 +1035,30 @@ export default function ImportInventoryAdjustmentPage() {
             onClick={handleBack}
             disabled={activeStep === 0}
           >
-            Kembali
+            {t.inventoryAdjustment.export.actions.back}
           </Button>
 
           <Group gap="sm">
             {activeStep === 2 ? (
               <Button
-                leftSection={<IconUpload size={16} />}
+                leftSection={<IconCheck size={16} />}
                 onClick={handleImport}
                 loading={importing}
                 disabled={!canImport}
                 color="green"
               >
-                Impor Sekarang
+                {t.inventoryAdjustment.import.actions.import}
               </Button>
             ) : (
               <Button
                 rightSection={<IconArrowRight size={16} />}
                 onClick={handleNext}
-                loading={activeStep === 1 && validating}
                 disabled={
                   (activeStep === 0 && !canProceedToStep2) ||
                   (activeStep === 1 && !canProceedToStep3)
                 }
               >
-                {activeStep === 1 ? "Validasi & Lanjut" : "Lanjut"}
+                {t.inventoryAdjustment.export.actions.next}
               </Button>
             )}
           </Group>

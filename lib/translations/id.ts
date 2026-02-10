@@ -1,0 +1,438 @@
+export const id = {
+  common: {
+    home: "Beranda",
+    login: "Masuk",
+    logout: "Keluar",
+    settings: "Pengaturan",
+    processing: "Memproses...",
+    back: "Kembali",
+    save: "Simpan",
+    cancel: "Batal",
+    delete: "Hapus",
+    error: "Kesalahan",
+    success: "Berhasil",
+    languageTooltip: "Bahasa aplikasi",
+    languageAriaLabel: "Pilih bahasa",
+    terms: "Syarat",
+    free: "Gratis 100% · Sumber Terbuka",
+    noCreditCard: "Tanpa kartu kredit",
+    selfHost: "Bisa self-host",
+    verified: "Terverifikasi Accurate App Market",
+  },
+  home: {
+    hero: {
+      title: "Manajer Ekspor/Impor untuk Accurate",
+      titleHighlight: "Penyesuaian Persediaan",
+      subtitle:
+        "Exima mempermudah ekspor dan impor penyesuaian persediaan dalam skala besar dengan validasi, pratinjau, dan pengelolaan kredensial Accurate yang aman.",
+      getStarted: "Mulai Sekarang",
+      viewGithub: "Lihat di GitHub",
+    },
+    features: {
+      bulk: {
+        title: "Impor & Ekspor massal",
+        description:
+          "Validasi & unduh template CSV/XLSX, lalu ekspor atau impor batch dengan pratinjau 20 baris sebelum jalan.",
+      },
+      security: {
+        title: "Kredensial aman",
+        description:
+          "OAuth Accurate + HMAC-SHA256 signature dengan rate limit bawaan (8 rps, 8 konkuren).",
+      },
+      workflow: {
+        title: "Satu alur terpadu",
+        description:
+          "Pilih modul Inventory Adjustment, lalu pilih ekspor (get data) atau impor (input data).",
+      },
+      kiosk: {
+        title: "Mode Kiosk (Checkout Mandiri)",
+        description:
+          "Mode kios untuk pemindaian mandiri, cocok di gudang/outlet sehingga tim bisa input adjustment tanpa login berulang.",
+      },
+    },
+    benefits: {
+      title: "Mengapa memilih Exima?",
+      badge: "Keuntungan",
+      description:
+        "Exima dirancang untuk mempermudah proses ekspor dan impor data inventory adjustment dari Accurate Online. Dengan antarmuka yang intuitif dan fitur validasi bawaan, Anda dapat mengelola data dengan lebih efisien.",
+      free: "Gratis 100%, tanpa biaya tersembunyi",
+      responsive: "Dasbor responsif dan modern",
+      realtime: "Notifikasi real-time status job",
+      multiAccount: "Mendukung multi-akun Accurate",
+      validation: "Validasi data sebelum impor",
+      exportFormat: "Ekspor dalam berbagai format",
+    },
+    setup: {
+      title: "Mulai Cepat",
+      subtitle: "Self-host lewat Docker",
+      step1: "Clone repositori & salin .env.example",
+      step2: "Isi kredensial Accurate + NextAuth",
+      step3: "docker compose up -d --build",
+      note: "Lanjutkan dengan `docker compose exec app npm run db:push`.",
+    },
+  },
+  login: {
+    title: "Selamat Datang",
+    subtitle: "Masuk ke akun Anda untuk melanjutkan",
+    email: "Email",
+    password: "Password",
+    placeholderEmail: "nama@email.com",
+    placeholderPassword: "Masukkan password",
+    forgotPassword: "Lupa password?",
+    submit: "Masuk",
+    errorTitle: "Login gagal",
+    errorInvalid: "Email atau password tidak valid",
+    errorGeneric: "Terjadi kesalahan. Silakan coba lagi.",
+    or: "atau",
+    noAccount: "Belum punya akun?",
+    register: "Daftar di sini",
+    terms: "Syarat & Ketentuan",
+    branding: {
+      title: "Kelola Inventory Adjustment dengan Mudah",
+      description:
+        "Platform ekspor dan impor massal untuk Accurate Online dengan validasi, pratinjau, dan keamanan terjamin.",
+    },
+    features: {
+      export: {
+        title: "Ekspor Massal",
+        description: "Ekspor ke CSV, XLSX, atau JSON",
+      },
+      import: {
+        title: "Impor Massal",
+        description: "Impor dengan validasi otomatis",
+      },
+      oauth: {
+        title: "Integrasi OAuth",
+        description: "Koneksi aman ke Accurate",
+      },
+      security: {
+        title: "Keamanan",
+        description: "HMAC-SHA256 signature",
+      },
+    },
+  },
+  kiosk: {
+    backToHome: "Kembali ke Beranda",
+    fullscreen: "Layar Penuh",
+    exitFullscreen: "Keluar Layar Penuh",
+    scanProduct: "Scan Produk",
+    scanDescription: "Barang langsung masuk ke keranjang",
+    loadingTitle: "Memuat Node",
+    loadingSubtitle: "Menyinkronkan sesi aman...",
+    selectDatabase: "Pilih Database",
+    selectDatabaseSubtitle: "Pilih database Accurate untuk memulai sesi kiosk",
+    noDatabases: "Tidak ada database ditemukan",
+  },
+  dashboard: {
+    welcome: "Selamat datang kembali 👋",
+    title: "Dasbor",
+    systemOperational: "Semua sistem operasional",
+    stats: {
+      totalExports: "Total Ekspor",
+      totalExportsDesc: "Seluruh operasi ekspor",
+      totalImports: "Total Impor",
+      totalImportsDesc: "Seluruh operasi impor",
+      connectedAccounts: "Akun Terhubung",
+      connectedAccountsDesc: "Akun Accurate aktif",
+      thisMonth: "Bulan Ini",
+      thisMonthDesc: "Operasi ekspor & impor",
+      jobs: "pekerjaan",
+      trendLabel: "vs bulan lalu",
+    },
+    quickActions: {
+      title: "Aksi Cepat",
+      export: {
+        title: "Ekspor Baru",
+        description: "Ekspor inventory adjustment ke CSV, XLSX, atau JSON",
+      },
+      import: {
+        title: "Impor Baru",
+        description: "Impor inventory adjustment dari file Anda",
+      },
+      kiosk: {
+        title: "Checkout Mandiri",
+        description: "Scan barang untuk checkout inventaris dengan cepat",
+      },
+      accounts: {
+        title: "Kelola Akun",
+        description: "Hubungkan atau kelola akun Accurate",
+      },
+    },
+    charts: {
+      weeklyTitle: "Aktivitas Mingguan",
+      monthlyTitle: "Tren Bulanan",
+      viewDetail: "Lihat detail",
+      growth: "pertumbuhan",
+      totalMonth: "Total bulan ini",
+      operations: "operasi",
+      exports: "Ekspor",
+      imports: "Impor",
+      totalOperations: "Total Operasi",
+    },
+    activity: {
+      title: "Aktivitas Terbaru",
+      noActivity: "Belum ada aktivitas",
+      noActivityDesc: "Operasi ekspor dan impor Anda akan muncul di sini",
+      startExport: "Mulai Ekspor",
+    },
+    nav: {
+      dashboard: "Dasbor",
+      inventoryAdjustment: "Penyesuaian Persediaan",
+      export: "Ekspor (Ambil data)",
+      import: "Impor (Input data)",
+      selfCheckout: "Checkout Mandiri",
+      credentials: "Kredensial Accurate",
+    },
+    userMenu: {
+      account: "Akun",
+      profile: "Profil",
+      settings: "Pengaturan",
+      links: "Tautan",
+      openKiosk: "Buka Mode Kiosk",
+      logout: "Keluar",
+    },
+    status: {
+      connected: "Terhubung ke Accurate",
+      operational: "Status API: Operasional",
+    },
+    credentials: {
+      title: "Kredensial Accurate",
+      connectTitle: "Hubungkan Accurate",
+      connectDescription:
+        "Hubungkan akun Accurate Anda untuk mengaktifkan ekspor dan impor data. App Key dan Signature Secret diatur melalui variabel lingkungan.",
+      connectButton: "Hubungkan Accurate",
+      connectedAccountsTitle: "Akun Terhubung",
+      table: {
+        appKey: "App Key",
+        host: "Host",
+        connectedAt: "Waktu Terhubung",
+        action: "Aksi",
+        notDetected: "Belum terdeteksi",
+      },
+      disconnectTooltip: "Putuskan akun",
+      disconnectConfirm: "Yakin ingin menghapus kredensial ini?",
+      notifications: {
+        connectedTitle: "Terhubung",
+        connectedMessage: "Token API Accurate berhasil disimpan dari OAuth",
+        errorTitle: "Kesalahan OAuth",
+        errorGeneric: "Gagal terhubung ke Accurate",
+        deleteSuccessTitle: "Berhasil",
+        deleteSuccessMessage: "Kredensial dihapus",
+        deleteErrorTitle: "Gagal",
+        deleteErrorMessage: "Gagal menghapus kredensial",
+      },
+    },
+    emptyState: {
+      noData: {
+        title: "Belum ada data",
+        description: "Mulai dengan menambahkan data agar tampil di sini.",
+      },
+      noResults: {
+        title: "Hasil tidak ditemukan",
+        description:
+          "Coba ubah pencarian atau filter untuk menemukan data yang Anda cari.",
+      },
+      noConnection: {
+        title: "Kesalahan koneksi",
+        description:
+          "Tidak dapat terhubung ke server. Periksa koneksi internet lalu coba lagi.",
+      },
+      emptyFolder: {
+        title: "Folder ini kosong",
+        description: "Unggah file atau buat item baru untuk memulai.",
+      },
+      emptyCart: {
+        title: "Keranjang Anda kosong",
+        description: "Scan barang untuk menambahkannya ke keranjang.",
+      },
+      noCredentials: {
+        title: "Belum ada akun terhubung",
+        description:
+          "Hubungkan akun Accurate untuk mulai impor dan ekspor data.",
+      },
+      error: {
+        title: "Terjadi kesalahan",
+        description:
+          "Terjadi kesalahan tak terduga. Silakan coba lagi atau hubungi dukungan.",
+      },
+    },
+  },
+  inventoryAdjustment: {
+    export: {
+      title: "Ekspor Penyesuaian Persediaan",
+      description:
+        "Ekspor data penyesuaian persediaan dari Accurate ke file CSV, XLSX, atau JSON.",
+      steps: {
+        selectAccount: "Pilih Akun",
+        selectAccountDesc: "Pilih kredensial Accurate",
+        config: "Konfigurasi",
+        configDesc: "Rentang tanggal & format",
+        preview: "Pratinjau",
+        previewDesc: "Tinjau data sebelum ekspor",
+      },
+      config: {
+        dateRange: "Rentang Tanggal",
+        format: "Format File",
+        formats: {
+          csv: {
+            label: "CSV (Comma Separated)",
+            description: "Terbaik untuk impor data massal",
+          },
+          xlsx: {
+            label: "Excel (XLSX)",
+            description: "Mudah dibaca & diedit manual",
+          },
+          json: {
+            label: "JSON Data",
+            description: "Untuk integrasi sistem",
+          },
+        },
+      },
+      preview: {
+        title: "Pratinjau Data",
+        subtitle: "Menampilkan 20 baris pertama dari {total} baris ditemukan.",
+        empty: "Tidak ada data ditemukan untuk rentang tanggal ini.",
+        table: {
+          date: "Tanggal",
+          number: "Nomor",
+          description: "Keterangan",
+          item: "Barang",
+          quantity: "Kuantitas",
+          unit: "Satuan",
+        },
+      },
+      actions: {
+        next: "Lanjutkan",
+        back: "Kembali",
+        export: "Ekspor Sekarang",
+        downloading: "Mengunduh...",
+      },
+      notifications: {
+        successTitle: "Ekspor Berhasil",
+        successMessage: "Data berhasil diekspor ke {format}",
+        errorTitle: "Ekspor Gagal",
+      },
+    },
+    import: {
+      title: "Impor Penyesuaian Persediaan",
+      description:
+        "Impor data penyesuaian persediaan dari file ke Accurate Online.",
+      steps: {
+        selectAccount: "Pilih Akun",
+        selectAccountDesc: "Pilih kredensial tujuan",
+        upload: "Unggah File",
+        uploadDesc: "Pilih & validasi file",
+        review: "Tinjau & Impor",
+        reviewDesc: "Hasil validasi & impor",
+      },
+      upload: {
+        title: "Unggah File Data",
+        description:
+          "Gunakan template kami untuk memastikan format data benar.",
+        dropzone: {
+          title: "Klik atau tarik file ke sini",
+          subtitle: "Hanya mendukung file .csv atau .xlsx (Maks. 5MB)",
+        },
+        template: {
+          title: "Template Data",
+          description: "Unduh contoh file sebagai acuan format kolom.",
+          download: "Unduh Template CSV",
+          columns: {
+            date: "Tanggal (DD/MM/YYYY)",
+            number: "Nomor Transaksi",
+            description: "Keterangan Transaksi",
+            itemNo: "Nomor Barang",
+            quantity: "Kuantitas",
+            unit: "Satuan",
+            warehouse: "Gudang",
+            detailDescription: "Keterangan Detail",
+          },
+        },
+      },
+      review: {
+        title: "Hasil Validasi",
+        autoNumber: "Gunakan penomoran otomatis Accurate",
+        summary: {
+          valid: "{count} baris valid",
+          invalid: "{count} baris error",
+        },
+        table: {
+          row: "Baris",
+          status: "Status",
+          errors: "Kesalahan",
+          valid: "Siap impor",
+        },
+      },
+      actions: {
+        validate: "Validasi File",
+        validating: "Memvalidasi...",
+        import: "Impor ke Accurate",
+        importing: "Mengimpor...",
+        reset: "Ulangi Proses",
+      },
+      notifications: {
+        validationSuccessTitle: "Validasi Selesai",
+        validationSuccessMessage:
+          "Ditemukan {valid} baris valid dan {invalid} baris error.",
+        validationErrorTitle: "Validasi Gagal",
+        importSuccessTitle: "Impor Selesai",
+        importSuccessMessage:
+          "Berhasil mengimpor {success} transaksi. {failed} gagal.",
+        importErrorTitle: "Impor Gagal",
+      },
+    },
+  },
+  selfCheckout: {
+    title: "Checkout Mandiri",
+    subtitle: "Scan barang untuk checkout inventaris dengan cepat",
+    scanner: {
+      placeholder: "Scan barcode barang...",
+      lookup: "Mencari barang...",
+      notFound: "Barang tidak ditemukan",
+    },
+    staff: {
+      title: "Informasi Staf",
+      email: "Email Staf",
+      placeholder: "Scan badge atau masukkan email",
+    },
+    cart: {
+      title: "Keranjang Belanja",
+      empty: "Keranjang kosong. Mulai scan barang.",
+      item: "Barang",
+      qty: "Qty",
+      total: "Total Item",
+      confirmDelete: "Hapus dari keranjang?",
+    },
+    actions: {
+      checkout: "Selesaikan Checkout",
+      cancel: "Batal",
+      newSession: "Sesi Baru",
+    },
+    notifications: {
+      itemAdded: "Ditambahkan ke keranjang",
+      checkoutSuccess: "Checkout Berhasil",
+      checkoutMessage: "Nomor penyesuaian: {number}",
+      checkoutError: "Checkout Gagal",
+    },
+  },
+  terms: {
+    title: "Syarat & Ketentuan",
+    subtitle: "Dengan menggunakan Exima, Anda menyetujui syarat berikut:",
+    list: [
+      "Akses ke Accurate Online membutuhkan kredensial resmi (App Key, Signature Secret, API Token) dari akun Anda.",
+      "Exima hanya mengakses data yang diperlukan untuk ekspor/impor penyesuaian persediaan.",
+      "Anda bertanggung jawab atas kebenaran data yang diimpor dan rentang data yang diekspor.",
+      "Jangan membagikan kredensial Anda kepada pihak lain; hapus kredensial jika sudah tidak digunakan.",
+      "Layanan disediakan apa adanya tanpa jaminan; gunakan dengan mempertimbangkan kebijakan internal perusahaan Anda.",
+    ],
+    integration: {
+      title: "Integrasi Accurate",
+      description:
+        "Integrasi dilakukan melalui OAuth Accurate dan kredensial resmi dari Accurate App Market. Untuk Cloud, akses akan direview admin. Untuk self-host, Anda mengelola sendiri App Key, Secret, dan callback URL sesuai lingkungan Anda.",
+    },
+    footer: {
+      copyright:
+        "MAD Labs by Millennia World School. Seluruh hak cipta dilindungi.",
+    },
+  },
+};

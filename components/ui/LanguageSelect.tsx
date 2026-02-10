@@ -9,10 +9,10 @@ interface LanguageSelectProps {
 }
 
 export function LanguageSelect({ size = "sm" }: LanguageSelectProps) {
-  const { language, options, setLanguage } = useLanguage();
+  const { language, options, setLanguage, t } = useLanguage();
 
   return (
-    <Tooltip label="Bahasa aplikasi" position="bottom">
+    <Tooltip label={t.common.languageTooltip} position="bottom">
       <Select
         size={size}
         w={190}
@@ -20,7 +20,7 @@ export function LanguageSelect({ size = "sm" }: LanguageSelectProps) {
         value={language}
         onChange={setLanguage}
         leftSection={<IconLanguage size={16} />}
-        aria-label="Pilih bahasa"
+        aria-label={t.common.languageAriaLabel}
         allowDeselect={false}
       />
     </Tooltip>

@@ -14,6 +14,7 @@ import {
   Loader,
 } from "@mantine/core";
 import { IconAlertCircle, IconCamera } from "@tabler/icons-react";
+import { useLanguage } from "@/lib/language";
 
 interface CameraScannerProps {
   onScanSuccess: (decodedText: string) => void;
@@ -32,6 +33,7 @@ export function CameraScanner({
   aspectRatio = 1.0,
   disableFlip = false,
 }: CameraScannerProps) {
+  const { language } = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
@@ -50,17 +52,27 @@ export function CameraScanner({
         if (devices && devices.length > 0) {
           const formattedDevices = devices.map((dev) => ({
             id: dev.id,
-            label: dev.label || `Kamera ${devices.indexOf(dev) + 1}`,
+            label:
+              dev.label ||
+              `${language === "id" ? "Kamera" : "Camera"} ${devices.indexOf(dev) + 1}`,
           }));
           setCameras(formattedDevices);
           setSelectedCamera(formattedDevices[0].id);
         } else {
-          setError("Tidak ada kamera yang ditemukan di perangkat ini.");
+          setError(
+            language === "id"
+              ? "Tidak ada kamera yang ditemukan di perangkat ini."
+              : "No camera found on this device.",
+          );
         }
       })
       .catch((err) => {
         console.error("Error getting cameras", err);
-        setError("Izin kamera belum diberikan atau kamera tidak didukung.");
+        setError(
+          language === "id"
+            ? "Izin kamera belum diberikan atau kamera tidak didukung."
+            : "Camera permission is not granted or camera is unsupported.",
+        );
       });
 
     return () => {
@@ -89,7 +101,7 @@ export function CameraScanner({
         }
       }
     };
-  }, []);
+  }, [language]);
 
   const startScanning = async () => {
     if (!selectedCamera || status !== "idle") return;
@@ -136,7 +148,12 @@ export function CameraScanner({
         return;
       }
       console.error("Failed to start scanning", err);
-      setError(err.message || "Gagal memulai kamera");
+      setError(
+        err.message ||
+          (language === "id"
+            ? "Gagal memulai kamera"
+            : "Failed to start camera"),
+      );
       setStatus("idle");
     }
   };
@@ -228,8 +245,8 @@ export function CameraScanner({
 
       {cameras.length > 1 && status === "idle" && (
         <Select
-          label="Pilih Kamera"
-          placeholder="Pilih kamera"
+          label={language === "id" ? "Pilih Kamera" : "Select Camera"}
+          placeholder={language === "id" ? "Pilih kamera" : "Select camera"}
           data={cameras.map((c) => ({ value: c.id, label: c.label }))}
           value={selectedCamera}
           onChange={setSelectedCamera}
@@ -278,8 +295,12 @@ export function CameraScanner({
               )}
               <Text c="dimmed">
                 {status === "starting"
-                  ? "Memulai kamera..."
-                  : "Pratinjau Kamera"}
+                  ? language === "id"
+                    ? "Memulai kamera..."
+                    : "Starting camera..."
+                  : language === "id"
+                    ? "Pratinjau Kamera"
+                    : "Camera Preview"}
               </Text>
             </Stack>
           </Center>
@@ -296,7 +317,11 @@ export function CameraScanner({
           >
             <Stack align="center" gap="xs">
               <Loader size="sm" color="white" />
-              <Text c="white">Memproses hasil scan...</Text>
+              <Text c="white">
+                {language === "id"
+                  ? "Memproses hasil scan..."
+                  : "Processing scan result..."}
+              </Text>
             </Stack>
           </Center>
         )}
@@ -316,7 +341,13 @@ export function CameraScanner({
           }
           size="lg"
         >
-          {status === "scanning" ? "Hentikan Kamera" : "Mulai Kamera"}
+          {status === "scanning"
+            ? language === "id"
+              ? "Hentikan Kamera"
+              : "Stop Camera"
+            : language === "id"
+              ? "Mulai Kamera"
+              : "Start Camera"}
         </Button>
       </Center>
     </Stack>

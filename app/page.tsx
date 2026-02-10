@@ -32,53 +32,52 @@ import {
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageSelect } from "@/components/ui/LanguageSelect";
-
-const features = [
-  {
-    icon: <IconArrowsLeftRight size={28} />,
-    title: "Impor & Ekspor massal",
-    description:
-      "Validasi & unduh template CSV/XLSX, lalu ekspor atau impor batch dengan pratinjau 20 baris sebelum jalan.",
-    color: "blue",
-    gradient: "linear-gradient(135deg, #228BE6 0%, #37B24D 100%)",
-  },
-  {
-    icon: <IconShield size={28} />,
-    title: "Kredensial aman",
-    description:
-      "OAuth Accurate + HMAC-SHA256 signature dengan rate limit bawaan (8 rps, 8 konkuren).",
-    color: "violet",
-    gradient: "linear-gradient(135deg, #7950F2 0%, #7048E8 100%)",
-  },
-  {
-    icon: <IconPlugConnected size={28} />,
-    title: "Satu alur terpadu",
-    description:
-      "Pilih modul Inventory Adjustment, lalu pilih ekspor (get data) atau impor (input data).",
-    color: "orange",
-    gradient: "linear-gradient(135deg, #FD7E14 0%, #F76707 100%)",
-  },
-  {
-    icon: <IconDeviceDesktop size={28} />,
-    title: "Mode Kiosk (Checkout Mandiri)",
-    description:
-      "Mode kios untuk pemindaian mandiri, cocok di gudang/outlet sehingga tim bisa input adjustment tanpa login berulang.",
-    color: "teal",
-    gradient: "linear-gradient(135deg, #12B886 0%, #0CA678 100%)",
-  },
-];
-
-const benefits = [
-  "Gratis 100%, tanpa biaya tersembunyi",
-  "Dasbor responsif dan modern",
-  "Notifikasi real-time status job",
-  "Mendukung multi-akun Accurate",
-  "Validasi data sebelum impor",
-  "Ekspor dalam berbagai format",
-];
+import { useLanguage } from "@/lib/language";
 
 export default function HomePage() {
   const router = useRouter();
+  const { t } = useLanguage();
+
+  const features = [
+    {
+      icon: <IconArrowsLeftRight size={28} />,
+      title: t.home.features.bulk.title,
+      description: t.home.features.bulk.description,
+      color: "blue",
+      gradient: "linear-gradient(135deg, #228BE6 0%, #37B24D 100%)",
+    },
+    {
+      icon: <IconShield size={28} />,
+      title: t.home.features.security.title,
+      description: t.home.features.security.description,
+      color: "violet",
+      gradient: "linear-gradient(135deg, #7950F2 0%, #7048E8 100%)",
+    },
+    {
+      icon: <IconPlugConnected size={28} />,
+      title: t.home.features.workflow.title,
+      description: t.home.features.workflow.description,
+      color: "orange",
+      gradient: "linear-gradient(135deg, #FD7E14 0%, #F76707 100%)",
+    },
+    {
+      icon: <IconDeviceDesktop size={28} />,
+      title: t.home.features.kiosk.title,
+      description: t.home.features.kiosk.description,
+      color: "teal",
+      gradient: "linear-gradient(135deg, #12B886 0%, #0CA678 100%)",
+    },
+  ];
+
+  const benefits = [
+    t.home.benefits.free,
+    t.home.benefits.responsive,
+    t.home.benefits.realtime,
+    t.home.benefits.multiAccount,
+    t.home.benefits.validation,
+    t.home.benefits.exportFormat,
+  ];
+
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
   const currentYear = new Date().getFullYear();
@@ -214,7 +213,7 @@ export default function HomePage() {
                 size="sm"
                 onClick={() => router.push("/terms")}
               >
-                Syarat
+                {t.common.terms}
               </Button>
             </Group>
           </Group>
@@ -239,7 +238,7 @@ export default function HomePage() {
               cursor: "default",
             }}
           >
-            Gratis 100% · Sumber Terbuka
+            {t.common.free}
           </Badge>
 
           {/* Heading */}
@@ -253,7 +252,7 @@ export default function HomePage() {
                 letterSpacing: "-0.02em",
               }}
             >
-              Ekspor & Impor{" "}
+              {t.home.hero.title}{" "}
               <Text
                 component="span"
                 inherit
@@ -264,15 +263,12 @@ export default function HomePage() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Penyesuaian Persediaan
-              </Text>{" "}
-              Accurate
+                {t.home.hero.titleHighlight}
+              </Text>
             </Title>
 
             <Text size="xl" c="dimmed" maw={600} lh={1.6} ta="center">
-              Exima mempermudah ekspor dan impor penyesuaian persediaan dalam
-              skala besar dengan validasi, pratinjau, dan pengelolaan kredensial
-              Accurate yang aman.
+              {t.home.hero.subtitle}
             </Text>
           </Stack>
 
@@ -290,7 +286,7 @@ export default function HomePage() {
                 )
               }
             >
-              Lihat di GitHub
+              {t.home.hero.viewGithub}
             </Button>
           </Group>
 
@@ -298,15 +294,15 @@ export default function HomePage() {
           <Group gap="xl" mt="xl" c="dimmed">
             <Group gap="xs">
               <IconCheck size={18} color="var(--mantine-color-green-6)" />
-              <Text size="sm">Tanpa kartu kredit</Text>
+              <Text size="sm">{t.common.noCreditCard}</Text>
             </Group>
             <Group gap="xs">
               <IconCheck size={18} color="var(--mantine-color-green-6)" />
-              <Text size="sm">Bisa self-host</Text>
+              <Text size="sm">{t.common.selfHost}</Text>
             </Group>
             <Group gap="xs">
               <IconCheck size={18} color="var(--mantine-color-green-6)" />
-              <Text size="sm">Terverifikasi Accurate App Market</Text>
+              <Text size="sm">{t.common.verified}</Text>
             </Group>
           </Group>
         </Stack>
@@ -321,14 +317,13 @@ export default function HomePage() {
         <Stack gap="xl">
           <Stack gap="sm" align="center" ta="center" mb="xl">
             <Badge size="md" variant="light" color="violet">
-              Fitur Utama
+              {t.home.benefits.badge}
             </Badge>
             <Title order={2} fz={{ base: 28, md: 36 }}>
-              Semua yang Anda butuhkan
+              {t.home.benefits.title}
             </Title>
             <Text c="dimmed" maw={500}>
-              Fitur lengkap untuk mengelola inventory adjustment Accurate dengan
-              mudah dan aman.
+              {t.home.benefits.description}
             </Text>
           </Stack>
 
@@ -410,16 +405,13 @@ export default function HomePage() {
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
             <Stack gap="lg">
               <Badge size="md" variant="light" color="green" w="fit-content">
-                Keuntungan
+                {t.home.benefits.badge}
               </Badge>
               <Title order={2} fz={{ base: 28, md: 36 }}>
-                Mengapa memilih Exima?
+                {t.home.benefits.title}
               </Title>
               <Text c="dimmed" lh={1.7}>
-                Exima dirancang untuk mempermudah proses ekspor dan impor data
-                inventory adjustment dari Accurate Online. Dengan antarmuka yang
-                intuitif dan fitur validasi bawaan, Anda dapat mengelola data
-                dengan lebih efisien.
+                {t.home.benefits.description}
               </Text>
 
               <Stack gap="sm" mt="md">
@@ -479,9 +471,9 @@ export default function HomePage() {
                         <IconRocket size={24} color="white" />
                       </ThemeIcon>
                       <Stack gap={0}>
-                        <Text fw={600}>Mulai Cepat</Text>
+                        <Text fw={600}>{t.home.setup.title}</Text>
                         <Text size="xs" c="dimmed">
-                          Self-host lewat Docker
+                          {t.home.setup.subtitle}
                         </Text>
                       </Stack>
                     </Group>
@@ -506,9 +498,7 @@ export default function HomePage() {
                             1
                           </Text>
                         </Box>
-                        <Text size="sm">
-                          Clone repositori & salin .env.example
-                        </Text>
+                        <Text size="sm">{t.home.setup.step1}</Text>
                       </Group>
                       <Group gap="xs">
                         <Box
@@ -527,9 +517,7 @@ export default function HomePage() {
                             2
                           </Text>
                         </Box>
-                        <Text size="sm">
-                          Isi kredensial Accurate + NextAuth
-                        </Text>
+                        <Text size="sm">{t.home.setup.step2}</Text>
                       </Group>
                       <Group gap="xs">
                         <Box
@@ -548,12 +536,11 @@ export default function HomePage() {
                             3
                           </Text>
                         </Box>
-                        <Text size="sm">docker compose up -d --build</Text>
+                        <Text size="sm">{t.home.setup.step3}</Text>
                       </Group>
                     </Stack>
                     <Text size="xs" c="dimmed">
-                      Lanjutkan dengan `docker compose exec app npm run
-                      db:push`.
+                      {t.home.setup.note}
                     </Text>
                   </Stack>
                 </Card>

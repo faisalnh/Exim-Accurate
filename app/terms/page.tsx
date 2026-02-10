@@ -17,8 +17,10 @@ import {
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageSelect } from "@/components/ui/LanguageSelect";
+import { useLanguage } from "@/lib/language";
 
 export default function TermsPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
@@ -93,14 +95,14 @@ export default function TermsPage() {
                 size="sm"
                 onClick={() => router.push("/terms")}
               >
-                Syarat
+                {t.common.terms}
               </Button>
               <Button
                 variant="filled"
                 size="sm"
                 onClick={() => router.push("/login")}
               >
-                Masuk
+                {t.common.login}
               </Button>
             </Group>
           </Group>
@@ -110,12 +112,10 @@ export default function TermsPage() {
       <Container size="md" py={{ base: "xl", md: 60 }}>
         <Stack gap="lg">
           <Badge size="md" variant="light" color="blue" w="fit-content">
-            Syarat
+            {t.common.terms}
           </Badge>
-          <Title order={1}>Syarat & Ketentuan</Title>
-          <Text c="dimmed">
-            Dengan menggunakan Exima, Anda menyetujui syarat berikut:
-          </Text>
+          <Title order={1}>{t.terms.title}</Title>
+          <Text c="dimmed">{t.terms.subtitle}</Text>
 
           <Card
             radius="lg"
@@ -130,26 +130,9 @@ export default function TermsPage() {
             }}
           >
             <List spacing="sm">
-              <List.Item>
-                Akses ke Accurate Online membutuhkan kredensial resmi (App Key,
-                Signature Secret, API Token) dari akun Anda.
-              </List.Item>
-              <List.Item>
-                Exima hanya mengakses data yang diperlukan untuk ekspor/impor
-                penyesuaian persediaan.
-              </List.Item>
-              <List.Item>
-                Anda bertanggung jawab atas kebenaran data yang diimpor dan
-                rentang data yang diekspor.
-              </List.Item>
-              <List.Item>
-                Jangan membagikan kredensial Anda kepada pihak lain; hapus
-                kredensial jika sudah tidak digunakan.
-              </List.Item>
-              <List.Item>
-                Layanan disediakan apa adanya tanpa jaminan; gunakan dengan
-                mempertimbangkan kebijakan internal perusahaan Anda.
-              </List.Item>
+              {t.terms.list.map((item, index) => (
+                <List.Item key={index}>{item}</List.Item>
+              ))}
             </List>
           </Card>
 
@@ -166,13 +149,8 @@ export default function TermsPage() {
             }}
           >
             <Stack gap="sm">
-              <Text fw={600}>Integrasi Accurate</Text>
-              <Text c="dimmed">
-                Integrasi dilakukan melalui OAuth Accurate dan kredensial resmi
-                dari Accurate App Market. Untuk Cloud, akses akan direview
-                admin. Untuk self-host, Anda mengelola sendiri App Key, Secret,
-                dan callback URL sesuai lingkungan Anda.
-              </Text>
+              <Text fw={600}>{t.terms.integration.title}</Text>
+              <Text c="dimmed">{t.terms.integration.description}</Text>
             </Stack>
           </Card>
         </Stack>
@@ -215,18 +193,18 @@ export default function TermsPage() {
                   rel="noreferrer"
                   c="dimmed"
                 >
-                  MAD Labs by Millennia World School
+                  {t.terms.footer.copyright.split(".")[0]}
                 </Anchor>
-                . Seluruh hak cipta dilindungi.
+                . {t.terms.footer.copyright.split(".")[1]}
               </Text>
             </Group>
 
             <Group gap="md">
               <Anchor size="sm" c="dimmed" href="/">
-                Beranda
+                {t.common.home}
               </Anchor>
               <Anchor size="sm" c="dimmed" href="/login">
-                Masuk
+                {t.common.login}
               </Anchor>
             </Group>
           </Group>

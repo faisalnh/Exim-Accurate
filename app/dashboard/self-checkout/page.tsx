@@ -20,6 +20,8 @@ import {
   ThemeIcon,
   Divider,
   Modal,
+  Box,
+  rem,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -38,6 +40,7 @@ import {
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useLanguage } from "@/lib/language";
 
 interface Credential {
   id: string;
@@ -51,6 +54,7 @@ interface CartItem {
 }
 
 export default function SelfCheckoutPage() {
+  const { t } = useLanguage();
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [selectedCredential, setSelectedCredential] = useState<string | null>(
     null,
@@ -119,11 +123,7 @@ export default function SelfCheckoutPage() {
     }
   };
 
-  // Handle item scan (triggered on Enter or blur)
-  const handleItemScan = useCallback(async () => {
-    const code = itemScanInput.trim();
-    if (!code || !selectedCredential) return;
-
+  const performLookup = async (code: string) => {
     setItemError("");
     setLookingUpItem(true);
     setPendingItem(null);
@@ -135,7 +135,7 @@ export default function SelfCheckoutPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Barang tidak ditemukan");
+        throw new Error(data.error || t.selfCheckout.scanner.notFound);
       }
 
       const item = await response.json();
@@ -144,7 +144,7 @@ export default function SelfCheckoutPage() {
       setItemScanInput("");
 
       notifications.show({
-        title: "Barang Ditemukan",
+        title: t.selfCheckout.notifications.itemAdded,
         message: `${item.itemName} (${item.itemCode})`,
         color: "blue",
         icon: <IconPackage size={16} />,
@@ -152,23 +152,26 @@ export default function SelfCheckoutPage() {
     } catch (err: any) {
       setItemError(err.message);
       notifications.show({
-        title: "Barang Tidak Ditemukan",
+        title: t.selfCheckout.scanner.notFound,
         message: err.message,
         color: "red",
       });
     } finally {
       setLookingUpItem(false);
-      // Refocus input for next scan
       itemInputRef.current?.focus();
     }
-  }, [itemScanInput, selectedCredential]);
+  };
 
-  // Handle scan success from camera
+  const handleItemScan = useCallback(async () => {
+    const code = itemScanInput.trim();
+    if (!code || !selectedCredential) return;
+    performLookup(code);
+  }, [itemScanInput, selectedCredential, t]);
+
   const handleCameraScanSuccess = (decodedText: string) => {
     if (scanTarget === "item") {
       setItemScanInput(decodedText);
       closeCameraModal();
-      // Automatically trigger lookup
       setTimeout(() => {
         const code = decodedText.trim();
         if (code && selectedCredential) {
@@ -182,61 +185,18 @@ export default function SelfCheckoutPage() {
     }
   };
 
-  const performLookup = async (code: string) => {
-    setItemError("");
-    setLookingUpItem(true);
-    setPendingItem(null);
-
-    try {
-      const response = await fetch(
-        `/api/self-checkout/lookup?code=${encodeURIComponent(code)}&credentialId=${selectedCredential}`,
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Barang tidak ditemukan");
-      }
-
-      const item = await response.json();
-      setPendingItem({ code: item.itemCode, name: item.itemName });
-      setPendingQuantity(1);
-      setItemScanInput("");
-
-      notifications.show({
-        title: "Barang Ditemukan",
-        message: `${item.itemName} (${item.itemCode})`,
-        color: "blue",
-        icon: <IconPackage size={16} />,
-      });
-    } catch (err: any) {
-      setItemError(err.message);
-      notifications.show({
-        title: "Barang Tidak Ditemukan",
-        message: err.message,
-        color: "red",
-      });
-    } finally {
-      setLookingUpItem(false);
-      itemInputRef.current?.focus();
-    }
-  };
-
-  // Add pending item to cart
   const addToCart = () => {
     if (!pendingItem || pendingQuantity <= 0) return;
 
-    // Check if item already in cart
     const existingIndex = cart.findIndex(
       (item) => item.itemCode === pendingItem.code,
     );
 
     if (existingIndex >= 0) {
-      // Update quantity
       const newCart = [...cart];
       newCart[existingIndex].quantity += pendingQuantity;
       setCart(newCart);
     } else {
-      // Add new item
       setCart([
         ...cart,
         {
@@ -247,26 +207,26 @@ export default function SelfCheckoutPage() {
       ]);
     }
 
+    const itemName = pendingItem.name;
     setPendingItem(null);
     setPendingQuantity(1);
     itemInputRef.current?.focus();
 
     notifications.show({
-      title: "Ditambahkan ke Keranjang",
-      message: `${pendingItem.name} x${pendingQuantity}`,
+      title: t.selfCheckout.notifications.itemAdded,
+      message: `${itemName} x${pendingQuantity}`,
       color: "green",
       icon: <IconCheck size={16} />,
     });
   };
 
-  // Remove item from cart
   const removeFromCart = (index: number) => {
+    if (!confirm(t.selfCheckout.cart.confirmDelete)) return;
     const newCart = [...cart];
     newCart.splice(index, 1);
     setCart(newCart);
   };
 
-  // Update quantity in cart
   const updateCartQuantity = (index: number, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(index);
@@ -277,7 +237,6 @@ export default function SelfCheckoutPage() {
     setCart(newCart);
   };
 
-  // Parse staff info from email (for display)
   const parseStaffInfo = (email: string) => {
     if (!email || !email.includes("@")) {
       setStaffInfo(null);
@@ -300,26 +259,15 @@ export default function SelfCheckoutPage() {
     }
   };
 
-  // Handle staff badge scan
   const handleStaffScan = () => {
     const email = staffEmail.trim().toLowerCase();
     if (email && email.includes("@")) {
       parseStaffInfo(email);
     }
-    // Move focus to submit button or back to item scanner
-    if (cart.length > 0) {
-      // Ready to submit
-    } else {
-      itemInputRef.current?.focus();
-    }
   };
 
-  // Submit checkout
   const handleSubmit = async () => {
-    if (!selectedCredential || !staffEmail || cart.length === 0) {
-      setError("Silakan scan barang dan ID staf sebelum kirim");
-      return;
-    }
+    if (!selectedCredential || !staffEmail || cart.length === 0) return;
 
     setError("");
     setSubmitting(true);
@@ -339,22 +287,22 @@ export default function SelfCheckoutPage() {
         }),
       });
 
+      const result = await response.json();
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Checkout gagal");
+        throw new Error(result.error || "Checkout gagal");
       }
 
-      const result = await response.json();
-
       notifications.show({
-        title: "Checkout Berhasil!",
-        message: `Adjustment #${result.adjustmentNumber || result.adjustmentId} dibuat untuk ${cart.length} barang`,
+        title: t.selfCheckout.notifications.checkoutSuccess,
+        message: t.selfCheckout.notifications.checkoutMessage.replace(
+          "{number}",
+          result.adjustmentNumber || result.adjustmentId,
+        ),
         color: "green",
         icon: <IconCheck size={16} />,
         autoClose: 5000,
       });
 
-      // Reset form
       setCart([]);
       setStaffEmail("");
       setStaffInfo(null);
@@ -363,7 +311,7 @@ export default function SelfCheckoutPage() {
     } catch (err: any) {
       setError(err.message);
       notifications.show({
-        title: "Checkout Gagal",
+        title: t.selfCheckout.notifications.checkoutError,
         message: err.message,
         color: "red",
       });
@@ -372,10 +320,7 @@ export default function SelfCheckoutPage() {
     }
   };
 
-  // Calculate total items
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  // Check if ready to submit
   const canSubmit =
     cart.length > 0 && staffEmail.includes("@") && selectedCredential;
 
@@ -383,7 +328,7 @@ export default function SelfCheckoutPage() {
     <Stack gap="md">
       <Group justify="space-between" align="center">
         <Group gap="md">
-          <Title order={1}>Checkout Mandiri</Title>
+          <Title order={1}>{t.selfCheckout.title}</Title>
           <Button
             component={Link}
             href="/kiosk"
@@ -392,7 +337,7 @@ export default function SelfCheckoutPage() {
             leftSection={<IconExternalLink size={18} />}
             size="sm"
           >
-            Beralih ke Mode Kiosk
+            {t.dashboard.userMenu.openKiosk}
           </Button>
         </Group>
         {cart.length > 0 && (
@@ -402,7 +347,7 @@ export default function SelfCheckoutPage() {
             color="blue"
             leftSection={<IconShoppingCart size={16} />}
           >
-            {totalItems} barang di keranjang
+            {totalItems} {t.selfCheckout.cart.total}
           </Badge>
         )}
       </Group>
@@ -410,7 +355,11 @@ export default function SelfCheckoutPage() {
       <Modal
         opened={cameraModalOpened}
         onClose={closeCameraModal}
-        title={`Memindai ${scanTarget === "item" ? "Barcode Barang" : "Kartu Staf"}`}
+        title={`${t.common.processing === "Memproses..." ? "Memindai" : "Scanning"} ${
+          scanTarget === "item"
+            ? t.selfCheckout.cart.item
+            : t.selfCheckout.staff.title
+        }`}
         size="lg"
       >
         <CameraScanner
@@ -422,259 +371,235 @@ export default function SelfCheckoutPage() {
       <Paper p="md" withBorder pos="relative">
         <LoadingOverlay visible={loading || submitting} />
 
-        {credentials.length === 0 && !loading ? (
-          <EmptyState
-            variant="no-credentials"
-            title="Belum ada akun terhubung"
-            description="Hubungkan akun Accurate untuk mulai memakai checkout mandiri."
-            action={{
-              label: "Hubungkan Accurate",
-              onClick: () => (window.location.href = "/dashboard/credentials"),
-            }}
+        <Stack gap="lg">
+          <Select
+            label={t.dashboard.nav.credentials}
+            placeholder={t.dashboard.emptyState.noCredentials.title}
+            data={credentials.map((c) => ({ value: c.id, label: c.appKey }))}
+            value={selectedCredential}
+            onChange={setSelectedCredential}
+            size="md"
           />
-        ) : (
-          <Stack gap="md">
-            {error && (
-              <Alert
-                icon={<IconAlertCircle size={16} />}
-                color="red"
-                withCloseButton
-                onClose={() => setError("")}
-              >
-                {error}
-              </Alert>
-            )}
 
-            {/* Credential Selection */}
-            <Select
-              label="Akun Accurate"
-              placeholder="Pilih akun"
-              data={credentials.map((c) => ({ value: c.id, label: c.appKey }))}
-              value={selectedCredential}
-              onChange={setSelectedCredential}
-              required
-              size="lg"
-            />
+          <Divider
+            label={t.selfCheckout.scanner.placeholder}
+            labelPosition="center"
+          />
 
-            <Divider label="Scan Barang" labelPosition="center" />
-
-            {/* Item Scanner */}
-            <Group align="flex-end" grow>
-              <TextInput
-                ref={itemInputRef}
-                label="Scan Barcode Barang"
-                placeholder="Scan atau ketik kode barang, lalu tekan Enter"
-                value={itemScanInput}
-                onChange={(e) => setItemScanInput(e.currentTarget.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleItemScan();
-                  }
-                }}
-                onBlur={() => {
-                  if (itemScanInput.trim()) {
-                    handleItemScan();
-                  }
-                }}
-                leftSection={<IconScan size={20} />}
-                size="lg"
-                disabled={!selectedCredential || lookingUpItem}
-                error={itemError}
-                autoFocus
-              />
-              <Button
-                size="lg"
-                variant="outline"
-                leftSection={<IconCamera size={20} />}
-                onClick={() => {
-                  setScanTarget("item");
-                  openCameraModal();
-                }}
-                disabled={!selectedCredential}
-              >
-                Kamera
-              </Button>
-            </Group>
-
-            {/* Pending Item (just scanned) */}
-            {pendingItem && (
-              <Card withBorder bg="blue.0" p="md">
-                <Group justify="space-between" align="center">
-                  <div>
-                    <Text fw={600} size="lg">
-                      {pendingItem.name}
-                    </Text>
-                    <Text c="dimmed" size="sm">
-                      Kode: {pendingItem.code}
-                    </Text>
-                  </div>
-                  <Group>
-                    <NumberInput
-                      value={pendingQuantity}
-                      onChange={(val) =>
-                        setPendingQuantity(typeof val === "number" ? val : 1)
-                      }
-                      min={1}
-                      max={1000}
-                      w={100}
-                      size="lg"
-                    />
-                    <Button
-                      onClick={addToCart}
-                      size="lg"
-                      leftSection={<IconCheck size={20} />}
-                    >
-                      Tambah ke Keranjang
-                    </Button>
-                  </Group>
-                </Group>
-              </Card>
-            )}
-
-            {/* Cart Table */}
-            <Divider label="Keranjang" labelPosition="center" />
-            {cart.length > 0 ? (
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Kode Barang</Table.Th>
-                    <Table.Th>Nama Barang</Table.Th>
-                    <Table.Th w={120}>Kuantitas</Table.Th>
-                    <Table.Th w={60}></Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {cart.map((item, idx) => (
-                    <Table.Tr key={idx}>
-                      <Table.Td>{item.itemCode}</Table.Td>
-                      <Table.Td>{item.itemName}</Table.Td>
-                      <Table.Td>
-                        <NumberInput
-                          value={item.quantity}
-                          onChange={(val) =>
-                            updateCartQuantity(
-                              idx,
-                              typeof val === "number" ? val : 0,
-                            )
-                          }
-                          min={1}
-                          max={1000}
-                          size="sm"
-                        />
-                      </Table.Td>
-                      <Table.Td>
-                        <ActionIcon
-                          color="red"
-                          variant="subtle"
-                          onClick={() => removeFromCart(idx)}
-                        >
-                          <IconTrash size={18} />
-                        </ActionIcon>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            ) : (
-              <EmptyState
-                variant="empty-cart"
-                size="sm"
-                description="Scan barang atau pakai kamera untuk menambah ke keranjang"
-              />
-            )}
-
-            <Divider label="Identifikasi Staf" labelPosition="center" />
-
-            {/* Staff Badge Scanner */}
+          <Group grow align="flex-end">
             <TextInput
-              ref={staffInputRef}
-              label="Scan Kartu Staf"
-              placeholder="Scan kode QR pada kartu staf"
-              value={staffEmail}
-              onChange={(e) => {
-                setStaffEmail(e.currentTarget.value);
-                parseStaffInfo(e.currentTarget.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleStaffScan();
-                }
-              }}
-              onBlur={handleStaffScan}
-              leftSection={<IconUser size={20} />}
+              ref={itemInputRef}
+              label={t.selfCheckout.cart.item}
+              placeholder={t.selfCheckout.scanner.placeholder}
+              value={itemScanInput}
+              onChange={(e) => setItemScanInput(e.currentTarget.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleItemScan()}
               size="lg"
               disabled={!selectedCredential}
+              leftSection={<IconScan size={20} />}
+              error={itemError}
             />
             <Button
               size="lg"
               variant="outline"
               leftSection={<IconCamera size={20} />}
               onClick={() => {
-                setScanTarget("staff");
+                setScanTarget("item");
                 openCameraModal();
               }}
               disabled={!selectedCredential}
-              fullWidth
+              style={{ flex: "0 0 auto" }}
             >
-              Scan Kartu dengan Kamera
+              Camera
             </Button>
+          </Group>
 
-            {/* Staff Info Display */}
-            {staffInfo && (
-              <Card withBorder bg="green.0" p="md">
+          {pendingItem && (
+            <Card withBorder bg="blue.0" p="md">
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text fw={600} size="lg">
+                    {pendingItem.name}
+                  </Text>
+                  <Text c="dimmed" size="sm">
+                    Code: {pendingItem.code}
+                  </Text>
+                </div>
                 <Group>
-                  <ThemeIcon size="xl" radius="xl" color="green">
-                    <IconUser size={24} />
-                  </ThemeIcon>
-                  <div>
-                    <Text fw={600} size="lg">
-                      {staffInfo.name}
-                    </Text>
-                    {staffInfo.dept && (
-                      <Text c="dimmed" size="sm">
-                        Departemen: {staffInfo.dept}
-                      </Text>
-                    )}
-                    <Text c="dimmed" size="sm">
-                      Email: {staffEmail}
-                    </Text>
-                  </div>
+                  <NumberInput
+                    value={pendingQuantity}
+                    onChange={(val) =>
+                      setPendingQuantity(typeof val === "number" ? val : 1)
+                    }
+                    min={1}
+                    max={1000}
+                    w={100}
+                    size="lg"
+                  />
+                  <Button
+                    onClick={addToCart}
+                    size="lg"
+                    leftSection={<IconCheck size={20} />}
+                  >
+                    {t.inventoryAdjustment.export.actions.next === "Lanjutkan"
+                      ? "Tambah ke Keranjang"
+                      : "Add to Cart"}
+                  </Button>
                 </Group>
-              </Card>
-            )}
+              </Group>
+            </Card>
+          )}
 
-            <Divider />
+          <Divider label={t.selfCheckout.cart.title} labelPosition="center" />
 
-            {/* Submit Button */}
-            <Button
-              onClick={handleSubmit}
-              size="xl"
-              fullWidth
-              disabled={!canSubmit}
-              loading={submitting}
-              color="green"
-              leftSection={<IconCheck size={24} />}
-              h={60}
-              styles={{ label: { fontSize: 20 } }}
-            >
-              Selesaikan Checkout ({totalItems} barang)
-            </Button>
+          {cart.length > 0 ? (
+            <Table striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>
+                    {
+                      t.inventoryAdjustment.import.upload.template.columns
+                        .itemNo
+                    }
+                  </Table.Th>
+                  <Table.Th>
+                    {t.inventoryAdjustment.export.preview.table.item}
+                  </Table.Th>
+                  <Table.Th w={120}>
+                    {t.inventoryAdjustment.export.preview.table.quantity}
+                  </Table.Th>
+                  <Table.Th w={60}></Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {cart.map((item, idx) => (
+                  <Table.Tr key={idx}>
+                    <Table.Td>{item.itemCode}</Table.Td>
+                    <Table.Td>{item.itemName}</Table.Td>
+                    <Table.Td>
+                      <NumberInput
+                        value={item.quantity}
+                        onChange={(val) =>
+                          updateCartQuantity(
+                            idx,
+                            typeof val === "number" ? val : 0,
+                          )
+                        }
+                        min={1}
+                        size="sm"
+                      />
+                    </Table.Td>
+                    <Table.Td>
+                      <ActionIcon
+                        color="red"
+                        variant="subtle"
+                        onClick={() => removeFromCart(idx)}
+                      >
+                        <IconTrash size={18} />
+                      </ActionIcon>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          ) : (
+            <EmptyState
+              variant="empty-cart"
+              size="sm"
+              description={t.selfCheckout.cart.empty}
+            />
+          )}
 
-            {!canSubmit && (
-              <Center>
-                <Text c="dimmed" size="sm">
-                  {!selectedCredential
-                    ? "Pilih akun Accurate untuk memulai"
-                    : cart.length === 0
-                      ? "Scan barang untuk menambah ke keranjang"
-                      : !staffEmail.includes("@")
-                        ? "Scan kartu staf untuk menyelesaikan checkout"
-                        : "Siap checkout"}
-                </Text>
-              </Center>
-            )}
-          </Stack>
-        )}
+          <Divider label={t.selfCheckout.staff.title} labelPosition="center" />
+
+          <TextInput
+            ref={staffInputRef}
+            label={t.selfCheckout.staff.email}
+            placeholder={t.selfCheckout.staff.placeholder}
+            value={staffEmail}
+            onChange={(e) => {
+              setStaffEmail(e.currentTarget.value);
+              parseStaffInfo(e.currentTarget.value);
+            }}
+            onKeyDown={(e) => e.key === "Enter" && handleStaffScan()}
+            onBlur={handleStaffScan}
+            leftSection={<IconUser size={20} />}
+            size="lg"
+            disabled={!selectedCredential}
+          />
+          <Button
+            size="lg"
+            variant="outline"
+            leftSection={<IconCamera size={20} />}
+            onClick={() => {
+              setScanTarget("staff");
+              openCameraModal();
+            }}
+            disabled={!selectedCredential}
+            fullWidth
+          >
+            {t.selfCheckout.staff.placeholder}
+          </Button>
+
+          {staffInfo && (
+            <Card withBorder bg="green.0" p="md">
+              <Group>
+                <ThemeIcon size="xl" radius="xl" color="green">
+                  <IconUser size={24} />
+                </ThemeIcon>
+                <div>
+                  <Text fw={600} size="lg">
+                    {staffInfo.name}
+                  </Text>
+                  {staffInfo.dept && (
+                    <Text c="dimmed" size="sm">
+                      {staffInfo.dept}
+                    </Text>
+                  )}
+                  <Text c="dimmed" size="sm">
+                    {staffEmail}
+                  </Text>
+                </div>
+              </Group>
+            </Card>
+          )}
+
+          <Divider />
+
+          {error && (
+            <Alert icon={<IconAlertCircle size={16} />} color="red">
+              {error}
+            </Alert>
+          )}
+
+          <Button
+            onClick={handleSubmit}
+            size="xl"
+            fullWidth
+            disabled={!canSubmit}
+            loading={submitting}
+            color="green"
+            leftSection={<IconCheck size={24} />}
+            h={60}
+            styles={{ label: { fontSize: 20 } }}
+          >
+            {t.selfCheckout.actions.checkout} ({totalItems})
+          </Button>
+
+          {!canSubmit && (
+            <Center>
+              <Text c="dimmed" size="sm">
+                {!selectedCredential
+                  ? t.dashboard.emptyState.noCredentials.description
+                  : cart.length === 0
+                    ? t.selfCheckout.cart.empty
+                    : !staffEmail.includes("@")
+                      ? t.selfCheckout.staff.placeholder
+                      : "Ready"}
+              </Text>
+            </Center>
+          )}
+        </Stack>
       </Paper>
     </Stack>
   );

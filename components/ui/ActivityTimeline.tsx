@@ -24,6 +24,7 @@ import {
   IconRefresh,
 } from "@tabler/icons-react";
 import { ReactNode } from "react";
+import { useLanguage } from "@/lib/language";
 
 export type ActivityType =
   | "export"
@@ -105,14 +106,10 @@ const typeConfig: Record<
   },
 };
 
-const statusConfig: Record<ActivityStatus, { color: string; label: string }> = {
-  success: { color: "green", label: "Selesai" },
-  error: { color: "red", label: "Gagal" },
-  pending: { color: "yellow", label: "Berjalan" },
-  warning: { color: "orange", label: "Peringatan" },
-};
-
-function formatRelativeTime(date: Date | string): string {
+function formatRelativeTime(
+  date: Date | string,
+  language: "id" | "en",
+): string {
   const now = new Date();
   const then = new Date(date);
   const diffMs = now.getTime() - then.getTime();
@@ -122,13 +119,13 @@ function formatRelativeTime(date: Date | string): string {
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffSeconds < 60) {
-    return "Baru saja";
+    return language === "id" ? "Baru saja" : "Just now";
   } else if (diffMinutes < 60) {
-    return `${diffMinutes}m lalu`;
+    return language === "id" ? `${diffMinutes}m lalu` : `${diffMinutes}m ago`;
   } else if (diffHours < 24) {
-    return `${diffHours}j lalu`;
+    return language === "id" ? `${diffHours}j lalu` : `${diffHours}h ago`;
   } else if (diffDays < 7) {
-    return `${diffDays}h lalu`;
+    return language === "id" ? `${diffDays}h lalu` : `${diffDays}d ago`;
   } else {
     return then.toLocaleDateString();
   }
@@ -139,10 +136,58 @@ export function ActivityTimeline({
   maxItems = 5,
   showViewAll = true,
   onViewAll,
-  emptyMessage = "Tidak ada aktivitas terbaru",
+  emptyMessage,
 }: ActivityTimelineProps) {
+  const { language } = useLanguage();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
+  const localizedTypeConfig = {
+    ...typeConfig,
+    export: {
+      ...typeConfig.export,
+      label: language === "id" ? "Ekspor" : "Export",
+    },
+    import: {
+      ...typeConfig.import,
+      label: language === "id" ? "Impor" : "Import",
+    },
+    connect: {
+      ...typeConfig.connect,
+      label: language === "id" ? "Terhubung" : "Connected",
+    },
+    disconnect: {
+      ...typeConfig.disconnect,
+      label: language === "id" ? "Terputus" : "Disconnected",
+    },
+    error: {
+      ...typeConfig.error,
+      label: language === "id" ? "Kesalahan" : "Error",
+    },
+    success: {
+      ...typeConfig.success,
+      label: language === "id" ? "Berhasil" : "Success",
+    },
+    pending: {
+      ...typeConfig.pending,
+      label: language === "id" ? "Menunggu" : "Pending",
+    },
+    warning: {
+      ...typeConfig.warning,
+      label: language === "id" ? "Peringatan" : "Warning",
+    },
+  };
+  const localizedStatusConfig = {
+    success: { color: "green", label: language === "id" ? "Selesai" : "Done" },
+    error: { color: "red", label: language === "id" ? "Gagal" : "Failed" },
+    pending: {
+      color: "yellow",
+      label: language === "id" ? "Berjalan" : "Running",
+    },
+    warning: {
+      color: "orange",
+      label: language === "id" ? "Peringatan" : "Warning",
+    },
+  };
 
   const displayedActivities = activities.slice(0, maxItems);
 
@@ -157,7 +202,12 @@ export function ActivityTimeline({
         <ThemeIcon size={48} radius="xl" variant="light" color="gray" mb="md">
           <IconClock size={24} />
         </ThemeIcon>
-        <Text c="dimmed">{emptyMessage}</Text>
+        <Text c="dimmed">
+          {emptyMessage ||
+            (language === "id"
+              ? "Tidak ada aktivitas terbaru"
+              : "No recent activity")}
+        </Text>
       </Box>
     );
   }
@@ -171,9 +221,9 @@ export function ActivityTimeline({
         color="brand"
       >
         {displayedActivities.map((activity, index) => {
-          const config = typeConfig[activity.type];
+          const config = localizedTypeConfig[activity.type];
           const statusInfo = activity.status
-            ? statusConfig[activity.status]
+            ? localizedStatusConfig[activity.status]
             : null;
 
           return (
@@ -215,7 +265,7 @@ export function ActivityTimeline({
                 )}
                 <Group gap="xs" align="center">
                   <Text size="xs" c="dimmed">
-                    {formatRelativeTime(activity.timestamp)}
+                    {formatRelativeTime(activity.timestamp, language)}
                   </Text>
                   {activity.metadata?.count !== undefined && (
                     <>
@@ -223,7 +273,8 @@ export function ActivityTimeline({
                         •
                       </Text>
                       <Text size="xs" c="dimmed">
-                        {activity.metadata.count} item
+                        {activity.metadata.count}{" "}
+                        {language === "id" ? "item" : "item"}
                       </Text>
                     </>
                   )}
@@ -233,7 +284,8 @@ export function ActivityTimeline({
                         •
                       </Text>
                       <Anchor href={activity.metadata.link} size="xs" fw={500}>
-                        {activity.metadata.linkText || "Lihat detail"}
+                        {activity.metadata.linkText ||
+                          (language === "id" ? "Lihat detail" : "View detail")}
                       </Anchor>
                     </>
                   )}
@@ -253,7 +305,9 @@ export function ActivityTimeline({
             fw={500}
             onClick={onViewAll}
           >
-            Lihat semua {activities.length} aktivitas
+            {language === "id"
+              ? `Lihat semua ${activities.length} aktivitas`
+              : `View all ${activities.length} activities`}
           </Anchor>
         </Box>
       )}
@@ -271,6 +325,7 @@ export function CompactActivityList({
   activities,
   maxItems = 5,
 }: CompactActivityListProps) {
+  const { language } = useLanguage();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
 
@@ -279,7 +334,9 @@ export function CompactActivityList({
   if (activities.length === 0) {
     return (
       <Text c="dimmed" size="sm" ta="center" py="md">
-        Tidak ada aktivitas terbaru
+        {language === "id"
+          ? "Tidak ada aktivitas terbaru"
+          : "No recent activity"}
       </Text>
     );
   }
@@ -287,7 +344,22 @@ export function CompactActivityList({
   return (
     <Stack gap="xs">
       {displayedActivities.map((activity) => {
-        const config = typeConfig[activity.type];
+        const config = {
+          ...typeConfig[activity.type],
+          label:
+            language === "id"
+              ? typeConfig[activity.type].label
+              : {
+                  export: "Export",
+                  import: "Import",
+                  connect: "Connected",
+                  disconnect: "Disconnected",
+                  error: "Error",
+                  success: "Success",
+                  pending: "Pending",
+                  warning: "Warning",
+                }[activity.type] || typeConfig[activity.type].label,
+        };
 
         return (
           <Group
@@ -321,7 +393,7 @@ export function CompactActivityList({
                 {activity.title}
               </Text>
               <Text size="xs" c="dimmed">
-                {formatRelativeTime(activity.timestamp)}
+                {formatRelativeTime(activity.timestamp, language)}
               </Text>
             </Stack>
           </Group>
@@ -341,14 +413,17 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({
-  title = "Aktivitas Terbaru",
+  title,
   activities,
   maxItems = 5,
   onViewAll,
   compact = false,
 }: ActivityCardProps) {
+  const { language } = useLanguage();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
+  const resolvedTitle =
+    title || (language === "id" ? "Aktivitas Terbaru" : "Recent Activity");
 
   return (
     <Paper
@@ -366,7 +441,7 @@ export function ActivityCard({
           <ThemeIcon size={24} radius="md" variant="light" color="brand">
             <IconRefresh size={14} />
           </ThemeIcon>
-          <Text fw={600}>{title}</Text>
+          <Text fw={600}>{resolvedTitle}</Text>
         </Group>
         {onViewAll && activities.length > 0 && (
           <Anchor
@@ -376,7 +451,7 @@ export function ActivityCard({
             fw={500}
             onClick={onViewAll}
           >
-            Lihat semua
+            {language === "id" ? "Lihat semua" : "View all"}
           </Anchor>
         )}
       </Group>

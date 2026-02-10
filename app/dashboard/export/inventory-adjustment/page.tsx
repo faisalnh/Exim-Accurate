@@ -46,6 +46,7 @@ import { notifications } from "@mantine/notifications";
 import dayjs from "dayjs";
 import { Stepper, StepperCard, type Step } from "@/components/ui";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useLanguage } from "@/lib/language";
 
 interface Credential {
   id: string;
@@ -63,24 +64,6 @@ interface PreviewRecord {
   warehouse?: string;
   description?: string;
 }
-
-const steps: Step[] = [
-  {
-    id: "select-account",
-    title: "Pilih Akun",
-    description: "Pilih akun Accurate",
-  },
-  {
-    id: "configure",
-    title: "Konfigurasi",
-    description: "Atur rentang tanggal & format",
-  },
-  {
-    id: "preview",
-    title: "Pratinjau & Ekspor",
-    description: "Tinjau dan unduh",
-  },
-];
 
 const formatOptions = [
   {
@@ -107,8 +90,51 @@ const formatOptions = [
 ];
 
 export default function ExportInventoryAdjustmentPage() {
+  const { t, language } = useLanguage();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
+
+  const steps: Step[] = [
+    {
+      id: "select-account",
+      title: t.inventoryAdjustment.export.steps.selectAccount,
+      description: t.inventoryAdjustment.export.steps.selectAccountDesc,
+    },
+    {
+      id: "configure",
+      title: t.inventoryAdjustment.export.steps.config,
+      description: t.inventoryAdjustment.export.steps.configDesc,
+    },
+    {
+      id: "preview",
+      title: t.inventoryAdjustment.export.steps.preview,
+      description: t.inventoryAdjustment.export.steps.previewDesc,
+    },
+  ];
+
+  const formatOptions = [
+    {
+      value: "csv",
+      label: t.inventoryAdjustment.export.config.formats.csv.label,
+      description: t.inventoryAdjustment.export.config.formats.csv.description,
+      icon: <IconFileTypeCsv size={24} />,
+      color: "green",
+    },
+    {
+      value: "xlsx",
+      label: t.inventoryAdjustment.export.config.formats.xlsx.label,
+      description: t.inventoryAdjustment.export.config.formats.xlsx.description,
+      icon: <IconFileTypeXls size={24} />,
+      color: "blue",
+    },
+    {
+      value: "json",
+      label: t.inventoryAdjustment.export.config.formats.json.label,
+      description: t.inventoryAdjustment.export.config.formats.json.description,
+      icon: <IconFileCode size={24} />,
+      color: "orange",
+    },
+  ];
 
   const [activeStep, setActiveStep] = useState(0);
   const [credentials, setCredentials] = useState<Credential[]>([]);
@@ -277,14 +303,15 @@ export default function ExportInventoryAdjustmentPage() {
             <ThemeIcon size={32} radius="md" variant="light" color="brand">
               <IconFileExport size={18} />
             </ThemeIcon>
-            <Title order={2}>Ekspor Penyesuaian Persediaan</Title>
+            <Title order={2}>{t.inventoryAdjustment.export.title}</Title>
           </Group>
           <Text c="dimmed" size="sm">
-            Ekspor data inventory adjustment ke format CSV, Excel, atau JSON
+            {t.inventoryAdjustment.export.description}
           </Text>
         </Box>
         <Badge size="lg" variant="light" color="blue">
-          Langkah {activeStep + 1} dari {steps.length}
+          {language === "id" ? "Langkah" : "Step"} {activeStep + 1} /{" "}
+          {steps.length}
         </Badge>
       </Group>
 
@@ -328,20 +355,24 @@ export default function ExportInventoryAdjustmentPage() {
           {(styles) => (
             <Box style={styles}>
               <StepperCard
-                title="Pilih Akun Accurate"
-                description="Pilih akun sumber data ekspor"
+                title={t.inventoryAdjustment.export.steps.selectAccount}
+                description={
+                  t.inventoryAdjustment.export.steps.selectAccountDesc
+                }
               >
                 {loadingCredentials ? (
                   <Stack gap="md" py="xl" align="center">
-                    <Text c="dimmed">Memuat akun...</Text>
+                    <Text c="dimmed">{t.common.processing}</Text>
                   </Stack>
                 ) : credentials.length === 0 ? (
                   <EmptyState
                     variant="no-credentials"
-                    title="Belum ada akun terhubung"
-                    description="Hubungkan akun Accurate terlebih dahulu untuk ekspor"
+                    title={t.dashboard.emptyState.noCredentials.title}
+                    description={
+                      t.dashboard.emptyState.noCredentials.description
+                    }
                     action={{
-                      label: "Hubungkan Akun",
+                      label: t.dashboard.credentials.connectButton,
                       onClick: () =>
                         (window.location.href = "/dashboard/credentials"),
                     }}
@@ -416,8 +447,8 @@ export default function ExportInventoryAdjustmentPage() {
               <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
                 {/* Date Range Card */}
                 <StepperCard
-                  title="Rentang Tanggal"
-                  description="Pilih rentang tanggal untuk ekspor"
+                  title={t.inventoryAdjustment.export.config.dateRange}
+                  description={t.inventoryAdjustment.export.steps.configDesc}
                 >
                   <Stack gap="md">
                     <Group gap="sm">
@@ -426,18 +457,22 @@ export default function ExportInventoryAdjustmentPage() {
                       </ThemeIcon>
                       <Box>
                         <Text size="sm" fw={500}>
-                          Rentang Tanggal Transaksi
+                          {t.inventoryAdjustment.export.config.dateRange}
                         </Text>
                         <Text size="xs" c="dimmed">
-                          Filter penyesuaian berdasarkan tanggal transaksi
+                          {t.inventoryAdjustment.export.steps.configDesc}
                         </Text>
                       </Box>
                     </Group>
 
                     <DatePickerInput
                       type="range"
-                      label="Pilih Rentang Tanggal"
-                      placeholder="Pilih tanggal awal dan akhir"
+                      label={t.inventoryAdjustment.export.config.dateRange}
+                      placeholder={
+                        language === "id"
+                          ? "Pilih rentang tanggal"
+                          : "Select date range"
+                      }
                       value={dateRange}
                       onChange={setDateRange}
                       size="md"
@@ -472,8 +507,8 @@ export default function ExportInventoryAdjustmentPage() {
 
                 {/* Format Card */}
                 <StepperCard
-                  title="Format Ekspor"
-                  description="Pilih format file yang diinginkan"
+                  title={t.inventoryAdjustment.export.config.format}
+                  description={t.inventoryAdjustment.export.config.format}
                 >
                   <Stack gap="md">
                     {formatOptions.map((option) => {
@@ -562,7 +597,7 @@ export default function ExportInventoryAdjustmentPage() {
                   <Group justify="space-between" align="flex-start" wrap="wrap">
                     <Stack gap="md">
                       <Text size="lg" fw={600}>
-                        Ringkasan Ekspor
+                        {t.inventoryAdjustment.import.steps.review}
                       </Text>
                       <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
                         <Group gap="sm">
@@ -576,7 +611,7 @@ export default function ExportInventoryAdjustmentPage() {
                           </ThemeIcon>
                           <Box>
                             <Text size="xs" c="dimmed">
-                              Akun
+                              {t.dashboard.nav.credentials}
                             </Text>
                             <Text size="sm" fw={600}>
                               {selectedCredentialData?.appKey || "-"}
@@ -595,7 +630,7 @@ export default function ExportInventoryAdjustmentPage() {
                           </ThemeIcon>
                           <Box>
                             <Text size="xs" c="dimmed">
-                              Rentang Tanggal
+                              {t.inventoryAdjustment.export.config.dateRange}
                             </Text>
                             <Text size="sm" fw={600}>
                               {dateRange[0] && dateRange[1]
@@ -622,7 +657,7 @@ export default function ExportInventoryAdjustmentPage() {
                           </ThemeIcon>
                           <Box>
                             <Text size="xs" c="dimmed">
-                              Format
+                              {t.inventoryAdjustment.export.config.format}
                             </Text>
                             <Text size="sm" fw={600}>
                               {selectedFormatData?.label || "-"}
@@ -651,11 +686,14 @@ export default function ExportInventoryAdjustmentPage() {
 
                 {/* Preview Section */}
                 <StepperCard
-                  title="Pratinjau Data"
+                  title={t.inventoryAdjustment.export.preview.title}
                   description={
                     totalRecords !== null
-                      ? `Menampilkan 20 data pertama dari ${totalRecords} data`
-                      : "Pratinjau data ekspor Anda"
+                      ? t.inventoryAdjustment.export.preview.subtitle.replace(
+                          "{total}",
+                          totalRecords.toString(),
+                        )
+                      : t.inventoryAdjustment.export.preview.title
                   }
                 >
                   <Group justify="flex-end" mb="md">
@@ -666,19 +704,19 @@ export default function ExportInventoryAdjustmentPage() {
                       onClick={fetchPreview}
                       loading={previewLoading}
                     >
-                      Muat Ulang Pratinjau
+                      {t.inventoryAdjustment.import.actions.reset}
                     </Button>
                   </Group>
 
                   {previewLoading ? (
                     <Stack gap="md" py="xl" align="center">
-                      <Text c="dimmed">Memuat pratinjau...</Text>
+                      <Text c="dimmed">{t.common.processing}</Text>
                     </Stack>
                   ) : preview.length === 0 ? (
                     <EmptyState
                       variant="no-data"
-                      title="Tidak ada data untuk dipratinjau"
-                      description="Tidak ada inventory adjustment pada rentang tanggal yang dipilih"
+                      title={t.inventoryAdjustment.export.preview.empty}
+                      description={t.inventoryAdjustment.export.preview.empty}
                       size="sm"
                     />
                   ) : (
@@ -698,14 +736,42 @@ export default function ExportInventoryAdjustmentPage() {
                       >
                         <Table.Thead>
                           <Table.Tr>
-                            <Table.Th>No. Penyesuaian</Table.Th>
-                            <Table.Th>Tanggal</Table.Th>
-                            <Table.Th>Nama Barang</Table.Th>
-                            <Table.Th>Kode Barang</Table.Th>
-                            <Table.Th>Tipe</Table.Th>
-                            <Table.Th>Kuantitas</Table.Th>
-                            <Table.Th>Satuan</Table.Th>
-                            <Table.Th>Gudang</Table.Th>
+                            <Table.Th>
+                              {
+                                t.inventoryAdjustment.export.preview.table
+                                  .number
+                              }
+                            </Table.Th>
+                            <Table.Th>
+                              {t.inventoryAdjustment.export.preview.table.date}
+                            </Table.Th>
+                            <Table.Th>
+                              {t.inventoryAdjustment.export.preview.table.item}
+                            </Table.Th>
+                            <Table.Th>
+                              {
+                                t.inventoryAdjustment.import.upload.template
+                                  .columns.itemNo
+                              }
+                            </Table.Th>
+                            <Table.Th>
+                              {language === "id" ? "Tipe" : "Type"}
+                            </Table.Th>
+                            <Table.Th>
+                              {
+                                t.inventoryAdjustment.export.preview.table
+                                  .quantity
+                              }
+                            </Table.Th>
+                            <Table.Th>
+                              {t.inventoryAdjustment.export.preview.table.unit}
+                            </Table.Th>
+                            <Table.Th>
+                              {
+                                t.inventoryAdjustment.import.upload.template
+                                  .columns.warehouse
+                              }
+                            </Table.Th>
                           </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>
@@ -785,7 +851,7 @@ export default function ExportInventoryAdjustmentPage() {
             onClick={handleBack}
             disabled={activeStep === 0}
           >
-            Kembali
+            {t.inventoryAdjustment.export.actions.back}
           </Button>
 
           <Group gap="sm">
@@ -797,7 +863,7 @@ export default function ExportInventoryAdjustmentPage() {
                 disabled={!canProceedToStep3}
                 color="green"
               >
-                Ekspor Sekarang
+                {t.inventoryAdjustment.export.actions.export}
               </Button>
             ) : (
               <Button
@@ -808,7 +874,7 @@ export default function ExportInventoryAdjustmentPage() {
                   (activeStep === 1 && !canProceedToStep3)
                 }
               >
-                Lanjut
+                {t.inventoryAdjustment.export.actions.next}
               </Button>
             )}
           </Group>

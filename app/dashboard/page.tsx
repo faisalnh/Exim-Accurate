@@ -25,6 +25,7 @@ import {
   IconArrowDownRight,
   IconDatabase,
   IconActivity,
+  IconScan,
 } from "@tabler/icons-react";
 import {
   AreaChart,
@@ -41,9 +42,11 @@ import { StatsCard } from "@/components/ui/StatsCard";
 import {
   QuickActions,
   defaultQuickActions,
+  type QuickAction,
 } from "@/components/ui/QuickActions";
 import { ActivityCard, ActivityItem } from "@/components/ui/ActivityTimeline";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useLanguage } from "@/lib/language";
 
 interface DashboardStats {
   totalExports: number;
@@ -108,6 +111,7 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export default function DashboardPage() {
+  const { t } = useLanguage();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
   const [loading, setLoading] = useState(true);
@@ -128,6 +132,41 @@ export default function DashboardPage() {
     [],
   );
   const [monthTotal, setMonthTotal] = useState(0);
+
+  const quickActions: QuickAction[] = [
+    {
+      id: "export",
+      title: t.dashboard.quickActions.export.title,
+      description: t.dashboard.quickActions.export.description,
+      icon: <IconFileExport size={24} />,
+      href: "/dashboard/export/inventory-adjustment",
+      color: "brand",
+    },
+    {
+      id: "import",
+      title: t.dashboard.quickActions.import.title,
+      description: t.dashboard.quickActions.import.description,
+      icon: <IconFileImport size={24} />,
+      href: "/dashboard/import/inventory-adjustment",
+      color: "success",
+    },
+    {
+      id: "self-checkout",
+      title: t.dashboard.quickActions.kiosk.title,
+      description: t.dashboard.quickActions.kiosk.description,
+      icon: <IconScan size={24} />,
+      href: "/dashboard/self-checkout",
+      color: "accent",
+    },
+    {
+      id: "credentials",
+      title: t.dashboard.quickActions.accounts.title,
+      description: t.dashboard.quickActions.accounts.description,
+      icon: <IconPlugConnected size={24} />,
+      href: "/dashboard/credentials",
+      color: "violet",
+    },
+  ];
 
   useEffect(() => {
     const loadData = async () => {
@@ -175,9 +214,9 @@ export default function DashboardPage() {
       <Group justify="space-between" align="flex-end">
         <Box>
           <Text size="sm" c="dimmed" mb={4}>
-            Selamat datang kembali 👋
+            {t.dashboard.welcome}
           </Text>
-          <Title order={2}>Dasbor</Title>
+          <Title order={2}>{t.dashboard.title}</Title>
         </Box>
         <Badge
           size="lg"
@@ -194,7 +233,7 @@ export default function DashboardPage() {
             />
           }
         >
-          Semua sistem operasional
+          {t.dashboard.systemOperational}
         </Badge>
       </Group>
 
@@ -210,41 +249,41 @@ export default function DashboardPage() {
         ) : (
           <>
             <StatsCard
-              title="Total Ekspor"
+              title={t.dashboard.stats.totalExports}
               value={stats.totalExports.toLocaleString()}
-              description="Seluruh operasi ekspor"
+              description={t.dashboard.stats.totalExportsDesc}
               trend={{
                 value: stats.exportsTrend,
-                label: "vs bulan lalu",
+                label: t.dashboard.stats.trendLabel,
               }}
               icon={<IconFileExport size={26} />}
               color="brand"
             />
             <StatsCard
-              title="Total Impor"
+              title={t.dashboard.stats.totalImports}
               value={stats.totalImports.toLocaleString()}
-              description="Seluruh operasi impor"
+              description={t.dashboard.stats.totalImportsDesc}
               trend={{
                 value: stats.importsTrend,
-                label: "vs bulan lalu",
+                label: t.dashboard.stats.trendLabel,
               }}
               icon={<IconFileImport size={26} />}
               color="success"
             />
             <StatsCard
-              title="Akun Terhubung"
+              title={t.dashboard.stats.connectedAccounts}
               value={stats.connectedAccounts}
-              description="Akun Accurate aktif"
+              description={t.dashboard.stats.connectedAccountsDesc}
               icon={<IconPlugConnected size={26} />}
               color="violet"
             />
             <StatsCard
-              title="Bulan Ini"
-              value={`${stats.thisMonth} pekerjaan`}
-              description="Operasi ekspor & impor"
+              title={t.dashboard.stats.thisMonth}
+              value={`${stats.thisMonth} ${t.dashboard.stats.jobs}`}
+              description={t.dashboard.stats.thisMonthDesc}
               trend={{
                 value: stats.monthTrend,
-                label: "vs bulan lalu",
+                label: t.dashboard.stats.trendLabel,
               }}
               icon={<IconCalendarStats size={26} />}
               color="accent"
@@ -260,10 +299,10 @@ export default function DashboardPage() {
             <ThemeIcon size={24} radius="md" variant="light" color="brand">
               <IconActivity size={14} />
             </ThemeIcon>
-            <Text fw={600}>Aksi Cepat</Text>
+            <Text fw={600}>{t.dashboard.quickActions.title}</Text>
           </Group>
         </Group>
-        <QuickActions actions={defaultQuickActions} />
+        <QuickActions actions={quickActions} />
       </Box>
 
       {/* Charts and Activity */}
@@ -284,10 +323,10 @@ export default function DashboardPage() {
               <ThemeIcon size={24} radius="md" variant="light" color="brand">
                 <IconDatabase size={14} />
               </ThemeIcon>
-              <Text fw={600}>Aktivitas Mingguan</Text>
+              <Text fw={600}>{t.dashboard.charts.weeklyTitle}</Text>
             </Group>
             <Anchor size="xs" fw={500}>
-              Lihat detail
+              {t.dashboard.charts.viewDetail}
             </Anchor>
           </Group>
 
@@ -342,7 +381,7 @@ export default function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="exports"
-                    name="Ekspor"
+                    name={t.dashboard.charts.exports}
                     stroke="#228BE6"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -351,7 +390,7 @@ export default function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="imports"
-                    name="Impor"
+                    name={t.dashboard.charts.imports}
                     stroke="#40C057"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -373,7 +412,7 @@ export default function DashboardPage() {
                 }}
               />
               <Text size="xs" c="dimmed">
-                Ekspor
+                {t.dashboard.charts.exports}
               </Text>
             </Group>
             <Group gap="xs">
@@ -386,7 +425,7 @@ export default function DashboardPage() {
                 }}
               />
               <Text size="xs" c="dimmed">
-                Impor
+                {t.dashboard.charts.imports}
               </Text>
             </Group>
           </Group>
@@ -408,10 +447,10 @@ export default function DashboardPage() {
               <ThemeIcon size={24} radius="md" variant="light" color="accent">
                 <IconCalendarStats size={14} />
               </ThemeIcon>
-              <Text fw={600}>Tren Bulanan</Text>
+              <Text fw={600}>{t.dashboard.charts.monthlyTitle}</Text>
             </Group>
             <Badge size="sm" variant="light" color="teal">
-              +25% pertumbuhan
+              +25% {t.dashboard.charts.growth}
             </Badge>
           </Group>
 
@@ -453,7 +492,7 @@ export default function DashboardPage() {
                   <Tooltip content={<CustomTooltip />} />
                   <Bar
                     dataKey="total"
-                    name="Total Operasi"
+                    name={t.dashboard.charts.totalOperations}
                     fill="url(#colorBar)"
                     radius={[4, 4, 0, 0]}
                   />
@@ -464,12 +503,12 @@ export default function DashboardPage() {
 
           <Group justify="space-between" mt="md">
             <Text size="xs" c="dimmed">
-              Total bulan ini
+              {t.dashboard.charts.totalMonth}
             </Text>
             <Group gap={4}>
               <IconArrowUpRight size={14} color="#40C057" />
               <Text size="sm" fw={600}>
-                {monthTotal} operasi
+                {monthTotal} {t.dashboard.charts.operations}
               </Text>
             </Group>
           </Group>
@@ -489,7 +528,7 @@ export default function DashboardPage() {
           </Paper>
         ) : activities.length > 0 ? (
           <ActivityCard
-            title="Aktivitas Terbaru"
+            title={t.dashboard.activity.title}
             activities={activities}
             maxItems={5}
             onViewAll={() => console.log("Lihat semua aktivitas")}
@@ -507,10 +546,10 @@ export default function DashboardPage() {
           >
             <EmptyState
               variant="no-data"
-              title="Belum ada aktivitas"
-              description="Operasi ekspor dan impor Anda akan muncul di sini"
+              title={t.dashboard.activity.noActivity}
+              description={t.dashboard.activity.noActivityDesc}
               action={{
-                label: "Mulai Ekspor",
+                label: t.dashboard.activity.startExport,
                 onClick: () =>
                   (window.location.href =
                     "/dashboard/export/inventory-adjustment"),

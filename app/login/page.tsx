@@ -22,6 +22,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { LanguageSelect } from "@/components/ui/LanguageSelect";
+import { useLanguage } from "@/lib/language";
 import {
   IconAlertCircle,
   IconShield,
@@ -32,31 +33,33 @@ import {
   IconArrowRight,
 } from "@tabler/icons-react";
 
-const features = [
-  {
-    icon: <IconFileExport size={20} />,
-    title: "Ekspor Massal",
-    description: "Ekspor ke CSV, XLSX, atau JSON",
-  },
-  {
-    icon: <IconFileImport size={20} />,
-    title: "Impor Massal",
-    description: "Impor dengan validasi otomatis",
-  },
-  {
-    icon: <IconPlugConnected size={20} />,
-    title: "Integrasi OAuth",
-    description: "Koneksi aman ke Accurate",
-  },
-  {
-    icon: <IconShield size={20} />,
-    title: "Keamanan",
-    description: "HMAC-SHA256 signature",
-  },
-];
-
 export default function LoginPage() {
+  const { t } = useLanguage();
   const router = useRouter();
+
+  const features = [
+    {
+      icon: <IconFileExport size={20} />,
+      title: t.login.features.export.title,
+      description: t.login.features.export.description,
+    },
+    {
+      icon: <IconFileImport size={20} />,
+      title: t.login.features.import.title,
+      description: t.login.features.import.description,
+    },
+    {
+      icon: <IconPlugConnected size={20} />,
+      title: t.login.features.oauth.title,
+      description: t.login.features.oauth.description,
+    },
+    {
+      icon: <IconShield size={20} />,
+      title: t.login.features.security.title,
+      description: t.login.features.security.description,
+    },
+  ];
+
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
   const [email, setEmail] = useState("");
@@ -77,13 +80,13 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Email atau password tidak valid");
+        setError(t.login.errorInvalid);
       } else {
         router.push("/dashboard");
         router.refresh();
       }
     } catch (err) {
-      setError("Terjadi kesalahan. Silakan coba lagi.");
+      setError(t.login.errorGeneric);
     } finally {
       setLoading(false);
     }
@@ -168,15 +171,10 @@ export default function LoginPage() {
           {/* Tagline */}
           <Stack gap="sm">
             <Title order={2} c="white" fw={700} style={{ fontSize: rem(36) }}>
-              Kelola Inventory
-              <br />
-              Adjustment dengan
-              <br />
-              Mudah
+              {t.login.branding.title}
             </Title>
             <Text c="rgba(255, 255, 255, 0.8)" size="lg" maw={400}>
-              Platform ekspor dan impor massal untuk Accurate Online dengan
-              validasi, pratinjau, dan keamanan terjamin.
+              {t.login.branding.description}
             </Text>
           </Stack>
 
@@ -212,19 +210,19 @@ export default function LoginPage() {
             <Group gap="xs">
               <IconCheck size={16} color="rgba(255, 255, 255, 0.8)" />
               <Text size="xs" c="rgba(255, 255, 255, 0.8)">
-                100% Gratis
+                {t.home.benefits.free.split(",")[0]}
               </Text>
             </Group>
             <Group gap="xs">
               <IconCheck size={16} color="rgba(255, 255, 255, 0.8)" />
               <Text size="xs" c="rgba(255, 255, 255, 0.8)">
-                Bisa self-host
+                {t.common.selfHost}
               </Text>
             </Group>
             <Group gap="xs">
               <IconCheck size={16} color="rgba(255, 255, 255, 0.8)" />
               <Text size="xs" c="rgba(255, 255, 255, 0.8)">
-                Sumber Terbuka
+                {t.common.free.split(" · ")[1]}
               </Text>
             </Group>
           </Group>
@@ -284,10 +282,10 @@ export default function LoginPage() {
             {/* Header */}
             <Stack gap="xs" ta={{ base: "center", md: "left" }}>
               <Title order={2} fw={700}>
-                Selamat Datang
+                {t.login.title}
               </Title>
               <Text c="dimmed" size="sm">
-                Masuk ke akun Anda untuk melanjutkan
+                {t.login.subtitle}
               </Text>
             </Stack>
 
@@ -311,7 +309,7 @@ export default function LoginPage() {
                   {error && (
                     <Alert
                       icon={<IconAlertCircle size={16} />}
-                      title="Login gagal"
+                      title={t.login.errorTitle}
                       color="red"
                       variant="light"
                       radius="md"
@@ -321,8 +319,8 @@ export default function LoginPage() {
                   )}
 
                   <TextInput
-                    label="Email"
-                    placeholder="nama@email.com"
+                    label={t.login.email}
+                    placeholder={t.login.placeholderEmail}
                     required
                     value={email}
                     onChange={(e) => setEmail(e.currentTarget.value)}
@@ -337,8 +335,8 @@ export default function LoginPage() {
                   />
 
                   <PasswordInput
-                    label="Password"
-                    placeholder="Masukkan password"
+                    label={t.login.password}
+                    placeholder={t.login.placeholderPassword}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.currentTarget.value)}
@@ -360,7 +358,7 @@ export default function LoginPage() {
                       size="sm"
                       fw={500}
                     >
-                      Lupa password?
+                      {t.login.forgotPassword}
                     </Anchor>
                   </Group>
 
@@ -385,7 +383,7 @@ export default function LoginPage() {
                       },
                     }}
                   >
-                    {loading ? "Memproses..." : "Masuk"}
+                    {loading ? t.common.processing : t.login.submit}
                   </Button>
                 </Stack>
               </form>
@@ -394,27 +392,27 @@ export default function LoginPage() {
             {/* Footer */}
             <Stack gap="md" align="center">
               <Divider
-                label="atau"
+                label={t.login.or}
                 labelPosition="center"
                 w="100%"
                 color={isDark ? "dark.4" : "gray.3"}
               />
 
               <Text size="sm" c="dimmed" ta="center">
-                Belum punya akun?{" "}
+                {t.login.noAccount}{" "}
                 <Anchor
                   component="button"
                   type="button"
                   fw={600}
                   onClick={() => router.push("/register")}
                 >
-                  Daftar di sini
+                  {t.login.register}
                 </Anchor>
               </Text>
 
               <Group gap="xs" mt="sm">
                 <Anchor size="xs" c="dimmed" href="/terms">
-                  Syarat & Ketentuan
+                  {t.login.terms}
                 </Anchor>
               </Group>
             </Stack>

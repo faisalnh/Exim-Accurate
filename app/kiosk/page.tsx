@@ -24,6 +24,7 @@ import {
   IconUserCheck,
 } from "@tabler/icons-react";
 import { LanguageSelect } from "@/components/ui/LanguageSelect";
+import { useLanguage } from "@/lib/language";
 
 interface Credential {
   id: string;
@@ -32,6 +33,7 @@ interface Credential {
 }
 
 export default function KioskHomePage() {
+  const { t, language } = useLanguage();
   const router = useRouter();
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,10 +84,10 @@ export default function KioskHomePage() {
           </Box>
           <Stack align="center" gap="xs">
             <Text c="white" size="xl" fw={600} className="kiosk-heading">
-              Memuat Node
+              {t.kiosk.loadingTitle}
             </Text>
             <Text c="rgba(255,255,255,0.6)" size="sm">
-              Menyinkronkan sesi aman...
+              {t.kiosk.loadingSubtitle}
             </Text>
           </Stack>
         </Stack>
@@ -121,11 +123,14 @@ export default function KioskHomePage() {
             </ThemeIcon>
             <Stack gap="sm">
               <Title order={2} c="white" className="kiosk-heading">
-                Belum Ada Akun Tersinkron
+                {language === "id"
+                  ? "Belum Ada Akun Tersinkron"
+                  : "No Synced Account Yet"}
               </Title>
               <Text c="rgba(255,255,255,0.65)" size="lg">
-                Konfigurasikan akun Accurate di dasbor untuk mengaktifkan kiosk
-                ini.
+                {language === "id"
+                  ? "Konfigurasikan akun Accurate di dasbor untuk mengaktifkan kiosk ini."
+                  : "Configure your Accurate account in the dashboard to enable this kiosk."}
               </Text>
             </Stack>
           </Stack>
@@ -137,18 +142,24 @@ export default function KioskHomePage() {
   const features = [
     {
       icon: <IconScan size={20} />,
-      title: "Scan Identitas",
-      description: "Autentikasi dengan kartu staf",
+      title: language === "id" ? "Scan Identitas" : "Scan Identity",
+      description:
+        language === "id"
+          ? "Autentikasi dengan kartu staf"
+          : "Authenticate with staff badge",
     },
     {
       icon: <IconShoppingCart size={20} />,
-      title: "Scan Produk",
-      description: "Barang langsung masuk ke keranjang",
+      title: t.kiosk.scanProduct,
+      description: t.kiosk.scanDescription,
     },
     {
       icon: <IconUserCheck size={20} />,
-      title: "Konfirmasi & Checkout",
-      description: "Tinjau barang lalu selesaikan checkout",
+      title: language === "id" ? "Konfirmasi & Checkout" : "Confirm & Checkout",
+      description:
+        language === "id"
+          ? "Tinjau barang lalu selesaikan checkout"
+          : "Review items then complete checkout",
     },
   ];
 
@@ -193,10 +204,12 @@ export default function KioskHomePage() {
               }}
               className="kiosk-heading"
             >
-              Checkout Mandiri
+              {language === "id" ? "Checkout Mandiri" : "Self-Checkout"}
             </Text>
             <Text size="xs" c="rgba(255,255,255,0.5)" fw={500}>
-              Terminal Checkout Mandiri
+              {language === "id"
+                ? "Terminal Checkout Mandiri"
+                : "Self-Checkout Terminal"}
             </Text>
           </Stack>
         </Group>
@@ -209,7 +222,7 @@ export default function KioskHomePage() {
             fw={800}
             style={{ fontSize: rem(42), lineHeight: 1.1 }}
           >
-            Tanpa Hambatan
+            {language === "id" ? "Tanpa Hambatan" : "Seamless"}
             <br />
             <span
               style={{
@@ -218,11 +231,15 @@ export default function KioskHomePage() {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              Pengalaman Self-Checkout
+              {language === "id"
+                ? "Pengalaman Self-Checkout"
+                : "Self-Checkout Experience"}
             </span>
           </Title>
           <Text c="rgba(255,255,255,0.6)" size="lg">
-            Pilih profil stasiun untuk memulai sesi checkout.
+            {language === "id"
+              ? "Pilih profil stasiun untuk memulai sesi checkout."
+              : "Select a station profile to start checkout session."}
           </Text>
         </Stack>
 
@@ -315,7 +332,7 @@ export default function KioskHomePage() {
                       border: "1px solid rgba(16, 185, 129, 0.4)",
                     }}
                   >
-                    Aktif
+                    {language === "id" ? "Aktif" : "Active"}
                   </Badge>
                 </Group>
 
@@ -324,7 +341,10 @@ export default function KioskHomePage() {
                     {cred.appKey}
                   </Text>
                   <Text c="rgba(255,255,255,0.55)" size="sm">
-                    {cred.host || "Belum dikonfigurasi"}
+                    {cred.host ||
+                      (language === "id"
+                        ? "Belum dikonfigurasi"
+                        : "Not configured")}
                   </Text>
                 </Stack>
 
@@ -336,7 +356,7 @@ export default function KioskHomePage() {
                   }}
                 >
                   <Text size="sm" fw={500}>
-                    Mulai Sesi
+                    {language === "id" ? "Mulai Sesi" : "Start Session"}
                   </Text>
                   <IconArrowRight size={16} />
                 </Group>
@@ -349,11 +369,11 @@ export default function KioskHomePage() {
       {/* Footer */}
       <Group justify="center" py="lg">
         <Text c="rgba(255,255,255,0.45)" size="xs">
-          Ditenagai oleh{" "}
+          {language === "id" ? "Ditenagai oleh" : "Powered by"}{" "}
           <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>
             Exima
           </span>{" "}
-          • Integrasi Accurate
+          • {language === "id" ? "Integrasi Accurate" : "Accurate Integration"}
         </Text>
       </Group>
 

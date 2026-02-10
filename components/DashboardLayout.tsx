@@ -35,6 +35,7 @@ import {
 } from "@tabler/icons-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageSelect } from "@/components/ui/LanguageSelect";
+import { useLanguage } from "@/lib/language";
 
 interface NavItem {
   label: string;
@@ -49,41 +50,8 @@ interface NavItem {
   badge?: string;
 }
 
-const navItems: NavItem[] = [
-  {
-    label: "Dasbor",
-    icon: <IconDashboard size={20} />,
-    href: "/dashboard",
-  },
-  {
-    label: "Penyesuaian Persediaan",
-    icon: <IconAdjustments size={20} />,
-    children: [
-      {
-        label: "Ekspor (Ambil data)",
-        icon: <IconFileExport size={16} />,
-        href: "/dashboard/export/inventory-adjustment",
-      },
-      {
-        label: "Impor (Input data)",
-        icon: <IconFileImport size={16} />,
-        href: "/dashboard/import/inventory-adjustment",
-      },
-    ],
-  },
-  {
-    label: "Checkout Mandiri",
-    icon: <IconScan size={20} />,
-    href: "/dashboard/self-checkout",
-  },
-  {
-    label: "Kredensial Accurate",
-    icon: <IconKey size={20} />,
-    href: "/dashboard/credentials",
-  },
-];
-
 function UserMenu() {
+  const { t } = useLanguage();
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -146,26 +114,26 @@ function UserMenu() {
       </Menu.Target>
 
       <Menu.Dropdown>
-        <Menu.Label>Akun</Menu.Label>
+        <Menu.Label>{t.dashboard.userMenu.account}</Menu.Label>
         <Menu.Item
           leftSection={<IconUser size={16} />}
           onClick={() => router.push("/dashboard/profile")}
         >
-          Profil
+          {t.dashboard.userMenu.profile}
         </Menu.Item>
         <Menu.Item
           leftSection={<IconSettings size={16} />}
           onClick={() => router.push("/dashboard/settings")}
         >
-          Pengaturan
+          {t.dashboard.userMenu.settings}
         </Menu.Item>
         <Menu.Divider />
-        <Menu.Label>Tautan</Menu.Label>
+        <Menu.Label>{t.dashboard.userMenu.links}</Menu.Label>
         <Menu.Item
           leftSection={<IconExternalLink size={16} />}
           onClick={() => window.open("/kiosk", "_blank")}
         >
-          Buka Mode Kiosk
+          {t.dashboard.userMenu.openKiosk}
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item
@@ -173,7 +141,7 @@ function UserMenu() {
           color="red"
           onClick={handleSignOut}
         >
-          Keluar
+          {t.dashboard.userMenu.logout}
         </Menu.Item>
       </Menu.Dropdown>
     </Menu>
@@ -181,11 +149,46 @@ function UserMenu() {
 }
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const [opened, { toggle, close }] = useDisclosure();
   const pathname = usePathname();
   const router = useRouter();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
+
+  const navItems: NavItem[] = [
+    {
+      label: t.dashboard.nav.dashboard,
+      icon: <IconDashboard size={20} />,
+      href: "/dashboard",
+    },
+    {
+      label: t.dashboard.nav.inventoryAdjustment,
+      icon: <IconAdjustments size={20} />,
+      children: [
+        {
+          label: t.dashboard.nav.export,
+          icon: <IconFileExport size={16} />,
+          href: "/dashboard/export/inventory-adjustment",
+        },
+        {
+          label: t.dashboard.nav.import,
+          icon: <IconFileImport size={16} />,
+          href: "/dashboard/import/inventory-adjustment",
+        },
+      ],
+    },
+    {
+      label: t.dashboard.nav.selfCheckout,
+      icon: <IconScan size={20} />,
+      href: "/dashboard/self-checkout",
+    },
+    {
+      label: t.dashboard.nav.credentials,
+      icon: <IconKey size={20} />,
+      href: "/dashboard/credentials",
+    },
+  ];
 
   const isActive = (href: string) => pathname === href;
   const isParentActive = (children?: { href: string }[]) =>
@@ -429,11 +432,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               }}
             />
             <Text size="xs" fw={500}>
-              Terhubung ke Accurate
+              {t.dashboard.status.connected}
             </Text>
           </Group>
           <Text size="xs" c="dimmed">
-            Status API: Operasional
+            {t.dashboard.status.operational}
           </Text>
         </Box>
       </AppShell.Navbar>

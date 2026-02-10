@@ -21,6 +21,7 @@ import {
 } from "@tabler/icons-react";
 import Image from "next/image";
 import { ReactNode } from "react";
+import { useLanguage } from "@/lib/language";
 
 type EmptyStateVariant =
   | "no-data"
@@ -129,13 +130,28 @@ export function EmptyState({
   size = "md",
 }: EmptyStateProps) {
   const { colorScheme } = useMantineColorScheme();
+  const { t } = useLanguage();
   const isDark = colorScheme === "dark";
 
   const config = variantConfig[variant];
   const sizeSettings = sizeConfig[size];
 
-  const displayTitle = title || config.title;
-  const displayDescription = description || config.description;
+  const displayTitle =
+    title ||
+    (
+      t.dashboard.emptyState[
+        variant as keyof typeof t.dashboard.emptyState
+      ] as any
+    )?.title ||
+    config.title;
+  const displayDescription =
+    description ||
+    (
+      t.dashboard.emptyState[
+        variant as keyof typeof t.dashboard.emptyState
+      ] as any
+    )?.description ||
+    config.description;
   const displayIcon = icon || config.icon;
 
   return (
@@ -221,6 +237,7 @@ export function IllustratedEmptyState({
   ...props
 }: IllustratedEmptyStateProps) {
   const { colorScheme } = useMantineColorScheme();
+  const { t } = useLanguage();
   const isDark = colorScheme === "dark";
   const sizeSettings = sizeConfig[props.size || "md"];
 
@@ -264,10 +281,21 @@ export function IllustratedEmptyState({
         style={{ maxWidth: sizeSettings.maxWidth, textAlign: "center" }}
       >
         <Title order={props.size === "lg" ? 2 : props.size === "md" ? 3 : 4}>
-          {props.title || variantConfig[props.variant || "no-data"].title}
+          {props.title ||
+            (
+              t.dashboard.emptyState[
+                props.variant as keyof typeof t.dashboard.emptyState
+              ] as any
+            )?.title ||
+            variantConfig[props.variant || "no-data"].title}
         </Title>
         <Text c="dimmed" size={props.size === "sm" ? "sm" : "md"}>
           {props.description ||
+            (
+              t.dashboard.emptyState[
+                props.variant as keyof typeof t.dashboard.emptyState
+              ] as any
+            )?.description ||
             variantConfig[props.variant || "no-data"].description}
         </Text>
       </Stack>

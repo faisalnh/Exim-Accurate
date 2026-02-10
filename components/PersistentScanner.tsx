@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Box, Text, Loader, Stack, Center, Select, Group } from "@mantine/core";
 import { IconCamera, IconAlertCircle } from "@tabler/icons-react";
+import { useLanguage } from "@/lib/language";
 
 interface PersistentScannerProps {
   onScan: (code: string) => void;
@@ -16,6 +17,7 @@ export function PersistentScanner({
   scannerHeight = 300,
   disabled = false,
 }: PersistentScannerProps) {
+  const { language } = useLanguage();
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [status, setStatus] = useState<
     "initializing" | "ready" | "scanning" | "error"
@@ -87,12 +89,17 @@ export function PersistentScanner({
         return;
       }
       console.error("Scanner start error:", err);
-      setError(err.message || "Gagal memulai kamera");
+      setError(
+        err.message ||
+          (language === "id"
+            ? "Gagal memulai kamera"
+            : "Failed to start camera"),
+      );
       setStatus("error");
     } finally {
       isTransitioningRef.current = false;
     }
-  }, [disabled, onScan, readerId, selectedCamera]);
+  }, [disabled, onScan, readerId, selectedCamera, language]);
 
   useEffect(() => {
     Html5Qrcode.getCameras()
@@ -100,19 +107,27 @@ export function PersistentScanner({
         if (devices && devices.length > 0) {
           const formattedDevices = devices.map((dev, idx) => ({
             id: dev.id,
-            label: dev.label || `Kamera ${idx + 1}`,
+            label:
+              dev.label ||
+              `${language === "id" ? "Kamera" : "Camera"} ${idx + 1}`,
           }));
           setCameras(formattedDevices);
           setSelectedCamera(formattedDevices[0].id);
           setStatus("ready");
         } else {
-          setError("Kamera tidak ditemukan");
+          setError(
+            language === "id" ? "Kamera tidak ditemukan" : "Camera not found",
+          );
           setStatus("error");
         }
       })
       .catch((err) => {
         console.error("Camera access error:", err);
-        setError("Izin kamera ditolak");
+        setError(
+          language === "id"
+            ? "Izin kamera ditolak"
+            : "Camera permission denied",
+        );
         setStatus("error");
       });
 
@@ -145,7 +160,7 @@ export function PersistentScanner({
         }
       }
     };
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     if (status === "ready" && selectedCamera) {
@@ -183,7 +198,7 @@ export function PersistentScanner({
       {cameras.length > 1 && (
         <Select
           size="xs"
-          placeholder="Pilih kamera"
+          placeholder={language === "id" ? "Pilih kamera" : "Select camera"}
           data={cameras.map((c) => ({ value: c.id, label: c.label }))}
           value={selectedCamera}
           onChange={handleCameraChange}
@@ -257,7 +272,9 @@ export function PersistentScanner({
               <Stack align="center" gap="xs">
                 <Loader color="blue" />
                 <Text c="white" size="sm">
-                  Menginisialisasi kamera...
+                  {language === "id"
+                    ? "Menginisialisasi kamera..."
+                    : "Initializing camera..."}
                 </Text>
               </Stack>
             )}
@@ -265,7 +282,9 @@ export function PersistentScanner({
               <Stack align="center" gap="xs">
                 <Loader color="blue" />
                 <Text c="white" size="sm">
-                  Memulai scanner...
+                  {language === "id"
+                    ? "Memulai scanner..."
+                    : "Starting scanner..."}
                 </Text>
               </Stack>
             )}
@@ -303,7 +322,7 @@ export function PersistentScanner({
                 }}
               />
               <Text c="white" size="xs" fw={600}>
-                MEMINDAI
+                {language === "id" ? "MEMINDAI" : "SCANNING"}
               </Text>
             </Group>
           </Box>

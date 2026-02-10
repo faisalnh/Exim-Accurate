@@ -11,34 +11,17 @@ export async function GET() {
     return NextResponse.json({ error: "Tidak diizinkan" }, { status: 401 });
   }
 
-  try {
-    const credentials = await prisma.accurateCredentials.findMany({
-      where: { userId: session.user.id },
-      select: {
-        id: true,
-        appKey: true,
-        host: true,
-        createdAt: true,
-      },
-    });
+  const credentials = await prisma.accurateCredentials.findMany({
+    where: { userId: session.user.id },
+    select: {
+      id: true,
+      appKey: true,
+      host: true,
+      createdAt: true,
+    },
+  });
 
-    return NextResponse.json(credentials);
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P1001"
-    ) {
-      return NextResponse.json(
-        { error: "Database tidak dapat diakses. Coba lagi beberapa saat." },
-        { status: 503 },
-      );
-    }
-
-    return NextResponse.json(
-      { error: "Gagal memuat daftar kredensial." },
-      { status: 500 },
-    );
-  }
+  return NextResponse.json(credentials);
 }
 
 export async function DELETE(req: NextRequest) {
