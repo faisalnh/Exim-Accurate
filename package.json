@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "npm run lint && npm run type-check",
+    "pretype-check": "prisma generate",
     "type-check": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

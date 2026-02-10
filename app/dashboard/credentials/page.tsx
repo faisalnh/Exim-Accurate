@@ -28,6 +28,7 @@ interface Credential {
 
 export default function CredentialsPage() {
   const { t } = useLanguage();
+  const notificationsText = t.dashboard.credentials.notifications;
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDeleteId, setLoadingDeleteId] = useState<string | null>(null);
@@ -47,20 +48,26 @@ export default function CredentialsPage() {
 
     if (status === "connected") {
       notifications.show({
-        title: t.dashboard.credentials.notifications.connectedTitle,
-        message: t.dashboard.credentials.notifications.connectedMessage,
+        title: notificationsText.connectedTitle,
+        message: notificationsText.connectedMessage,
         color: "green",
         icon: <IconCheck size={16} />,
       });
       fetchCredentials();
     } else if (status === "error") {
       notifications.show({
-        title: t.dashboard.credentials.notifications.errorTitle,
-        message: message || t.dashboard.credentials.notifications.errorGeneric,
+        title: notificationsText.errorTitle,
+        message: message || notificationsText.errorGeneric,
         color: "red",
       });
     }
-  }, [searchParams]);
+  }, [
+    searchParams,
+    notificationsText.connectedTitle,
+    notificationsText.connectedMessage,
+    notificationsText.errorTitle,
+    notificationsText.errorGeneric,
+  ]);
 
   useEffect(() => {
     fetchCredentials();

@@ -7,6 +7,8 @@ const ignores = [
   "coverage",
   "out",
   "build",
+  ".worktrees",
+  ".worktrees/**",
   "**/*.config.*",
   "**/next-env.d.ts",
   "**/tsconfig.*",

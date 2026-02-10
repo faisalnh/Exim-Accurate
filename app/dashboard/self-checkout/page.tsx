@@ -123,50 +123,57 @@ export default function SelfCheckoutPage() {
     }
   };
 
-  const performLookup = async (code: string) => {
-    setItemError("");
-    setLookingUpItem(true);
-    setPendingItem(null);
+  const performLookup = useCallback(
+    async (code: string) => {
+      setItemError("");
+      setLookingUpItem(true);
+      setPendingItem(null);
 
-    try {
-      const response = await fetch(
-        `/api/self-checkout/lookup?code=${encodeURIComponent(code)}&credentialId=${selectedCredential}`,
-      );
+      try {
+        const response = await fetch(
+          `/api/self-checkout/lookup?code=${encodeURIComponent(code)}&credentialId=${selectedCredential}`,
+        );
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || t.selfCheckout.scanner.notFound);
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || t.selfCheckout.scanner.notFound);
+        }
+
+        const item = await response.json();
+        setPendingItem({ code: item.itemCode, name: item.itemName });
+        setPendingQuantity(1);
+        setItemScanInput("");
+
+        notifications.show({
+          title: t.selfCheckout.notifications.itemAdded,
+          message: `${item.itemName} (${item.itemCode})`,
+          color: "blue",
+          icon: <IconPackage size={16} />,
+        });
+      } catch (err: any) {
+        setItemError(err.message);
+        notifications.show({
+          title: t.selfCheckout.scanner.notFound,
+          message: err.message,
+          color: "red",
+        });
+      } finally {
+        setLookingUpItem(false);
+        itemInputRef.current?.focus();
       }
-
-      const item = await response.json();
-      setPendingItem({ code: item.itemCode, name: item.itemName });
-      setPendingQuantity(1);
-      setItemScanInput("");
-
-      notifications.show({
-        title: t.selfCheckout.notifications.itemAdded,
-        message: `${item.itemName} (${item.itemCode})`,
-        color: "blue",
-        icon: <IconPackage size={16} />,
-      });
-    } catch (err: any) {
-      setItemError(err.message);
-      notifications.show({
-        title: t.selfCheckout.scanner.notFound,
-        message: err.message,
-        color: "red",
-      });
-    } finally {
-      setLookingUpItem(false);
-      itemInputRef.current?.focus();
-    }
-  };
+    },
+    [
+      selectedCredential,
+      t.selfCheckout.scanner.notFound,
+      t.selfCheckout.notifications.itemAdded,
+    ],
+  );
 
   const handleItemScan = useCallback(async () => {
     const code = itemScanInput.trim();
     if (!code || !selectedCredential) return;
     performLookup(code);
-  }, [itemScanInput, selectedCredential, t]);
+  }, [itemScanInput, selectedCredential, performLookup]);
 
   const handleCameraScanSuccess = (decodedText: string) => {
     if (scanTarget === "item") {

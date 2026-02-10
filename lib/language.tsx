@@ -37,18 +37,22 @@ interface LanguageContextValue {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<AppLanguage>("id");
+  const [language, setLanguageState] = useState<AppLanguage>(() => {
+    if (typeof window === "undefined") {
+      return "id";
+    }
 
-  useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === "en" || stored === "id") {
-        setLanguageState(stored as AppLanguage);
+        return stored as AppLanguage;
       }
     } catch {
       // Ignore localStorage access errors in restricted environments.
     }
-  }, []);
+
+    return "id";
+  });
 
   const setLanguage = useCallback((value: string | null) => {
     if (value !== "id" && value !== "en") {
