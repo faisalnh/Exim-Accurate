@@ -23,6 +23,7 @@ import {
   Box,
   rem,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { useDisclosure } from "@mantine/hooks";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { CameraScanner } from "@/components/CameraScanner";
@@ -228,10 +229,17 @@ export default function SelfCheckoutPage() {
   };
 
   const removeFromCart = (index: number) => {
-    if (!confirm(t.selfCheckout.cart.confirmDelete)) return;
-    const newCart = [...cart];
-    newCart.splice(index, 1);
-    setCart(newCart);
+    modals.openConfirmModal({
+      title: t.common.delete,
+      children: <Text size="sm">{t.selfCheckout.cart.confirmDelete}</Text>,
+      labels: { confirm: t.common.delete, cancel: t.common.cancel },
+      confirmProps: { color: "red" },
+      onConfirm: () => {
+        const newCart = [...cart];
+        newCart.splice(index, 1);
+        setCart(newCart);
+      },
+    });
   };
 
   const updateCartQuantity = (index: number, quantity: number) => {
