@@ -1,39 +1,25 @@
 
-> exim-accurate@1.0.0 dev
+> exim-accurate@1.0.0 dev /app
 > next dev
 
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-   ▲ Next.js 16.0.8 (Turbopack)
-   - Local:         http://localhost:3000
-   - Network:       http://192.168.0.2:3000
-   - Experiments (use with caution):
-     · serverActions
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+- Environments: .env
+- Experiments (use with caution):
+  · serverActions
 
- ✓ Starting...
- ✓ Ready in 2.2s
- ○ Compiling /dashboard/self-checkout ...
-[next-auth][warn][NEXTAUTH_URL]
-https://next-auth.js.org/warnings#nextauth_url
-[next-auth][warn][NO_SECRET]
-https://next-auth.js.org/warnings#no_secret
- GET /dashboard/self-checkout 307 in 13.3s (compile: 12.2s, render: 1135ms)
- GET /login 200 in 1805ms (compile: 1521ms, render: 284ms)
-[next-auth][warn][NEXTAUTH_URL]
-https://next-auth.js.org/warnings#nextauth_url
-[next-auth][warn][NO_SECRET]
-https://next-auth.js.org/warnings#no_secret
- GET /api/auth/session 200 in 2.9s (compile: 2.9s, render: 71ms)
- GET /dashboard/self-checkout 307 in 452ms (compile: 16ms, render: 436ms)
- GET /login 200 in 221ms (compile: 9ms, render: 213ms)
- GET /api/auth/session 200 in 58ms (compile: 36ms, render: 22ms)
- GET /dashboard/self-checkout 307 in 193ms (compile: 5ms, render: 188ms)
- GET /login 200 in 104ms (compile: 4ms, render: 100ms)
- GET /api/auth/session 200 in 47ms (compile: 37ms, render: 10ms)
- ✓ Compiled in 128ms
- GET /dashboard/self-checkout 200 in 777ms (compile: 227ms, render: 550ms)
- GET /api/auth/session 200 in 53ms (compile: 36ms, render: 16ms)
- GET /dashboard/self-checkout 200 in 172ms (compile: 4ms, render: 168ms)
- GET /dashboard/self-checkout 200 in 165ms (compile: 4ms, render: 161ms)
- GET /api/auth/session 200 in 59ms (compile: 44ms, render: 15ms)
- GET /dashboard/self-checkout 200 in 142ms (compile: 3ms, render: 139ms)
- ✓ Compiled in 414ms
+✓ Starting...
+✓ Ready in 1173ms
+ GET /dashboard/credentials 200 in 1520ms (compile: 700ms, render: 820ms)
+ GET /api/auth/session 200 in 572ms
+ GET /api/auth/session 200 in 574ms
+ GET /dashboard/credentials 200 in 477ms (compile: 104ms, render: 373ms)
+ GET /api/auth/session 200 in 45ms (compile: 27ms, render: 18ms)
+ GET /api/auth/session 200 in 26ms (compile: 13ms, render: 12ms)
+ GET /dashboard/credentials 200 in 464ms (compile: 100ms, render: 364ms)
+ GET /api/auth/session 200 in 53ms (compile: 32ms, render: 21ms)
+ GET /api/auth/session 200 in 26ms (compile: 9ms, render: 17ms)
+✓ Compiled in 94ms
+ ELIFECYCLE  Command failed.
+[?25h
