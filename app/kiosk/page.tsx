@@ -15,6 +15,8 @@ import {
   Box,
   Badge,
   rem,
+  Transition,
+  ActionIcon,
 } from "@mantine/core";
 import {
   IconBuildingStore,
@@ -22,6 +24,10 @@ import {
   IconScan,
   IconShoppingCart,
   IconUserCheck,
+  IconArrowLeft,
+  IconClipboardList,
+  IconMaximize,
+  IconMinimize,
 } from "@tabler/icons-react";
 import { LanguageSelect } from "@/components/ui/LanguageSelect";
 import { useLanguage } from "@/lib/language";
@@ -37,6 +43,20 @@ export default function KioskHomePage() {
   const router = useRouter();
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCredential, setSelectedCredential] =
+    useState<Credential | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Fullscreen toggle
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
 
   const fetchCredentials = useCallback(async () => {
     try {
@@ -45,9 +65,9 @@ export default function KioskHomePage() {
         const data = await response.json();
         setCredentials(data);
 
-        // Auto-redirect if only one credential
+        // Auto-select if only one credential (show mode selection directly)
         if (data.length === 1) {
-          router.push(`/kiosk/${data[0].id}`);
+          setSelectedCredential(data[0]);
         }
       }
     } catch (err) {
@@ -55,7 +75,7 @@ export default function KioskHomePage() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     fetchCredentials();
@@ -139,6 +159,193 @@ export default function KioskHomePage() {
     );
   }
 
+  // Mode selection screen
+  if (selectedCredential) {
+    const modes = [
+      {
+        id: "checkout",
+        icon: <IconShoppingCart size={40} />,
+        gradient: { from: "cyan.4", to: "indigo.6", deg: 135 },
+        glowColor: "rgba(56, 189, 248, 0.45)",
+        title: language === "id" ? "Checkout Mandiri" : "Self-Checkout",
+        description:
+          language === "id"
+            ? "Scan barang untuk checkout inventaris. Barang akan dikurangi dari stok Accurate."
+            : "Scan items for inventory checkout. Items will be deducted from Accurate stock.",
+        onClick: () =>
+          router.push(`/kiosk/${selectedCredential.id}`),
+      },
+      {
+        id: "peminjaman",
+        icon: <IconClipboardList size={40} />,
+        gradient: { from: "violet.5", to: "grape.7", deg: 135 },
+        glowColor: "rgba(167, 139, 250, 0.45)",
+        title: language === "id" ? "Peminjaman" : "Borrowing",
+        description:
+          language === "id"
+            ? "Pinjam dan kembalikan barang. Sistem otomatis mendeteksi barang yang belum dikembalikan."
+            : "Borrow and return items. System auto-detects unreturned items.",
+        onClick: () =>
+          router.push(`/kiosk/${selectedCredential.id}/peminjaman`),
+      },
+    ];
+
+    return (
+      <Box
+        p={{ base: "md", sm: "xl" }}
+        style={{ flex: 1, display: "flex", flexDirection: "column" }}
+      >
+        <Group justify="space-between" mb="md">
+          {credentials.length > 1 && (
+            <ActionIcon
+              variant="subtle"
+              size="lg"
+              onClick={() => setSelectedCredential(null)}
+              style={{ color: "rgba(255,255,255,0.7)" }}
+            >
+              <IconArrowLeft size={20} />
+            </ActionIcon>
+          )}
+          <Box style={{ flex: 1 }} />
+          <Group gap="xs">
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="lg"
+              onClick={toggleFullscreen}
+              style={{
+                background: "rgba(12, 18, 32, 0.85)",
+                border: "1px solid rgba(148, 163, 184, 0.15)",
+              }}
+            >
+              {isFullscreen ? (
+                <IconMinimize size={18} />
+              ) : (
+                <IconMaximize size={18} />
+              )}
+            </ActionIcon>
+            <LanguageSelect size="xs" />
+          </Group>
+        </Group>
+
+        <Center style={{ flex: 1 }}>
+          <Stack align="center" gap="xl" maw={700}>
+            {/* Header */}
+            <Stack align="center" gap="md" ta="center">
+              <Box
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 20,
+                  background:
+                    "linear-gradient(135deg, rgba(56, 189, 248, 0.35) 0%, rgba(167, 139, 250, 0.35) 100%)",
+                  backdropFilter: "blur(10px)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "1px solid rgba(148, 163, 184, 0.25)",
+                  boxShadow: "0 0 30px rgba(56, 189, 248, 0.25)",
+                }}
+              >
+                <IconBuildingStore size={36} color="white" />
+              </Box>
+              <Title
+                order={1}
+                c="white"
+                fw={800}
+                style={{ fontSize: rem(36), lineHeight: 1.1 }}
+              >
+                {language === "id" ? "Pilih Mode" : "Select Mode"}
+              </Title>
+              <Text c="rgba(255,255,255,0.6)" size="lg">
+                {selectedCredential.appKey}
+                {selectedCredential.host
+                  ? ` • ${selectedCredential.host}`
+                  : ""}
+              </Text>
+            </Stack>
+
+            {/* Mode Cards */}
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg" w="100%">
+              {modes.map((mode) => (
+                <Card
+                  key={mode.id}
+                  shadow="xl"
+                  padding="xl"
+                  radius="xl"
+                  style={{
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                    background: "var(--kiosk-panel)",
+                    backdropFilter: "blur(24px)",
+                    border: "1px solid var(--kiosk-stroke)",
+                    boxShadow: "0 20px 40px rgba(4, 8, 16, 0.45)",
+                    minHeight: 220,
+                  }}
+                  onClick={mode.onClick}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform =
+                      "translateY(-8px) scale(1.02)";
+                    e.currentTarget.style.boxShadow = `0 30px 70px rgba(2, 8, 20, 0.75), 0 0 40px ${mode.glowColor}`;
+                    e.currentTarget.style.borderColor =
+                      mode.glowColor.replace("0.45", "0.6");
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0) scale(1)";
+                    e.currentTarget.style.boxShadow = "";
+                    e.currentTarget.style.borderColor = "var(--kiosk-stroke)";
+                  }}
+                >
+                  <Stack gap="lg" h="100%" justify="space-between">
+                    <Stack gap="md">
+                      <ThemeIcon
+                        size={72}
+                        radius="xl"
+                        variant="gradient"
+                        gradient={mode.gradient}
+                        style={{ boxShadow: `0 0 25px ${mode.glowColor}` }}
+                      >
+                        {mode.icon}
+                      </ThemeIcon>
+                      <Stack gap="xs">
+                        <Text c="white" fw={700} size="xl">
+                          {mode.title}
+                        </Text>
+                        <Text c="rgba(255,255,255,0.55)" size="sm" lh={1.5}>
+                          {mode.description}
+                        </Text>
+                      </Stack>
+                    </Stack>
+                    <Group
+                      gap="xs"
+                      style={{ color: "rgba(255, 255, 255, 0.65)" }}
+                    >
+                      <Text size="sm" fw={500}>
+                        {language === "id" ? "Mulai →" : "Start →"}
+                      </Text>
+                    </Group>
+                  </Stack>
+                </Card>
+              ))}
+            </SimpleGrid>
+          </Stack>
+        </Center>
+
+        {/* Footer */}
+        <Group justify="center" py="lg">
+          <Text c="rgba(255,255,255,0.45)" size="xs">
+            {language === "id" ? "Ditenagai oleh" : "Powered by"}{" "}
+            <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>
+              Exima
+            </span>{" "}
+            •{" "}
+            {language === "id" ? "Integrasi Accurate" : "Accurate Integration"}
+          </Text>
+        </Group>
+      </Box>
+    );
+  }
+
   const features = [
     {
       icon: <IconScan size={20} />,
@@ -204,12 +411,12 @@ export default function KioskHomePage() {
               }}
               className="kiosk-heading"
             >
-              {language === "id" ? "Checkout Mandiri" : "Self-Checkout"}
+              Exima Kiosk
             </Text>
             <Text size="xs" c="rgba(255,255,255,0.5)" fw={500}>
               {language === "id"
-                ? "Terminal Checkout Mandiri"
-                : "Self-Checkout Terminal"}
+                ? "Terminal Checkout & Peminjaman"
+                : "Checkout & Borrowing Terminal"}
             </Text>
           </Stack>
         </Group>
@@ -232,14 +439,14 @@ export default function KioskHomePage() {
               }}
             >
               {language === "id"
-                ? "Pengalaman Self-Checkout"
-                : "Self-Checkout Experience"}
+                ? "Pengalaman Kiosk"
+                : "Kiosk Experience"}
             </span>
           </Title>
           <Text c="rgba(255,255,255,0.6)" size="lg">
             {language === "id"
-              ? "Pilih profil stasiun untuk memulai sesi checkout."
-              : "Select a station profile to start checkout session."}
+              ? "Pilih profil stasiun untuk memulai."
+              : "Select a station profile to get started."}
           </Text>
         </Stack>
 
@@ -294,7 +501,7 @@ export default function KioskHomePage() {
                 animationDelay: `${index * 100}ms`,
                 boxShadow: "0 20px 40px rgba(4, 8, 16, 0.45)",
               }}
-              onClick={() => router.push(`/kiosk/${cred.id}`)}
+              onClick={() => setSelectedCredential(cred)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform =
                   "translateY(-8px) scale(1.02)";
@@ -356,7 +563,7 @@ export default function KioskHomePage() {
                   }}
                 >
                   <Text size="sm" fw={500}>
-                    {language === "id" ? "Mulai Sesi" : "Start Session"}
+                    {language === "id" ? "Pilih Stasiun" : "Select Station"}
                   </Text>
                   <IconArrowRight size={16} />
                 </Group>

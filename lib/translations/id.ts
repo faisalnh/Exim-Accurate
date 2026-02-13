@@ -181,6 +181,7 @@ export const id = {
       export: "Ekspor (Ambil data)",
       import: "Impor (Input data)",
       selfCheckout: "Checkout Mandiri",
+      peminjaman: "Peminjaman",
       credentials: "Kredensial Accurate",
     },
     userMenu: {

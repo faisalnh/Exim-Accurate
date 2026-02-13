@@ -182,6 +182,7 @@ export const en = {
       export: "Export (Get data)",
       import: "Import (Input data)",
       selfCheckout: "Self-Checkout",
+      peminjaman: "Borrowing",
       credentials: "Accurate Credentials",
     },
     userMenu: {

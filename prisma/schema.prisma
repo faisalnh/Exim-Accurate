@@ -21,6 +21,8 @@ model User {
   exportJobs          ExportJob[]
   importJobs          ImportJob[]
   kioskSyncData       KioskSyncData[]
+  borrowableItems     BorrowableItem[]
+  borrowingSessions   BorrowingSession[]
 }
 
 model AccurateCredentials {
@@ -40,6 +42,8 @@ model AccurateCredentials {
   checkoutSessions CheckoutSession[]
   exportJobs       ExportJob[]
   importJobs       ImportJob[]
+  borrowableItems  BorrowableItem[]
+  borrowingSessions BorrowingSession[]
 }
 
 // Self Checkout feature - tracks staff checkout sessions
@@ -125,4 +129,59 @@ model ImportJob {
 
   user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   credential  AccurateCredentials?  @relation(fields: [credentialId], references: [id], onDelete: SetNull)
+}
+
+// Peminjaman (Borrowing) feature - items configured as available for borrowing
+model BorrowableItem {
+  id            String   @id @default(uuid())
+  userId        String
+  credentialId  String
+
+  itemCode      String   // Accurate item code
+  itemName      String   // Cached from Accurate
+  totalStock    Int      // Reference number (how many we should have)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credential    AccurateCredentials @relation(fields: [credentialId], references: [id])
+
+  @@unique([credentialId, itemCode])
+}
+
+// Tracks borrowing/return sessions
+model BorrowingSession {
+  id            String    @id @default(uuid())
+  userId        String
+  credentialId  String
+
+  borrowerEmail String
+  borrowerName  String?
+  borrowerDept  String?
+
+  status        String    @default("active") // active, returned, partial
+  borrowedAt    DateTime  @default(now())
+  returnedAt    DateTime?
+  notes         String?
+
+  adjustmentOutId Int?    // Accurate adjustment ID for borrow (ADJUSTMENT_OUT)
+  adjustmentInId  Int?    // Accurate adjustment ID for return (ADJUSTMENT_IN)
+
+  items         BorrowingItem[]
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credential    AccurateCredentials @relation(fields: [credentialId], references: [id])
+}
+
+model BorrowingItem {
+  id          String    @id @default(uuid())
+  sessionId   String
+  session     BorrowingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  itemCode    String    // Accurate item code
+  itemName    String    // Cached from Accurate
+  quantity    Int       @default(1)
+
+  returnedQty Int       @default(0)
+  returnedAt  DateTime?
 }

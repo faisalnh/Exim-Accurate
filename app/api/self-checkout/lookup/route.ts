@@ -93,16 +93,62 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // Search for item by code
-        const item = await findItemByCode(
-            {
-                apiToken: credential.apiToken,
-                signatureSecret: credential.signatureSecret,
-                host: credential.host!,
-                session: credential.session!,
-            },
-            code
-        );
+        // Search for item by code (with 401 retry)
+        let item;
+        try {
+            item = await findItemByCode(
+                {
+                    apiToken: credential.apiToken,
+                    signatureSecret: credential.signatureSecret,
+                    host: credential.host!,
+                    session: credential.session!,
+                },
+                code
+            );
+        } catch (lookupErr: any) {
+            // If 401, try refreshing token and retry once
+            if (lookupErr.message?.includes("401") && credential.refreshToken) {
+                console.log("[self-checkout/lookup] Token expired, refreshing...");
+                const { accessToken, refreshToken: newRefreshToken } = await refreshAccessToken(
+                    credential.refreshToken,
+                    credential.appKey,
+                    credential.signatureSecret
+                );
+
+                credential = await prisma.accurateCredentials.update({
+                    where: { id: credential.id },
+                    data: {
+                        apiToken: accessToken,
+                        refreshToken: newRefreshToken || credential.refreshToken,
+                    },
+                });
+
+                // Also refresh session
+                if (credential.dbId) {
+                    const { host, session: newSession } = await refreshSession(
+                        accessToken,
+                        credential.dbId
+                    );
+                    credential = await prisma.accurateCredentials.update({
+                        where: { id: credential.id },
+                        data: { host, session: newSession },
+                    });
+                }
+
+                // Retry lookup
+                item = await findItemByCode(
+                    {
+                        apiToken: credential.apiToken,
+                        signatureSecret: credential.signatureSecret,
+                        host: credential.host!,
+                        session: credential.session!,
+                    },
+                    code
+                );
+            } else {
+                throw lookupErr;
+            }
+        }
 
         if (!item) {
             return NextResponse.json({ error: "Barang tidak ditemukan", code }, { status: 404 });

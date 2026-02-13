@@ -32,6 +32,7 @@ import {
   IconChevronRight,
   IconSettings,
   IconExternalLink,
+  IconClipboardList,
 } from "@tabler/icons-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageSelect } from "@/components/ui/LanguageSelect";
@@ -182,6 +183,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       label: t.dashboard.nav.selfCheckout,
       icon: <IconScan size={20} />,
       href: "/kiosk",
+    },
+    {
+      label: t.dashboard.nav.peminjaman,
+      icon: <IconClipboardList size={20} />,
+      href: "/dashboard/peminjaman",
     },
     {
       label: t.dashboard.nav.credentials,
