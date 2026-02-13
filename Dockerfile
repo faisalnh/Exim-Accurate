@@ -35,9 +35,11 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.* ./
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
 
 USER appuser
 
 EXPOSE 5758
 
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["npm", "run", "start"]
