@@ -18,9 +18,20 @@ else
         
         # Get list of all migrations
         MIGRATIONS=$(ls -1 prisma/migrations | grep -E '^[0-9]' | sort)
+        MIGRATION_COUNT=$(echo "$MIGRATIONS" | wc -l)
+        CURRENT=0
         
-        # Mark each migration as applied (except the last one which we'll actually run)
+        # Mark all migrations EXCEPT the last one as applied
+        # This assumes the last migration is the new one that needs to actually run
         for migration in $MIGRATIONS; do
+            CURRENT=$((CURRENT + 1))
+            
+            # Skip the last migration - let it run for real
+            if [ $CURRENT -eq $MIGRATION_COUNT ]; then
+                echo "  ⏭️  Skipping $migration (will run as new migration)"
+                continue
+            fi
+            
             echo "  → Marking $migration as applied..."
             npx prisma migrate resolve --applied "$migration" || true
         done
