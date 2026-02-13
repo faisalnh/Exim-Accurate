@@ -15,6 +15,8 @@ import {
   ThemeIcon,
   Anchor,
   rem,
+  Button,
+  Tooltip as MantineTooltip,
 } from "@mantine/core";
 import {
   IconFileExport,
@@ -24,8 +26,12 @@ import {
   IconArrowUpRight,
   IconArrowDownRight,
   IconDatabase,
-  IconActivity,
   IconScan,
+  IconUser,
+  IconActivity,
+  IconPackage,
+  IconTrophy,
+  IconRefresh,
 } from "@tabler/icons-react";
 import {
   AreaChart,
@@ -39,14 +45,19 @@ import {
   Bar,
 } from "recharts";
 import { StatsCard } from "@/components/ui/StatsCard";
-import {
-  QuickActions,
-  defaultQuickActions,
-  type QuickAction,
-} from "@/components/ui/QuickActions";
 import { ActivityCard, ActivityItem } from "@/components/ui/ActivityTimeline";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useLanguage } from "@/lib/language";
+
+interface KioskStats {
+  totalCheckouts: number;
+  uniqueUsers: number;
+  topUser: {
+    email: string;
+    name: string | null;
+    count: number;
+  } | null;
+}
 
 interface DashboardStats {
   totalExports: number;
@@ -64,9 +75,21 @@ interface WeeklyActivityPoint {
   imports: number;
 }
 
+interface KioskWeeklyPoint {
+  name: string;
+  checkouts: number;
+}
+
 interface MonthlyTrendPoint {
   name: string;
   total: number;
+}
+
+interface TopItem {
+  rank: number;
+  itemCode: string;
+  itemName: string;
+  totalQuantity: number;
 }
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -132,41 +155,11 @@ export default function DashboardPage() {
     [],
   );
   const [monthTotal, setMonthTotal] = useState(0);
-
-  const quickActions: QuickAction[] = [
-    {
-      id: "export",
-      title: t.dashboard.quickActions.export.title,
-      description: t.dashboard.quickActions.export.description,
-      icon: <IconFileExport size={24} />,
-      href: "/dashboard/export/inventory-adjustment",
-      color: "brand",
-    },
-    {
-      id: "import",
-      title: t.dashboard.quickActions.import.title,
-      description: t.dashboard.quickActions.import.description,
-      icon: <IconFileImport size={24} />,
-      href: "/dashboard/import/inventory-adjustment",
-      color: "success",
-    },
-    {
-      id: "self-checkout",
-      title: t.dashboard.quickActions.kiosk.title,
-      description: t.dashboard.quickActions.kiosk.description,
-      icon: <IconScan size={24} />,
-      href: "/dashboard/self-checkout",
-      color: "accent",
-    },
-    {
-      id: "credentials",
-      title: t.dashboard.quickActions.accounts.title,
-      description: t.dashboard.quickActions.accounts.description,
-      icon: <IconPlugConnected size={24} />,
-      href: "/dashboard/credentials",
-      color: "violet",
-    },
-  ];
+  const [kioskStats, setKioskStats] = useState<KioskStats | null>(null);
+  const [kioskWeeklyData, setKioskWeeklyData] = useState<KioskWeeklyPoint[]>([]);
+  const [topItems, setTopItems] = useState<TopItem[]>([]);
+  const [kioskLastSync, setKioskLastSync] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -188,6 +181,10 @@ export default function DashboardPage() {
 
         const data = await response.json();
         setStats(data.stats);
+        setKioskStats(data.kioskStats);
+        setKioskWeeklyData(data.kioskWeeklyData || []);
+        setTopItems(data.topItems || []);
+        setKioskLastSync(data.kioskLastSync || null);
         setWeeklyActivityData(data.weeklyActivityData || []);
         setMonthlyTrendData(data.monthlyTrendData || []);
         setMonthTotal(data.monthTotal || 0);
@@ -207,6 +204,31 @@ export default function DashboardPage() {
     ? "rgba(255, 255, 255, 0.1)"
     : "rgba(0, 0, 0, 0.1)";
   const chartTextColor = isDark ? "#909296" : "#868E96";
+
+  const syncKioskData = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/cron/sync-kiosk", { credentials: "include" });
+      if (res.ok) {
+        // Reload dashboard data
+        const response = await fetch("/api/dashboard/summary", {
+          cache: "no-store",
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setKioskStats(data.kioskStats);
+          setKioskWeeklyData(data.kioskWeeklyData || []);
+          setTopItems(data.topItems || []);
+          setKioskLastSync(data.kioskLastSync || null);
+        }
+      }
+    } catch (err) {
+      console.error("Sync failed:", err);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   return (
     <Stack gap="lg">
@@ -292,21 +314,264 @@ export default function DashboardPage() {
         )}
       </SimpleGrid>
 
-      {/* Quick Actions */}
+      {/* Kiosk Statistics */}
       <Box>
         <Group justify="space-between" align="center" mb="md">
           <Group gap="xs">
-            <ThemeIcon size={24} radius="md" variant="light" color="brand">
-              <IconActivity size={14} />
+            <ThemeIcon size={24} radius="md" variant="light" color="accent">
+              <IconScan size={14} />
             </ThemeIcon>
-            <Text fw={600}>{t.dashboard.quickActions.title}</Text>
+            <Text fw={600}>Statistik Mode Kiosk</Text>
+          </Group>
+          <Group gap="xs">
+            {kioskLastSync && (
+              <Text size="xs" c="dimmed">
+                Terakhir sync: {new Date(kioskLastSync).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </Text>
+            )}
+            <Badge size="sm" variant="light" color="blue">
+              Bulan ini
+            </Badge>
+            <Button
+              size="compact-xs"
+              variant="light"
+              color="blue"
+              leftSection={<IconRefresh size={14} />}
+              loading={syncing}
+              onClick={syncKioskData}
+            >
+              Sync
+            </Button>
           </Group>
         </Group>
-        <QuickActions actions={quickActions} />
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+          {loading ? (
+            <>
+              <Skeleton height={100} radius="lg" />
+              <Skeleton height={100} radius="lg" />
+              <Skeleton height={100} radius="lg" />
+            </>
+          ) : (
+            <>
+              <StatsCard
+                title="Total Checkout"
+                value={kioskStats?.totalCheckouts.toLocaleString() || "0"}
+                description="Total transaksi bulan ini"
+                icon={<IconScan size={22} />}
+                color="cyan"
+                compact
+              />
+              <StatsCard
+                title="Pengguna Unik"
+                value={kioskStats?.uniqueUsers.toLocaleString() || "0"}
+                description="Staf yang menggunakan kiosk"
+                icon={<IconUser size={22} />}
+                color="teal"
+                compact
+              />
+              <StatsCard
+                title="Top User"
+                value={kioskStats?.topUser?.name || kioskStats?.topUser?.email || "-"}
+                description={`${kioskStats?.topUser?.count || 0} checkout`}
+                icon={<IconActivity size={22} />}
+                color="violet"
+                compact
+              />
+            </>
+          )}
+        </SimpleGrid>
       </Box>
 
-      {/* Charts and Activity */}
+      {/* Top 5 Items */}
+      <Box>
+        <Group justify="space-between" align="center" mb="md">
+          <Group gap="xs">
+            <ThemeIcon size={24} radius="md" variant="light" color="orange">
+              <IconTrophy size={14} />
+            </ThemeIcon>
+            <Text fw={600}>Top 5 Item Paling Sering Checkout</Text>
+          </Group>
+          <Badge size="sm" variant="light" color="orange">
+            Bulan ini
+          </Badge>
+        </Group>
+        {loading ? (
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 5 }} spacing="md">
+            <Skeleton height={120} radius="lg" />
+            <Skeleton height={120} radius="lg" />
+            <Skeleton height={120} radius="lg" />
+            <Skeleton height={120} radius="lg" />
+            <Skeleton height={120} radius="lg" />
+          </SimpleGrid>
+        ) : topItems.length > 0 ? (
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 5 }} spacing="md">
+            {topItems.map((item) => {
+              const rankColors = ["yellow", "gray", "orange", "blue", "violet"];
+              const color = rankColors[item.rank - 1] || "gray";
+              return (
+                <Paper
+                  key={item.itemCode}
+                  p="md"
+                  radius="lg"
+                  shadow="sm"
+                  style={{
+                    border: isDark
+                      ? "1px solid var(--mantine-color-dark-4)"
+                      : "1px solid var(--mantine-color-gray-2)",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Badge
+                    size="lg"
+                    variant="light"
+                    color={color}
+                    style={{ position: "absolute", top: 12, right: 12 }}
+                  >
+                    #{item.rank}
+                  </Badge>
+                  <Stack gap={6}>
+                    <ThemeIcon
+                      size={36}
+                      radius="md"
+                      variant="light"
+                      color={color}
+                    >
+                      <IconPackage size={20} />
+                    </ThemeIcon>
+                    <Text fw={600} size="sm" lineClamp={2} mt={4}>
+                      {item.itemName}
+                    </Text>
+                    <Text size="xs" c="dimmed" lineClamp={1}>
+                      {item.itemCode}
+                    </Text>
+                    <Badge size="md" variant="filled" color={color} mt={4}>
+                      {item.totalQuantity} unit
+                    </Badge>
+                  </Stack>
+                </Paper>
+              );
+            })}
+          </SimpleGrid>
+        ) : (
+          <Paper
+            p="xl"
+            radius="lg"
+            shadow="sm"
+            style={{
+              border: isDark
+                ? "1px solid var(--mantine-color-dark-4)"
+                : "1px solid var(--mantine-color-gray-2)",
+              textAlign: "center",
+            }}
+          >
+            <ThemeIcon size={48} radius="xl" variant="light" color="gray" mx="auto" mb="sm">
+              <IconPackage size={24} />
+            </ThemeIcon>
+            <Text c="dimmed" size="sm">
+              Belum ada data checkout item bulan ini
+            </Text>
+          </Paper>
+        )}
+      </Box>
+
+      {/* Charts */}
       <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
+        {/* Kiosk Weekly Activity Chart */}
+        <Paper
+          p="md"
+          radius="lg"
+          shadow="sm"
+          style={{
+            border: isDark
+              ? "1px solid var(--mantine-color-dark-4)"
+              : "1px solid var(--mantine-color-gray-2)",
+          }}
+        >
+          <Group justify="space-between" align="center" mb="md">
+            <Group gap="xs">
+              <ThemeIcon size={24} radius="md" variant="light" color="cyan">
+                <IconScan size={14} />
+              </ThemeIcon>
+              <Text fw={600}>Aktivitas Kiosk (7 Hari Terakhir)</Text>
+            </Group>
+            <Badge size="sm" variant="light" color="cyan">
+              {kioskStats?.totalCheckouts || 0} checkout
+            </Badge>
+          </Group>
+
+          {loading ? (
+            <Skeleton height={200} radius="md" />
+          ) : (
+            <Box h={220}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={kioskWeeklyData}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient
+                      id="colorKiosk"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#15AABF" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#15AABF" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={chartGridColor}
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 11, fill: chartTextColor }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12, fill: chartTextColor }}
+                    axisLine={false}
+                    tickLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="checkouts"
+                    name="Checkout"
+                    stroke="#15AABF"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#colorKiosk)"
+                    dot={{ r: 3, fill: "#15AABF", strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: "#15AABF", strokeWidth: 2, stroke: "white" }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </Box>
+          )}
+
+          <Group justify="center" gap="xl" mt="md">
+            <Group gap="xs">
+              <Box
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 2,
+                  backgroundColor: "#15AABF",
+                }}
+              />
+              <Text size="xs" c="dimmed">
+                Self Checkout
+              </Text>
+            </Group>
+          </Group>
+        </Paper>
+
         {/* Weekly Activity Chart */}
         <Paper
           p="md"
@@ -551,8 +816,8 @@ export default function DashboardPage() {
               action={{
                 label: t.dashboard.activity.startExport,
                 onClick: () =>
-                  (window.location.href =
-                    "/dashboard/export/inventory-adjustment"),
+                (window.location.href =
+                  "/dashboard/export/inventory-adjustment"),
               }}
             />
           </Paper>

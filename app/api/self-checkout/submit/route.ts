@@ -125,8 +125,8 @@ export async function POST(req: NextRequest) {
                     if (credential.refreshToken) {
                         const { accessToken, refreshToken: newRefreshToken } = await refreshAccessToken(
                             credential.refreshToken,
-                            credential.appKey,
-                            credential.signatureSecret
+                            process.env.ACCURATE_CLIENT_ID!,
+                            process.env.ACCURATE_CLIENT_SECRET!
                         );
 
                         credential = await prisma.accurateCredentials.update({

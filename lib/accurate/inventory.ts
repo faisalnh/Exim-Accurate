@@ -71,6 +71,7 @@ export async function listInventoryAdjustments(
   const params = new URLSearchParams({
     "sp.page": page.toString(),
     "sp.pageSize": pageSize.toString(),
+    "fields": "id,transDate,number,description",
   });
 
   if (filter?.startDate) {

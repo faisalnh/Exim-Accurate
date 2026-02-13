@@ -181,7 +181,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     {
       label: t.dashboard.nav.selfCheckout,
       icon: <IconScan size={20} />,
-      href: "/dashboard/self-checkout",
+      href: "/kiosk",
     },
     {
       label: t.dashboard.nav.credentials,

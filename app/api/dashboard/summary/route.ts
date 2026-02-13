@@ -112,6 +112,50 @@ export async function GET() {
       }),
     ]);
 
+    // Read kiosk data from cache (synced by /api/cron/sync-kiosk)
+    let kioskCache = null;
+    if ((prisma as any).kioskSyncData) {
+      kioskCache = await (prisma as any).kioskSyncData.findUnique({
+        where: {
+          userId_year_month: {
+            userId,
+            year: now.getFullYear(),
+            month: now.getMonth() + 1,
+          },
+        },
+      });
+    } else {
+      console.warn('[dashboard/summary] kioskSyncData model not found on prisma client yet');
+    }
+
+    const totalKioskCheckouts = kioskCache?.totalCheckouts || 0;
+    const uniqueKioskUsers = kioskCache?.uniqueUsers || 0;
+    const cachedTopUsers = (kioskCache?.topUsers as any[]) || [];
+    const topKioskUser = cachedTopUsers.length > 0 ? cachedTopUsers[0] : null;
+    const topItems = ((kioskCache?.topItems as any[]) || []).slice(0, 5).map((item: any, idx: number) => ({
+      rank: idx + 1,
+      itemCode: item.itemCode,
+      itemName: item.itemName || item.itemCode,
+      totalQuantity: item.totalQuantity || 0,
+    }));
+    const cachedDailyData = (kioskCache?.dailyData as any[]) || [];
+
+    // Build kiosk weekly chart data (last 7 days) from cached daily data
+    const dailyMap = new Map<string, number>();
+    cachedDailyData.forEach((d: any) => dailyMap.set(d.date, d.count));
+
+    const kioskWeeklyData: { name: string; checkouts: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split("T")[0];
+      const dayLabel = d.toLocaleDateString("id-ID", { weekday: "short", day: "numeric" });
+      kioskWeeklyData.push({
+        name: dayLabel,
+        checkouts: dailyMap.get(key) || 0,
+      });
+    }
+
     const thisMonthTotal = thisMonthExports + thisMonthImports;
     const lastMonthTotal = lastMonthExports + lastMonthImports;
 
@@ -265,6 +309,14 @@ export async function GET() {
 
     return NextResponse.json({
       stats,
+      kioskStats: {
+        totalCheckouts: totalKioskCheckouts,
+        uniqueUsers: uniqueKioskUsers,
+        topUser: topKioskUser,
+      },
+      topItems,
+      kioskWeeklyData,
+      kioskLastSync: kioskCache?.lastSyncAt || null,
       weeklyActivityData,
       monthlyTrendData: monthlyBuckets,
       monthTotal: thisMonthTotal,

@@ -32,14 +32,14 @@ export interface QuickAction {
   href?: string;
   onClick?: () => void;
   color?:
-    | "brand"
-    | "accent"
-    | "success"
-    | "danger"
-    | "violet"
-    | "cyan"
-    | "teal"
-    | "grape";
+  | "brand"
+  | "accent"
+  | "success"
+  | "danger"
+  | "violet"
+  | "cyan"
+  | "teal"
+  | "grape";
   badge?: string;
   disabled?: boolean;
 }
@@ -117,14 +117,6 @@ export const defaultQuickActions: QuickAction[] = [
     icon: <IconFileImport size={24} />,
     href: "/dashboard/import/inventory-adjustment",
     color: "success",
-  },
-  {
-    id: "self-checkout",
-    title: "Checkout Mandiri",
-    description: "Scan barang untuk checkout inventaris dengan cepat",
-    icon: <IconScan size={24} />,
-    href: "/dashboard/self-checkout",
-    color: "accent",
   },
   {
     id: "credentials",

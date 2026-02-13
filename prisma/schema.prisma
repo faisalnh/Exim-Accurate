@@ -20,6 +20,7 @@ model User {
   accurateCredentials AccurateCredentials[]
   exportJobs          ExportJob[]
   importJobs          ImportJob[]
+  kioskSyncData       KioskSyncData[]
 }
 
 model AccurateCredentials {
@@ -67,6 +68,26 @@ model CheckoutItem {
   itemName        String?  // Fetched from Accurate
   quantity        Int      @default(1)
   scannedAt       DateTime @default(now())
+}
+
+// Cached kiosk statistics - synced daily via cron
+model KioskSyncData {
+  id              String   @id @default(uuid())
+  userId          String
+  year            Int
+  month           Int      // 1-12
+  totalCheckouts  Int      @default(0)
+  uniqueUsers     Int      @default(0)
+  topUsers        Json     @default("[]") // [{email, name, count}]
+  topItems        Json     @default("[]") // [{itemCode, itemName, totalQuantity}]
+  dailyData       Json     @default("[]") // [{date, count}]
+  lastSyncAt      DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year, month])
 }
 
 model ExportJob {

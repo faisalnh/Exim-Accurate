@@ -8,6 +8,7 @@ import {
   Stack,
   useMantineColorScheme,
   Box,
+  rem,
 } from "@mantine/core";
 import { IconTrendingUp, IconTrendingDown, IconMinus } from "@tabler/icons-react";
 import { ReactNode } from "react";
@@ -22,6 +23,7 @@ interface StatsCardProps {
   };
   icon: ReactNode;
   color?: "brand" | "accent" | "success" | "danger" | "violet" | "cyan" | "grape" | "teal";
+  compact?: boolean;
 }
 
 const colorGradients: Record<string, { light: string; dark: string }> = {
@@ -77,6 +79,7 @@ export function StatsCard({
   trend,
   icon,
   color = "brand",
+  compact = false,
 }: StatsCardProps) {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
@@ -100,7 +103,7 @@ export function StatsCard({
 
   return (
     <Paper
-      p="lg"
+      p={compact ? "md" : "lg"}
       radius="lg"
       style={{
         background: isDark ? gradient.dark : gradient.light,
@@ -121,12 +124,12 @@ export function StatsCard({
         e.currentTarget.style.boxShadow = "";
       }}
     >
-      <Group justify="space-between" align="flex-start">
-        <Stack gap={4}>
-          <Text size="sm" c="dimmed" fw={500} tt="uppercase" lts={0.5}>
+      <Group justify="space-between" align="center">
+        <Stack gap={2}>
+          <Text size="xs" c="dimmed" fw={600} tt="uppercase" lts={0.5}>
             {title}
           </Text>
-          <Text size="xl" fw={700} lh={1.2} style={{ fontSize: "2rem" }}>
+          <Text size={compact ? "xl" : "2rem"} fw={700} lh={1.2} style={{ fontSize: compact ? rem(24) : rem(32) }}>
             {value}
           </Text>
           {description && (
@@ -150,7 +153,7 @@ export function StatsCard({
           )}
         </Stack>
         <ThemeIcon
-          size={52}
+          size={compact ? 44 : 52}
           radius="xl"
           variant="light"
           style={{
