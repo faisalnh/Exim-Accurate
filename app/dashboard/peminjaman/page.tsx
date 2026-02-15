@@ -25,6 +25,7 @@ import {
     Modal,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { modals } from "@mantine/modals";
 import {
     IconClipboardList,
     IconPackage,
@@ -38,6 +39,7 @@ import {
 } from "@tabler/icons-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useLanguage } from "@/lib/language";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface Credential {
     id: string;
@@ -225,24 +227,42 @@ export default function PeminjamanDashboardPage() {
 
     // Delete borrowable item
     const handleDeleteItem = async (id: string) => {
-        try {
-            const res = await fetch(`/api/peminjaman/items?id=${id}`, {
-                method: "DELETE",
-            });
-            if (!res.ok) throw new Error("Failed to delete");
-            notifications.show({
-                title: language === "id" ? "Berhasil" : "Success",
-                message: language === "id" ? "Barang dihapus" : "Item deleted",
-                color: "green",
-            });
-            fetchItems();
-        } catch {
-            notifications.show({
-                title: language === "id" ? "Gagal" : "Failed",
-                message: language === "id" ? "Gagal menghapus" : "Failed to delete",
-                color: "red",
-            });
-        }
+        modals.openConfirmModal({
+            title: language === "id" ? "Hapus Barang" : "Delete Item",
+            children: (
+                <Text size="sm">
+                    {language === "id"
+                        ? "Apakah Anda yakin ingin menghapus barang ini? Tindakan ini tidak dapat dibatalkan."
+                        : "Are you sure you want to delete this item? This action cannot be undone."}
+                </Text>
+            ),
+            labels: {
+                confirm: language === "id" ? "Hapus" : "Delete",
+                cancel: language === "id" ? "Batal" : "Cancel",
+            },
+            confirmProps: { color: "red" },
+            onConfirm: async () => {
+                try {
+                    const res = await fetch(`/api/peminjaman/items?id=${id}`, {
+                        method: "DELETE",
+                    });
+                    if (!res.ok) throw new Error("Failed to delete");
+                    notifications.show({
+                        title: language === "id" ? "Berhasil" : "Success",
+                        message: language === "id" ? "Barang dihapus" : "Item deleted",
+                        color: "green",
+                    });
+                    fetchItems();
+                } catch {
+                    notifications.show({
+                        title: language === "id" ? "Gagal" : "Failed",
+                        message:
+                            language === "id" ? "Gagal menghapus" : "Failed to delete",
+                        color: "red",
+                    });
+                }
+            },
+        });
     };
 
     const getStatusColor = (status: string) => {
@@ -401,21 +421,18 @@ export default function PeminjamanDashboardPage() {
                                     <Loader />
                                 </Center>
                             ) : items.length === 0 ? (
-                                <Card withBorder radius="md" p="xl">
-                                    <Center>
-                                        <Stack align="center" gap="sm">
-                                            <IconPackage
-                                                size={48}
-                                                style={{ opacity: 0.3 }}
-                                            />
-                                            <Text c="dimmed" size="sm">
-                                                {language === "id"
-                                                    ? "Belum ada barang. Tambahkan barang dari Accurate untuk memulai."
-                                                    : "No items yet. Add items from Accurate to get started."}
-                                            </Text>
-                                        </Stack>
-                                    </Center>
-                                </Card>
+                                <EmptyState
+                                    variant="custom"
+                                    icon={<IconPackage size={48} />}
+                                    title={
+                                        language === "id" ? "Belum ada barang" : "No items yet"
+                                    }
+                                    description={
+                                        language === "id"
+                                            ? "Tambahkan barang dari Accurate untuk memulai."
+                                            : "Add items from Accurate to get started."
+                                    }
+                                />
                             ) : (
                                 <Card withBorder radius="md" p={0}>
                                     <Table.ScrollContainer minWidth={600}>
@@ -500,6 +517,11 @@ export default function PeminjamanDashboardPage() {
                                                                     onClick={() =>
                                                                         handleDeleteItem(item.id)
                                                                     }
+                                                                    aria-label={
+                                                                        language === "id"
+                                                                            ? "Hapus barang"
+                                                                            : "Delete item"
+                                                                    }
                                                                 >
                                                                     <IconTrash size={16} />
                                                                 </ActionIcon>
@@ -552,21 +574,20 @@ export default function PeminjamanDashboardPage() {
                                 </Center>
                             ) : sessions.filter((s) => s.status !== "returned").length ===
                                 0 ? (
-                                <Card withBorder radius="md" p="xl">
-                                    <Center>
-                                        <Stack align="center" gap="sm">
-                                            <IconClipboardList
-                                                size={48}
-                                                style={{ opacity: 0.3 }}
-                                            />
-                                            <Text c="dimmed" size="sm">
-                                                {language === "id"
-                                                    ? "Tidak ada pinjaman aktif"
-                                                    : "No active loans"}
-                                            </Text>
-                                        </Stack>
-                                    </Center>
-                                </Card>
+                                <EmptyState
+                                    variant="custom"
+                                    icon={<IconClipboardList size={48} />}
+                                    title={
+                                        language === "id"
+                                            ? "Tidak ada pinjaman aktif"
+                                            : "No active loans"
+                                    }
+                                    description={
+                                        language === "id"
+                                            ? "Pinjaman yang sedang berjalan akan muncul di sini."
+                                            : "Ongoing loans will appear here."
+                                    }
+                                />
                             ) : (
                                 <Stack gap="sm">
                                     {sessions
@@ -693,18 +714,20 @@ export default function PeminjamanDashboardPage() {
                                     <Loader />
                                 </Center>
                             ) : sessions.length === 0 ? (
-                                <Card withBorder radius="md" p="xl">
-                                    <Center>
-                                        <Stack align="center" gap="sm">
-                                            <IconHistory size={48} style={{ opacity: 0.3 }} />
-                                            <Text c="dimmed" size="sm">
-                                                {language === "id"
-                                                    ? "Belum ada riwayat peminjaman"
-                                                    : "No borrowing history yet"}
-                                            </Text>
-                                        </Stack>
-                                    </Center>
-                                </Card>
+                                <EmptyState
+                                    variant="custom"
+                                    icon={<IconHistory size={48} />}
+                                    title={
+                                        language === "id"
+                                            ? "Belum ada riwayat peminjaman"
+                                            : "No borrowing history yet"
+                                    }
+                                    description={
+                                        language === "id"
+                                            ? "Riwayat peminjaman yang sudah selesai akan muncul di sini."
+                                            : "Completed loan history will appear here."
+                                    }
+                                />
                             ) : (
                                 <Card withBorder radius="md" p={0}>
                                     <Table.ScrollContainer minWidth={700}>
