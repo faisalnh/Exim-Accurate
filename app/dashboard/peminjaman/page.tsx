@@ -24,6 +24,7 @@ import {
     Tooltip,
     Modal,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import {
     IconClipboardList,
@@ -244,6 +245,25 @@ export default function PeminjamanDashboardPage() {
             });
         }
     };
+
+    const openDeleteModal = (id: string, itemName: string) =>
+        modals.openConfirmModal({
+            title: language === "id" ? "Hapus Barang" : "Delete Item",
+            centered: true,
+            children: (
+                <Text size="sm">
+                    {language === "id"
+                        ? `Apakah Anda yakin ingin menghapus ${itemName} dari daftar barang peminjaman?`
+                        : `Are you sure you want to delete ${itemName} from the borrowing list?`}
+                </Text>
+            ),
+            labels: {
+                confirm: language === "id" ? "Hapus" : "Delete",
+                cancel: language === "id" ? "Batal" : "Cancel",
+            },
+            confirmProps: { color: "red" },
+            onConfirm: () => handleDeleteItem(id),
+        });
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -498,7 +518,15 @@ export default function PeminjamanDashboardPage() {
                                                                     color="red"
                                                                     variant="subtle"
                                                                     onClick={() =>
-                                                                        handleDeleteItem(item.id)
+                                                                        openDeleteModal(
+                                                                            item.id,
+                                                                            item.itemName
+                                                                        )
+                                                                    }
+                                                                    aria-label={
+                                                                        language === "id"
+                                                                            ? "Hapus"
+                                                                            : "Delete"
                                                                     }
                                                                 >
                                                                     <IconTrash size={16} />
