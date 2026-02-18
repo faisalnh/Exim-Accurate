@@ -5,3 +5,7 @@
 ## 2026-02-04 - [Consistent Empty States]
 **Learning:** Replacing plain text empty states with visually rich components significantly improves the perceived quality of the application and provides clearer calls to action.
 **Action:** Always check for empty states in lists/tables and use the `EmptyState` component instead of plain text.
+
+## 2026-02-04 - [Consistent Deletion Safety]
+**Learning:** Some lists (e.g., Peminjaman) perform immediate destructive actions without confirmation, leading to potential data loss. `modals.openConfirmModal` is the standard pattern for safety.
+**Action:** Always wrap delete actions in `modals.openConfirmModal` with `confirmProps: { color: 'red' }` and localized strings.
