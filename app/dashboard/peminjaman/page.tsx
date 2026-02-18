@@ -25,6 +25,7 @@ import {
     Modal,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { modals } from "@mantine/modals";
 import {
     IconClipboardList,
     IconPackage,
@@ -37,6 +38,7 @@ import {
     IconCalendar,
 } from "@tabler/icons-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { useLanguage } from "@/lib/language";
 
 interface Credential {
@@ -283,6 +285,25 @@ export default function PeminjamanDashboardPage() {
         }
     };
 
+    const openDeleteModal = (id: string, itemName: string) =>
+        modals.openConfirmModal({
+            title: language === "id" ? "Hapus Barang" : "Delete Item",
+            centered: true,
+            children: (
+                <Text size="sm">
+                    {language === "id"
+                        ? `Apakah Anda yakin ingin menghapus ${itemName} dari daftar barang peminjaman?`
+                        : `Are you sure you want to delete ${itemName} from the borrowing list?`}
+                </Text>
+            ),
+            labels: {
+                confirm: language === "id" ? "Hapus" : "Delete",
+                cancel: language === "id" ? "Batal" : "Cancel",
+            },
+            confirmProps: { color: "red" },
+            onConfirm: () => handleDeleteItem(id),
+        });
+
     if (loading) {
         return (
             <DashboardLayout>
@@ -401,21 +422,20 @@ export default function PeminjamanDashboardPage() {
                                     <Loader />
                                 </Center>
                             ) : items.length === 0 ? (
-                                <Card withBorder radius="md" p="xl">
-                                    <Center>
-                                        <Stack align="center" gap="sm">
-                                            <IconPackage
-                                                size={48}
-                                                style={{ opacity: 0.3 }}
-                                            />
-                                            <Text c="dimmed" size="sm">
-                                                {language === "id"
-                                                    ? "Belum ada barang. Tambahkan barang dari Accurate untuk memulai."
-                                                    : "No items yet. Add items from Accurate to get started."}
-                                            </Text>
-                                        </Stack>
-                                    </Center>
-                                </Card>
+                                <EmptyState
+                                    variant="custom"
+                                    icon={<IconPackage size={48} stroke={1.5} />}
+                                    title={
+                                        language === "id"
+                                            ? "Belum ada barang"
+                                            : "No items yet"
+                                    }
+                                    description={
+                                        language === "id"
+                                            ? "Tambahkan barang dari Accurate untuk memulai."
+                                            : "Add items from Accurate to get started."
+                                    }
+                                />
                             ) : (
                                 <Card withBorder radius="md" p={0}>
                                     <Table.ScrollContainer minWidth={600}>
@@ -498,7 +518,15 @@ export default function PeminjamanDashboardPage() {
                                                                     color="red"
                                                                     variant="subtle"
                                                                     onClick={() =>
-                                                                        handleDeleteItem(item.id)
+                                                                        openDeleteModal(
+                                                                            item.id,
+                                                                            item.itemName
+                                                                        )
+                                                                    }
+                                                                    aria-label={
+                                                                        language === "id"
+                                                                            ? "Hapus"
+                                                                            : "Delete"
                                                                     }
                                                                 >
                                                                     <IconTrash size={16} />
@@ -552,21 +580,20 @@ export default function PeminjamanDashboardPage() {
                                 </Center>
                             ) : sessions.filter((s) => s.status !== "returned").length ===
                                 0 ? (
-                                <Card withBorder radius="md" p="xl">
-                                    <Center>
-                                        <Stack align="center" gap="sm">
-                                            <IconClipboardList
-                                                size={48}
-                                                style={{ opacity: 0.3 }}
-                                            />
-                                            <Text c="dimmed" size="sm">
-                                                {language === "id"
-                                                    ? "Tidak ada pinjaman aktif"
-                                                    : "No active loans"}
-                                            </Text>
-                                        </Stack>
-                                    </Center>
-                                </Card>
+                                <EmptyState
+                                    variant="custom"
+                                    icon={<IconClipboardList size={48} stroke={1.5} />}
+                                    title={
+                                        language === "id"
+                                            ? "Tidak ada pinjaman aktif"
+                                            : "No active loans"
+                                    }
+                                    description={
+                                        language === "id"
+                                            ? "Belum ada barang yang sedang dipinjam saat ini."
+                                            : "No items are currently being borrowed."
+                                    }
+                                />
                             ) : (
                                 <Stack gap="sm">
                                     {sessions
@@ -693,18 +720,20 @@ export default function PeminjamanDashboardPage() {
                                     <Loader />
                                 </Center>
                             ) : sessions.length === 0 ? (
-                                <Card withBorder radius="md" p="xl">
-                                    <Center>
-                                        <Stack align="center" gap="sm">
-                                            <IconHistory size={48} style={{ opacity: 0.3 }} />
-                                            <Text c="dimmed" size="sm">
-                                                {language === "id"
-                                                    ? "Belum ada riwayat peminjaman"
-                                                    : "No borrowing history yet"}
-                                            </Text>
-                                        </Stack>
-                                    </Center>
-                                </Card>
+                                <EmptyState
+                                    variant="custom"
+                                    icon={<IconHistory size={48} stroke={1.5} />}
+                                    title={
+                                        language === "id"
+                                            ? "Belum ada riwayat"
+                                            : "No history"
+                                    }
+                                    description={
+                                        language === "id"
+                                            ? "Riwayat peminjaman akan muncul di sini."
+                                            : "Borrowing history will appear here."
+                                    }
+                                />
                             ) : (
                                 <Card withBorder radius="md" p={0}>
                                     <Table.ScrollContainer minWidth={700}>
