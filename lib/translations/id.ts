@@ -211,6 +211,7 @@ export const id = {
         notDetected: "Belum terdeteksi",
       },
       disconnectTooltip: "Putuskan akun",
+      disconnectTitle: "Putuskan Akun",
       disconnectConfirm: "Yakin ingin menghapus kredensial ini?",
       notifications: {
         connectedTitle: "Terhubung",
