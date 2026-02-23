@@ -24,6 +24,7 @@ import {
     Tooltip,
     Modal,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import {
     IconClipboardList,
@@ -224,25 +225,47 @@ export default function PeminjamanDashboardPage() {
     };
 
     // Delete borrowable item
-    const handleDeleteItem = async (id: string) => {
-        try {
-            const res = await fetch(`/api/peminjaman/items?id=${id}`, {
-                method: "DELETE",
-            });
-            if (!res.ok) throw new Error("Failed to delete");
-            notifications.show({
-                title: language === "id" ? "Berhasil" : "Success",
-                message: language === "id" ? "Barang dihapus" : "Item deleted",
-                color: "green",
-            });
-            fetchItems();
-        } catch {
-            notifications.show({
-                title: language === "id" ? "Gagal" : "Failed",
-                message: language === "id" ? "Gagal menghapus" : "Failed to delete",
-                color: "red",
-            });
-        }
+    const handleDeleteItem = (item: BorrowableItem) => {
+        modals.openConfirmModal({
+            title: language === "id" ? "Hapus Barang" : "Delete Item",
+            centered: true,
+            children: (
+                <Text size="sm">
+                    {language === "id"
+                        ? `Apakah Anda yakin ingin menghapus "${item.itemName}"? Tindakan ini tidak dapat dibatalkan.`
+                        : `Are you sure you want to delete "${item.itemName}"? This action cannot be undone.`}
+                </Text>
+            ),
+            labels: {
+                confirm: language === "id" ? "Hapus" : "Delete",
+                cancel: language === "id" ? "Batal" : "Cancel",
+            },
+            confirmProps: { color: "red" },
+            onConfirm: async () => {
+                try {
+                    const res = await fetch(`/api/peminjaman/items?id=${item.id}`, {
+                        method: "DELETE",
+                    });
+                    if (!res.ok) throw new Error("Failed to delete");
+                    notifications.show({
+                        title: language === "id" ? "Berhasil" : "Success",
+                        message:
+                            language === "id" ? "Barang dihapus" : "Item deleted",
+                        color: "green",
+                    });
+                    fetchItems();
+                } catch {
+                    notifications.show({
+                        title: language === "id" ? "Gagal" : "Failed",
+                        message:
+                            language === "id"
+                                ? "Gagal menghapus"
+                                : "Failed to delete",
+                        color: "red",
+                    });
+                }
+            },
+        });
     };
 
     const getStatusColor = (status: string) => {
@@ -497,8 +520,11 @@ export default function PeminjamanDashboardPage() {
                                                                 <ActionIcon
                                                                     color="red"
                                                                     variant="subtle"
-                                                                    onClick={() =>
-                                                                        handleDeleteItem(item.id)
+                                                                    onClick={() => handleDeleteItem(item)}
+                                                                    aria-label={
+                                                                        language === "id"
+                                                                            ? `Hapus ${item.itemName}`
+                                                                            : `Delete ${item.itemName}`
                                                                     }
                                                                 >
                                                                     <IconTrash size={16} />
