@@ -1,0 +1,28 @@
+
+> exim-accurate@1.0.0 dev /app
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+- Experiments (use with caution):
+  · serverActions
+
+✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+✓ Ready in 1206ms
+○ Compiling /dashboard/peminjaman ...
+ GET /dashboard/peminjaman 200 in 7.9s (compile: 7.0s, render: 876ms)
+ GET /dashboard/peminjaman 200 in 329ms (compile: 6ms, render: 324ms)
+○ Compiling /api/auth/[...nextauth] ...
+[next-auth][warn][NEXTAUTH_URL]
+https://next-auth.js.org/warnings#nextauth_url
+[next-auth][warn][NO_SECRET]
+https://next-auth.js.org/warnings#no_secret
+ GET /api/auth/session 200 in 855ms (compile: 808ms, render: 48ms)
+ POST /api/auth/_log 200 in 2.6s (compile: 2.6s, render: 52ms)
+✓ Compiled in 640ms
