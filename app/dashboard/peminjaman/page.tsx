@@ -24,7 +24,9 @@ import {
     Tooltip,
     Modal,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
     IconClipboardList,
     IconPackage,
@@ -87,6 +89,7 @@ export default function PeminjamanDashboardPage() {
     const [newItemStock, setNewItemStock] = useState<number>(1);
     const [lookingUp, setLookingUp] = useState(false);
     const [addingItem, setAddingItem] = useState(false);
+    const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
     // Sessions tab
     const [sessions, setSessions] = useState<BorrowingSession[]>([]);
@@ -225,24 +228,44 @@ export default function PeminjamanDashboardPage() {
 
     // Delete borrowable item
     const handleDeleteItem = async (id: string) => {
-        try {
-            const res = await fetch(`/api/peminjaman/items?id=${id}`, {
-                method: "DELETE",
-            });
-            if (!res.ok) throw new Error("Failed to delete");
-            notifications.show({
-                title: language === "id" ? "Berhasil" : "Success",
-                message: language === "id" ? "Barang dihapus" : "Item deleted",
-                color: "green",
-            });
-            fetchItems();
-        } catch {
-            notifications.show({
-                title: language === "id" ? "Gagal" : "Failed",
-                message: language === "id" ? "Gagal menghapus" : "Failed to delete",
-                color: "red",
-            });
-        }
+        modals.openConfirmModal({
+            title: language === "id" ? "Hapus Barang" : "Delete Item",
+            children: (
+                <Text size="sm">
+                    {language === "id"
+                        ? "Apakah Anda yakin ingin menghapus barang ini? Tindakan ini tidak dapat dibatalkan."
+                        : "Are you sure you want to delete this item? This action cannot be undone."}
+                </Text>
+            ),
+            labels: {
+                confirm: language === "id" ? "Hapus" : "Delete",
+                cancel: language === "id" ? "Batal" : "Cancel",
+            },
+            confirmProps: { color: "red" },
+            onConfirm: async () => {
+                setDeletingItemId(id);
+                try {
+                    const res = await fetch(`/api/peminjaman/items?id=${id}`, {
+                        method: "DELETE",
+                    });
+                    if (!res.ok) throw new Error("Failed to delete");
+                    notifications.show({
+                        title: language === "id" ? "Berhasil" : "Success",
+                        message: language === "id" ? "Barang dihapus" : "Item deleted",
+                        color: "green",
+                    });
+                    fetchItems();
+                } catch {
+                    notifications.show({
+                        title: language === "id" ? "Gagal" : "Failed",
+                        message: language === "id" ? "Gagal menghapus" : "Failed to delete",
+                        color: "red",
+                    });
+                } finally {
+                    setDeletingItemId(null);
+                }
+            },
+        });
     };
 
     const getStatusColor = (status: string) => {
@@ -401,20 +424,17 @@ export default function PeminjamanDashboardPage() {
                                     <Loader />
                                 </Center>
                             ) : items.length === 0 ? (
-                                <Card withBorder radius="md" p="xl">
-                                    <Center>
-                                        <Stack align="center" gap="sm">
-                                            <IconPackage
-                                                size={48}
-                                                style={{ opacity: 0.3 }}
-                                            />
-                                            <Text c="dimmed" size="sm">
-                                                {language === "id"
-                                                    ? "Belum ada barang. Tambahkan barang dari Accurate untuk memulai."
-                                                    : "No items yet. Add items from Accurate to get started."}
-                                            </Text>
-                                        </Stack>
-                                    </Center>
+                                <Card withBorder radius="md" p={0}>
+                                    <EmptyState
+                                        variant="custom"
+                                        icon={<IconPackage size={48} />}
+                                        title={language === "id" ? "Belum ada barang" : "No items yet"}
+                                        description={
+                                            language === "id"
+                                                ? "Tambahkan barang dari Accurate untuk memulai."
+                                                : "Add items from Accurate to get started."
+                                        }
+                                    />
                                 </Card>
                             ) : (
                                 <Card withBorder radius="md" p={0}>
@@ -499,6 +519,12 @@ export default function PeminjamanDashboardPage() {
                                                                     variant="subtle"
                                                                     onClick={() =>
                                                                         handleDeleteItem(item.id)
+                                                                    }
+                                                                    loading={deletingItemId === item.id}
+                                                                    aria-label={
+                                                                        language === "id"
+                                                                            ? "Hapus barang"
+                                                                            : "Delete item"
                                                                     }
                                                                 >
                                                                     <IconTrash size={16} />
