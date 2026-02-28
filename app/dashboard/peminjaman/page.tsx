@@ -25,6 +25,7 @@ import {
     Modal,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { modals } from "@mantine/modals";
 import {
     IconClipboardList,
     IconPackage,
@@ -87,6 +88,7 @@ export default function PeminjamanDashboardPage() {
     const [newItemStock, setNewItemStock] = useState<number>(1);
     const [lookingUp, setLookingUp] = useState(false);
     const [addingItem, setAddingItem] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     // Sessions tab
     const [sessions, setSessions] = useState<BorrowingSession[]>([]);
@@ -224,25 +226,45 @@ export default function PeminjamanDashboardPage() {
     };
 
     // Delete borrowable item
-    const handleDeleteItem = async (id: string) => {
-        try {
-            const res = await fetch(`/api/peminjaman/items?id=${id}`, {
-                method: "DELETE",
-            });
-            if (!res.ok) throw new Error("Failed to delete");
-            notifications.show({
-                title: language === "id" ? "Berhasil" : "Success",
-                message: language === "id" ? "Barang dihapus" : "Item deleted",
-                color: "green",
-            });
-            fetchItems();
-        } catch {
-            notifications.show({
-                title: language === "id" ? "Gagal" : "Failed",
-                message: language === "id" ? "Gagal menghapus" : "Failed to delete",
-                color: "red",
-            });
-        }
+    const handleDeleteItem = (id: string, itemName: string) => {
+        modals.openConfirmModal({
+            title: language === "id" ? "Konfirmasi Hapus" : "Confirm Delete",
+            children: (
+                <Text size="sm">
+                    {language === "id"
+                        ? `Apakah Anda yakin ingin menghapus "${itemName}"? Tindakan ini tidak dapat dibatalkan.`
+                        : `Are you sure you want to delete "${itemName}"? This action cannot be undone.`}
+                </Text>
+            ),
+            labels: {
+                confirm: language === "id" ? "Hapus" : "Delete",
+                cancel: language === "id" ? "Batal" : "Cancel",
+            },
+            confirmProps: { color: "red" },
+            onConfirm: async () => {
+                setDeletingId(id);
+                try {
+                    const res = await fetch(`/api/peminjaman/items?id=${id}`, {
+                        method: "DELETE",
+                    });
+                    if (!res.ok) throw new Error("Failed to delete");
+                    notifications.show({
+                        title: language === "id" ? "Berhasil" : "Success",
+                        message: language === "id" ? "Barang dihapus" : "Item deleted",
+                        color: "green",
+                    });
+                    fetchItems();
+                } catch {
+                    notifications.show({
+                        title: language === "id" ? "Gagal" : "Failed",
+                        message: language === "id" ? "Gagal menghapus" : "Failed to delete",
+                        color: "red",
+                    });
+                } finally {
+                    setDeletingId(null);
+                }
+            },
+        });
     };
 
     const getStatusColor = (status: string) => {
@@ -498,8 +520,10 @@ export default function PeminjamanDashboardPage() {
                                                                     color="red"
                                                                     variant="subtle"
                                                                     onClick={() =>
-                                                                        handleDeleteItem(item.id)
+                                                                        handleDeleteItem(item.id, item.itemName)
                                                                     }
+                                                                    loading={deletingId === item.id}
+                                                                    aria-label={language === "id" ? "Hapus barang" : "Delete item"}
                                                                 >
                                                                     <IconTrash size={16} />
                                                                 </ActionIcon>
