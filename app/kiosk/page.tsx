@@ -200,6 +200,7 @@ export default function KioskHomePage() {
             <ActionIcon
               variant="subtle"
               size="lg"
+              aria-label={language === "id" ? "Kembali" : "Back"}
               onClick={() => setSelectedCredential(null)}
               style={{ color: "rgba(255,255,255,0.7)" }}
             >
@@ -212,6 +213,7 @@ export default function KioskHomePage() {
               variant="subtle"
               color="gray"
               size="lg"
+              aria-label={isFullscreen ? (language === "id" ? "Keluar layar penuh" : "Exit fullscreen") : (language === "id" ? "Layar penuh" : "Fullscreen")}
               onClick={toggleFullscreen}
               style={{
                 background: "rgba(12, 18, 32, 0.85)",

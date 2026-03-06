@@ -5,3 +5,7 @@
 ## 2026-02-04 - [Consistent Empty States]
 **Learning:** Replacing plain text empty states with visually rich components significantly improves the perceived quality of the application and provides clearer calls to action.
 **Action:** Always check for empty states in lists/tables and use the `EmptyState` component instead of plain text.
+
+## 2024-05-23 - Missing ARIA Labels on ActionIcon
+**Learning:** The Mantine `ActionIcon` component is used extensively for icon-only buttons (like back, fullscreen, increment/decrement) throughout the Kiosk application pages, but they frequently lack `aria-label` attributes, making them inaccessible to screen readers.
+**Action:** Always verify `ActionIcon` components have descriptive, localized `aria-label` attributes whenever adding or modifying them.
