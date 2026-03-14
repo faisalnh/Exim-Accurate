@@ -500,6 +500,9 @@ export default function PeminjamanDashboardPage() {
                                                                     onClick={() =>
                                                                         handleDeleteItem(item.id)
                                                                     }
+                                                                    aria-label={
+                                                                        language === "id" ? "Hapus barang" : "Delete item"
+                                                                    }
                                                                 >
                                                                     <IconTrash size={16} />
                                                                 </ActionIcon>
