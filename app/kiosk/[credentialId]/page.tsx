@@ -539,6 +539,7 @@ export default function KioskCheckoutPage() {
             variant="subtle"
             color="gray"
             onClick={handleCancel}
+            aria-label={t.kiosk.backToHome}
             style={{
               background: "rgba(12, 18, 32, 0.85)",
               border: "1px solid var(--kiosk-stroke)",
@@ -926,6 +927,7 @@ export default function KioskCheckoutPage() {
                                 variant="subtle"
                                 color="gray"
                                 onClick={() => updateQuantity(idx, -1)}
+                                aria-label={language === "id" ? "Kurangi jumlah" : "Decrease quantity"}
                                 style={{
                                   background: "rgba(12, 18, 32, 0.85)",
                                   border: "1px solid var(--kiosk-stroke)",
@@ -960,6 +962,7 @@ export default function KioskCheckoutPage() {
                                 variant="subtle"
                                 color="gray"
                                 onClick={() => updateQuantity(idx, 1)}
+                                aria-label={language === "id" ? "Tambah jumlah" : "Increase quantity"}
                                 style={{
                                   background: "rgba(12, 18, 32, 0.85)",
                                   border: "1px solid var(--kiosk-stroke)",
@@ -971,6 +974,7 @@ export default function KioskCheckoutPage() {
                                 color="red"
                                 variant="subtle"
                                 onClick={() => removeFromCart(idx)}
+                                aria-label={language === "id" ? "Hapus barang" : "Remove item"}
                                 style={{
                                   background: "rgba(239, 68, 68, 0.1)",
                                   border: "1px solid rgba(239, 68, 68, 0.3)",
