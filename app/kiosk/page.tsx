@@ -201,6 +201,7 @@ export default function KioskHomePage() {
               variant="subtle"
               size="lg"
               onClick={() => setSelectedCredential(null)}
+              aria-label={language === "id" ? "Kembali" : "Go back"}
               style={{ color: "rgba(255,255,255,0.7)" }}
             >
               <IconArrowLeft size={20} />
@@ -213,6 +214,7 @@ export default function KioskHomePage() {
               color="gray"
               size="lg"
               onClick={toggleFullscreen}
+              aria-label={isFullscreen ? t.kiosk.exitFullscreen : t.kiosk.fullscreen}
               style={{
                 background: "rgba(12, 18, 32, 0.85)",
                 border: "1px solid rgba(148, 163, 184, 0.15)",
