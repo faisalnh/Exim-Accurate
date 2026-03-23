@@ -5,3 +5,7 @@
 ## 2026-02-04 - [Consistent Empty States]
 **Learning:** Replacing plain text empty states with visually rich components significantly improves the perceived quality of the application and provides clearer calls to action.
 **Action:** Always check for empty states in lists/tables and use the `EmptyState` component instead of plain text.
+
+## 2026-02-04 - [Accessible Icon-Only Buttons in Kiosk Mode]
+**Learning:** Icon-only buttons (like `ActionIcon` from Mantine) used in specialized interfaces such as the Kiosk mode require explicit ARIA labels. Screen reader users cannot rely on visual context (icons) alone, and these labels must be localized since the interface supports multiple languages.
+**Action:** Always provide localized `aria-label` attributes to any icon-only button to ensure full accessibility across all supported languages.
