@@ -202,6 +202,7 @@ export default function KioskHomePage() {
               size="lg"
               onClick={() => setSelectedCredential(null)}
               style={{ color: "rgba(255,255,255,0.7)" }}
+              aria-label="Kembali"
             >
               <IconArrowLeft size={20} />
             </ActionIcon>
@@ -217,6 +218,7 @@ export default function KioskHomePage() {
                 background: "rgba(12, 18, 32, 0.85)",
                 border: "1px solid rgba(148, 163, 184, 0.15)",
               }}
+              aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
             >
               {isFullscreen ? (
                 <IconMinimize size={18} />
