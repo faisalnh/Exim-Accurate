@@ -388,6 +388,7 @@ export default function PeminjamanKioskPage() {
                 <ActionIcon
                     variant="subtle"
                     size="lg"
+                    aria-label={language === "id" ? "Kembali ke Kiosk" : "Back to Kiosk"}
                     onClick={() => {
                         if (currentStep === "identify") {
                             router.push("/kiosk");
@@ -856,6 +857,7 @@ export default function PeminjamanKioskPage() {
                                                         <ActionIcon
                                                             size="sm"
                                                             variant="subtle"
+                                                            aria-label={language === "id" ? "Kurangi" : "Decrease quantity"}
                                                             onClick={() =>
                                                                 setCart((prev) =>
                                                                     prev
@@ -880,6 +882,7 @@ export default function PeminjamanKioskPage() {
                                                         <ActionIcon
                                                             size="sm"
                                                             variant="subtle"
+                                                            aria-label={language === "id" ? "Tambah" : "Increase quantity"}
                                                             onClick={() =>
                                                                 setCart((prev) =>
                                                                     prev.map((i) =>
@@ -900,6 +903,7 @@ export default function PeminjamanKioskPage() {
                                                             size="sm"
                                                             variant="subtle"
                                                             color="red"
+                                                            aria-label={language === "id" ? "Hapus" : "Delete"}
                                                             onClick={() =>
                                                                 setCart((prev) =>
                                                                     prev.filter(
