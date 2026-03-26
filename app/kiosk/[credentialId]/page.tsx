@@ -538,6 +538,7 @@ export default function KioskCheckoutPage() {
             size="xl"
             variant="subtle"
             color="gray"
+            aria-label={t.kiosk.ariaHome}
             onClick={handleCancel}
             style={{
               background: "rgba(12, 18, 32, 0.85)",
@@ -925,6 +926,7 @@ export default function KioskCheckoutPage() {
                               <ActionIcon
                                 variant="subtle"
                                 color="gray"
+                                aria-label={t.kiosk.ariaMinus}
                                 onClick={() => updateQuantity(idx, -1)}
                                 style={{
                                   background: "rgba(12, 18, 32, 0.85)",
@@ -959,6 +961,7 @@ export default function KioskCheckoutPage() {
                               <ActionIcon
                                 variant="subtle"
                                 color="gray"
+                                aria-label={t.kiosk.ariaPlus}
                                 onClick={() => updateQuantity(idx, 1)}
                                 style={{
                                   background: "rgba(12, 18, 32, 0.85)",
@@ -970,6 +973,7 @@ export default function KioskCheckoutPage() {
                               <ActionIcon
                                 color="red"
                                 variant="subtle"
+                                aria-label={t.kiosk.ariaTrash}
                                 onClick={() => removeFromCart(idx)}
                                 style={{
                                   background: "rgba(239, 68, 68, 0.1)",

@@ -62,7 +62,7 @@ interface ActiveItem {
 }
 
 export default function PeminjamanKioskPage() {
-    const { language } = useLanguage();
+    const { t, language } = useLanguage();
     const params = useParams();
     const router = useRouter();
     const credentialId = params.credentialId as string;
@@ -388,6 +388,7 @@ export default function PeminjamanKioskPage() {
                 <ActionIcon
                     variant="subtle"
                     size="lg"
+                    aria-label={t.kiosk.ariaBack}
                     onClick={() => {
                         if (currentStep === "identify") {
                             router.push("/kiosk");
@@ -856,6 +857,7 @@ export default function PeminjamanKioskPage() {
                                                         <ActionIcon
                                                             size="sm"
                                                             variant="subtle"
+                                                            aria-label={t.kiosk.ariaMinus}
                                                             onClick={() =>
                                                                 setCart((prev) =>
                                                                     prev
@@ -880,6 +882,7 @@ export default function PeminjamanKioskPage() {
                                                         <ActionIcon
                                                             size="sm"
                                                             variant="subtle"
+                                                            aria-label={t.kiosk.ariaPlus}
                                                             onClick={() =>
                                                                 setCart((prev) =>
                                                                     prev.map((i) =>
@@ -900,6 +903,7 @@ export default function PeminjamanKioskPage() {
                                                             size="sm"
                                                             variant="subtle"
                                                             color="red"
+                                                            aria-label={t.kiosk.ariaTrash}
                                                             onClick={() =>
                                                                 setCart((prev) =>
                                                                     prev.filter(
