@@ -112,6 +112,12 @@ export const id = {
     },
   },
   kiosk: {
+    ariaBack: "Kembali",
+    ariaFullscreen: "Ubah Layar Penuh",
+    ariaHome: "Beranda",
+    ariaMinus: "Kurangi jumlah",
+    ariaPlus: "Tambah jumlah",
+    ariaTrash: "Hapus item",
     backToHome: "Kembali ke Beranda",
     fullscreen: "Layar Penuh",
     exitFullscreen: "Keluar Layar Penuh",

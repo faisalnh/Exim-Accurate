@@ -112,6 +112,12 @@ export const en = {
     },
   },
   kiosk: {
+    ariaBack: "Back",
+    ariaFullscreen: "Toggle Fullscreen",
+    ariaHome: "Home",
+    ariaMinus: "Decrease quantity",
+    ariaPlus: "Increase quantity",
+    ariaTrash: "Remove item",
     backToHome: "Back to Home",
     fullscreen: "Full Screen",
     exitFullscreen: "Exit Full Screen",
