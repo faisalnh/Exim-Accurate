@@ -5,3 +5,6 @@
 ## 2026-02-04 - [Consistent Empty States]
 **Learning:** Replacing plain text empty states with visually rich components significantly improves the perceived quality of the application and provides clearer calls to action.
 **Action:** Always check for empty states in lists/tables and use the `EmptyState` component instead of plain text.
+## 2026-03-27 - Mantine ActionIcon Screen-Reader Accessibility
+**Learning:** Icon-only `ActionIcon` components from Mantine lack accessibility by default when used without explicitly descriptive `aria-label` attributes. This is especially prevalent in dense interfaces like kiosk interfaces or cart item groups.
+**Action:** Ensure that every `ActionIcon` containing only an icon explicitly passes an `aria-label` describing its action, and use the existing localization patterns (e.g. `language === "id" ? "..." : "..."`) to make the label accessible across languages.
