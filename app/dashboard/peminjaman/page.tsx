@@ -25,6 +25,7 @@ import {
     Modal,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { modals } from "@mantine/modals";
 import {
     IconClipboardList,
     IconPackage,
@@ -224,7 +225,7 @@ export default function PeminjamanDashboardPage() {
     };
 
     // Delete borrowable item
-    const handleDeleteItem = async (id: string) => {
+    const performDeleteItem = async (id: string) => {
         try {
             const res = await fetch(`/api/peminjaman/items?id=${id}`, {
                 method: "DELETE",
@@ -243,6 +244,16 @@ export default function PeminjamanDashboardPage() {
                 color: "red",
             });
         }
+    };
+
+    const handleDeleteItem = (id: string) => {
+        modals.openConfirmModal({
+            title: language === "id" ? "Hapus Barang" : "Delete Item",
+            children: <Text size="sm">{language === "id" ? "Apakah Anda yakin ingin menghapus barang ini?" : "Are you sure you want to delete this item?"}</Text>,
+            labels: { confirm: language === "id" ? "Hapus" : "Delete", cancel: language === "id" ? "Batal" : "Cancel" },
+            confirmProps: { color: 'red' },
+            onConfirm: () => performDeleteItem(id),
+        });
     };
 
     const getStatusColor = (status: string) => {
