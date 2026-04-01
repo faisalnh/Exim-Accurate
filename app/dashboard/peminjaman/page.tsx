@@ -37,6 +37,7 @@ import {
     IconCalendar,
 } from "@tabler/icons-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { useLanguage } from "@/lib/language";
 
 interface Credential {
@@ -401,20 +402,17 @@ export default function PeminjamanDashboardPage() {
                                     <Loader />
                                 </Center>
                             ) : items.length === 0 ? (
-                                <Card withBorder radius="md" p="xl">
-                                    <Center>
-                                        <Stack align="center" gap="sm">
-                                            <IconPackage
-                                                size={48}
-                                                style={{ opacity: 0.3 }}
-                                            />
-                                            <Text c="dimmed" size="sm">
-                                                {language === "id"
-                                                    ? "Belum ada barang. Tambahkan barang dari Accurate untuk memulai."
-                                                    : "No items yet. Add items from Accurate to get started."}
-                                            </Text>
-                                        </Stack>
-                                    </Center>
+                                <Card withBorder radius="md" p={0}>
+                                    <EmptyState
+                                        variant="custom"
+                                        title={language === "id" ? "Belum ada barang" : "No items yet"}
+                                        description={
+                                            language === "id"
+                                                ? "Tambahkan barang dari Accurate untuk memulai."
+                                                : "Add items from Accurate to get started."
+                                        }
+                                        icon={<IconPackage size={48} stroke={1.5} />}
+                                    />
                                 </Card>
                             ) : (
                                 <Card withBorder radius="md" p={0}>
@@ -552,20 +550,17 @@ export default function PeminjamanDashboardPage() {
                                 </Center>
                             ) : sessions.filter((s) => s.status !== "returned").length ===
                                 0 ? (
-                                <Card withBorder radius="md" p="xl">
-                                    <Center>
-                                        <Stack align="center" gap="sm">
-                                            <IconClipboardList
-                                                size={48}
-                                                style={{ opacity: 0.3 }}
-                                            />
-                                            <Text c="dimmed" size="sm">
-                                                {language === "id"
-                                                    ? "Tidak ada pinjaman aktif"
-                                                    : "No active loans"}
-                                            </Text>
-                                        </Stack>
-                                    </Center>
+                                <Card withBorder radius="md" p={0}>
+                                    <EmptyState
+                                        variant="custom"
+                                        title={language === "id" ? "Tidak ada pinjaman aktif" : "No active loans"}
+                                        description={
+                                            language === "id"
+                                                ? "Pinjaman yang belum dikembalikan akan muncul di sini."
+                                                : "Loans that have not been returned will appear here."
+                                        }
+                                        icon={<IconClipboardList size={48} stroke={1.5} />}
+                                    />
                                 </Card>
                             ) : (
                                 <Stack gap="sm">
@@ -693,17 +688,17 @@ export default function PeminjamanDashboardPage() {
                                     <Loader />
                                 </Center>
                             ) : sessions.length === 0 ? (
-                                <Card withBorder radius="md" p="xl">
-                                    <Center>
-                                        <Stack align="center" gap="sm">
-                                            <IconHistory size={48} style={{ opacity: 0.3 }} />
-                                            <Text c="dimmed" size="sm">
-                                                {language === "id"
-                                                    ? "Belum ada riwayat peminjaman"
-                                                    : "No borrowing history yet"}
-                                            </Text>
-                                        </Stack>
-                                    </Center>
+                                <Card withBorder radius="md" p={0}>
+                                    <EmptyState
+                                        variant="custom"
+                                        title={language === "id" ? "Belum ada riwayat peminjaman" : "No borrowing history yet"}
+                                        description={
+                                            language === "id"
+                                                ? "Semua riwayat peminjaman akan tercatat di sini."
+                                                : "All borrowing history will be recorded here."
+                                        }
+                                        icon={<IconHistory size={48} stroke={1.5} />}
+                                    />
                                 </Card>
                             ) : (
                                 <Card withBorder radius="md" p={0}>
