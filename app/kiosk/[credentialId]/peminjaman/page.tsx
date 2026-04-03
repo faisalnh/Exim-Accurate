@@ -62,7 +62,7 @@ interface ActiveItem {
 }
 
 export default function PeminjamanKioskPage() {
-    const { language } = useLanguage();
+    const { t, language } = useLanguage();
     const params = useParams();
     const router = useRouter();
     const credentialId = params.credentialId as string;
@@ -405,6 +405,7 @@ export default function PeminjamanKioskPage() {
                         }
                     }}
                     style={{ color: "rgba(255,255,255,0.7)" }}
+                    aria-label={t.common.back}
                 >
                     <IconArrowLeft size={20} />
                 </ActionIcon>
@@ -871,6 +872,7 @@ export default function PeminjamanKioskPage() {
                                                                 )
                                                             }
                                                             style={{ color: "rgba(255,255,255,0.6)" }}
+                                                            aria-label={t.kiosk.decreaseQuantity}
                                                         >
                                                             <IconMinus size={14} />
                                                         </ActionIcon>
@@ -893,6 +895,7 @@ export default function PeminjamanKioskPage() {
                                                                 )
                                                             }
                                                             style={{ color: "rgba(255,255,255,0.6)" }}
+                                                            aria-label={t.kiosk.increaseQuantity}
                                                         >
                                                             <IconPlus size={14} />
                                                         </ActionIcon>

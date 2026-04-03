@@ -1,7 +1,3 @@
-## 2024-05-23 - [Destructive Action Feedback]
-**Learning:** Users lack confidence when clicking destructive actions (like delete) without immediate visual feedback. Adding a specific loading state for the item being deleted prevents "rage clicking" and assures the user the system is working.
-**Action:** Always verify delete actions have a loading state, especially in lists/tables where multiple items exist.
-
-## 2026-02-04 - [Consistent Empty States]
-**Learning:** Replacing plain text empty states with visually rich components significantly improves the perceived quality of the application and provides clearer calls to action.
-**Action:** Always check for empty states in lists/tables and use the `EmptyState` component instead of plain text.
+## 2024-05-18 - Missing ARIA labels on Kiosk action icons
+**Learning:** Found multiple icon-only `ActionIcon` components without `aria-label`s in the `app/kiosk` pages. This is a recurring pattern in the app. Icon-only buttons are inaccessible to screen reader users without proper aria-labels or visually hidden text.
+**Action:** Add descriptive, localized `aria-label` attributes to icon-only buttons (`ActionIcon`s) throughout the Kiosk pages, specifically the fullscreen toggles, navigation buttons, and cart quantity adjusters.
