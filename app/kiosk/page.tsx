@@ -202,6 +202,7 @@ export default function KioskHomePage() {
               size="lg"
               onClick={() => setSelectedCredential(null)}
               style={{ color: "rgba(255,255,255,0.7)" }}
+              aria-label={t.kiosk.backToHome}
             >
               <IconArrowLeft size={20} />
             </ActionIcon>
@@ -217,6 +218,9 @@ export default function KioskHomePage() {
                 background: "rgba(12, 18, 32, 0.85)",
                 border: "1px solid rgba(148, 163, 184, 0.15)",
               }}
+              aria-label={
+                isFullscreen ? t.kiosk.exitFullscreen : t.kiosk.fullscreen
+              }
             >
               {isFullscreen ? (
                 <IconMinimize size={18} />

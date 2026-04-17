@@ -405,6 +405,7 @@ export default function PeminjamanKioskPage() {
                         }
                     }}
                     style={{ color: "rgba(255,255,255,0.7)" }}
+                    aria-label={language === "id" ? "Kembali" : "Back"}
                 >
                     <IconArrowLeft size={20} />
                 </ActionIcon>
@@ -871,6 +872,11 @@ export default function PeminjamanKioskPage() {
                                                                 )
                                                             }
                                                             style={{ color: "rgba(255,255,255,0.6)" }}
+                                                            aria-label={
+                                                                language === "id"
+                                                                    ? "Kurangi kuantitas"
+                                                                    : "Decrease quantity"
+                                                            }
                                                         >
                                                             <IconMinus size={14} />
                                                         </ActionIcon>
@@ -893,6 +899,11 @@ export default function PeminjamanKioskPage() {
                                                                 )
                                                             }
                                                             style={{ color: "rgba(255,255,255,0.6)" }}
+                                                            aria-label={
+                                                                language === "id"
+                                                                    ? "Tambah kuantitas"
+                                                                    : "Increase quantity"
+                                                            }
                                                         >
                                                             <IconPlus size={14} />
                                                         </ActionIcon>
@@ -906,6 +917,9 @@ export default function PeminjamanKioskPage() {
                                                                         (i) => i.itemCode !== item.itemCode
                                                                     )
                                                                 )
+                                                            }
+                                                            aria-label={
+                                                                language === "id" ? "Hapus" : "Delete"
                                                             }
                                                         >
                                                             <IconTrash size={14} />
