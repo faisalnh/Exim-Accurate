@@ -72,10 +72,11 @@ async function main() {
 
   await prisma.\$executeRawUnsafe(\`
     DO \\\$\\\$ BEGIN
+      ALTER TABLE \"CheckoutSession\" DROP CONSTRAINT IF EXISTS \"CheckoutSession_credentialId_fkey\";
       ALTER TABLE \"CheckoutSession\"
         ADD CONSTRAINT \"CheckoutSession_credentialId_fkey\"
         FOREIGN KEY (\"credentialId\") REFERENCES \"AccurateCredentials\"(\"id\")
-        ON DELETE RESTRICT ON UPDATE CASCADE;
+        ON DELETE CASCADE ON UPDATE CASCADE;
     EXCEPTION WHEN duplicate_object THEN NULL;
     END \\\$\\\$
   \`);
@@ -154,10 +155,11 @@ async function main() {
 
   await prisma.\$executeRawUnsafe(\`
     DO \\\$\\\$ BEGIN
+      ALTER TABLE \"BorrowableItem\" DROP CONSTRAINT IF EXISTS \"BorrowableItem_credentialId_fkey\";
       ALTER TABLE \"BorrowableItem\"
         ADD CONSTRAINT \"BorrowableItem_credentialId_fkey\"
         FOREIGN KEY (\"credentialId\") REFERENCES \"AccurateCredentials\"(\"id\")
-        ON DELETE RESTRICT ON UPDATE CASCADE;
+        ON DELETE CASCADE ON UPDATE CASCADE;
     EXCEPTION WHEN duplicate_object THEN NULL;
     END \\\$\\\$
   \`);
@@ -174,10 +176,11 @@ async function main() {
 
   await prisma.\$executeRawUnsafe(\`
     DO \\\$\\\$ BEGIN
+      ALTER TABLE \"BorrowingSession\" DROP CONSTRAINT IF EXISTS \"BorrowingSession_credentialId_fkey\";
       ALTER TABLE \"BorrowingSession\"
         ADD CONSTRAINT \"BorrowingSession_credentialId_fkey\"
         FOREIGN KEY (\"credentialId\") REFERENCES \"AccurateCredentials\"(\"id\")
-        ON DELETE RESTRICT ON UPDATE CASCADE;
+        ON DELETE CASCADE ON UPDATE CASCADE;
     EXCEPTION WHEN duplicate_object THEN NULL;
     END \\\$\\\$
   \`);

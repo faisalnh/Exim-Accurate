@@ -59,7 +59,7 @@ model CheckoutSession {
   
   items         CheckoutItem[]
   credentialId  String
-  credential    AccurateCredentials @relation(fields: [credentialId], references: [id])
+  credential    AccurateCredentials @relation(fields: [credentialId], references: [id], onDelete: Cascade)
   
   adjustmentId  Int?      // ID of created inventory adjustment in Accurate
 }
@@ -145,7 +145,7 @@ model BorrowableItem {
   updatedAt     DateTime @updatedAt
 
   user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  credential    AccurateCredentials @relation(fields: [credentialId], references: [id])
+  credential    AccurateCredentials @relation(fields: [credentialId], references: [id], onDelete: Cascade)
 
   @@unique([credentialId, itemCode])
 }
@@ -170,7 +170,7 @@ model BorrowingSession {
 
   items         BorrowingItem[]
   user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  credential    AccurateCredentials @relation(fields: [credentialId], references: [id])
+  credential    AccurateCredentials @relation(fields: [credentialId], references: [id], onDelete: Cascade)
 }
 
 model BorrowingItem {

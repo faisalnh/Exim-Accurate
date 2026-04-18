@@ -42,12 +42,14 @@ async function processBatch<T, R>(
 /**
  * The actual sync logic, runs in the background via after()
  */
-async function performSync() {
+async function performSync(forceStartDate?: string | null) {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1; // 1-based
     const startOfMonth = new Date(year, now.getMonth(), 1);
-    const startDateStr = startOfMonth.toISOString().split("T")[0];
+    const startDateStr = forceStartDate || startOfMonth.toISOString().split("T")[0];
+
+    console.log(`[sync-kiosk] Starting sync. Date range: ${startDateStr} to now.`);
 
     // Get all users with credentials
     const users = await prisma.user.findMany({
@@ -56,9 +58,11 @@ async function performSync() {
         },
     });
 
+    console.log(`[sync-kiosk] Found ${users.length} users`);
+
     for (const user of users) {
         try {
-            console.log(`[sync-kiosk] Syncing for user ${user.email}...`);
+            console.log(`[sync-kiosk] Syncing for user ${user.email}, credentials: ${user.accurateCredentials.length}`);
 
             interface KioskUser {
                 email: string;
@@ -78,7 +82,11 @@ async function performSync() {
             let totalCheckouts = 0;
 
             for (let cred of user.accurateCredentials) {
-                if (!cred.apiToken) continue;
+                console.log(`[sync-kiosk] Credential ${cred.id}: apiToken=${!!cred.apiToken}, host=${!!cred.host}, session=${!!cred.session}, dbId=${!!cred.dbId}`);
+                if (!cred.apiToken) {
+                    console.log(`[sync-kiosk] Skipping credential ${cred.id}: no apiToken`);
+                    continue;
+                }
 
                 try {
                     // Ensure session is available
@@ -93,7 +101,11 @@ async function performSync() {
                         });
                     }
 
-                    if (!cred.host || !cred.session) continue;
+                    if (!cred.host || !cred.session) {
+                        console.log(`[sync-kiosk] Skipping credential ${cred.id}: no host/session after refresh attempt`);
+                        continue;
+                    }
+                    console.log(`[sync-kiosk] Credential ${cred.id} ready, fetching adjustments since ${startDateStr}...`);
 
                     // Fetch all pages of inventory adjustments
                     let page = 1;
@@ -166,10 +178,18 @@ async function performSync() {
                         }
 
                         if (response.d && response.d.length > 0) {
+                            console.log(`[sync-kiosk] Page ${page}: ${response.d.length} adjustments found`);
+                            
+                            // Log all descriptions to see what we are dealing with
+                            response.d.forEach((adj, idx) => {
+                                if (idx < 5) console.log(`[sync-kiosk]   - Adjustment ${adj.id}: "${adj.description || '(no description)'}"`);
+                            });
+
                             // Filter self-checkout adjustments
                             const selfCheckouts = response.d.filter(
-                                (adj) => adj.description?.includes("Self Checkout"),
+                                (adj) => adj.description?.toLowerCase().includes("self checkout"),
                             );
+                            console.log(`[sync-kiosk] Page ${page}: ${selfCheckouts.length}/${response.d.length} matched 'self checkout' (case-insensitive)`);
 
                             selfCheckouts.forEach((adj) => {
                                 allSelfCheckoutIds.push({
@@ -186,6 +206,7 @@ async function performSync() {
                                 hasMore = false;
                             }
                         } else {
+                            console.log(`[sync-kiosk] Page ${page}: empty response (d is empty or null)`);
                             hasMore = false;
                         }
                     }
@@ -349,15 +370,19 @@ async function performSync() {
 export async function GET(request: Request) {
     // Verify cron secret
     const authHeader = request.headers.get("authorization");
-    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+    const isDev = process.env.NODE_ENV === "development";
+    if (!isDev && CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const forceStartDate = searchParams.get("startDate");
 
     // Schedule the sync to run in the background AFTER the response is sent.
     // This avoids Cloudflare's 100-second proxy timeout (HTTP 524).
     after(async () => {
         try {
-            await performSync();
+            await performSync(forceStartDate);
         } catch (error: any) {
             console.error("[sync-kiosk] Fatal error in background sync:", error);
         }
