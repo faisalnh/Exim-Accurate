@@ -92,6 +92,13 @@ interface TopItem {
   totalQuantity: number;
 }
 
+interface TopCheckoutUser {
+  rank: number;
+  email: string;
+  name: string | null;
+  count: number;
+}
+
 function CustomTooltip({ active, payload, label }: any) {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
@@ -158,6 +165,7 @@ export default function DashboardPage() {
   const [kioskStats, setKioskStats] = useState<KioskStats | null>(null);
   const [kioskWeeklyData, setKioskWeeklyData] = useState<KioskWeeklyPoint[]>([]);
   const [topItems, setTopItems] = useState<TopItem[]>([]);
+  const [topCheckoutUsers, setTopCheckoutUsers] = useState<TopCheckoutUser[]>([]);
   const [kioskLastSync, setKioskLastSync] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
 
@@ -184,6 +192,7 @@ export default function DashboardPage() {
         setKioskStats(data.kioskStats);
         setKioskWeeklyData(data.kioskWeeklyData || []);
         setTopItems(data.topItems || []);
+        setTopCheckoutUsers(data.topCheckoutUsers || []);
         setKioskLastSync(data.kioskLastSync || null);
         setWeeklyActivityData(data.weeklyActivityData || []);
         setMonthlyTrendData(data.monthlyTrendData || []);
@@ -220,6 +229,7 @@ export default function DashboardPage() {
           setKioskStats(data.kioskStats);
           setKioskWeeklyData(data.kioskWeeklyData || []);
           setTopItems(data.topItems || []);
+          setTopCheckoutUsers(data.topCheckoutUsers || []);
           setKioskLastSync(data.kioskLastSync || null);
         }
       }
@@ -694,6 +704,95 @@ export default function DashboardPage() {
               </Text>
             </Group>
           </Group>
+        </Paper>
+
+        {/* Top Checkout Users */}
+        <Paper
+          p="md"
+          radius="lg"
+          shadow="sm"
+          style={{
+            border: isDark
+              ? "1px solid var(--mantine-color-dark-4)"
+              : "1px solid var(--mantine-color-gray-2)",
+          }}
+        >
+          <Group justify="space-between" align="center" mb="md">
+            <Group gap="xs">
+              <ThemeIcon size={24} radius="md" variant="light" color="grape">
+                <IconUser size={14} />
+              </ThemeIcon>
+              <Text fw={600}>Top 10 User Checkout</Text>
+            </Group>
+            <Badge size="sm" variant="light" color="grape">
+              Bulan ini
+            </Badge>
+          </Group>
+
+          {loading ? (
+            <Skeleton height={220} radius="md" />
+          ) : topCheckoutUsers.length > 0 ? (
+            <Box h={220} style={{ overflowY: "auto", paddingRight: rem(4) }}>
+              <Stack gap={6}>
+                {topCheckoutUsers.map((user) => (
+                  <Group
+                    key={user.email}
+                    justify="space-between"
+                    align="center"
+                    wrap="nowrap"
+                    px="xs"
+                    py={6}
+                    style={{
+                      borderRadius: rem(12),
+                      backgroundColor: isDark
+                        ? "rgba(255,255,255,0.03)"
+                        : "var(--mantine-color-gray-0)",
+                    }}
+                  >
+                    <Group gap="sm" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
+                      <Badge
+                        size="md"
+                        variant={user.rank <= 3 ? "filled" : "light"}
+                        color={
+                          user.rank === 1
+                            ? "yellow"
+                            : user.rank === 2
+                              ? "gray"
+                              : user.rank === 3
+                                ? "orange"
+                                : "grape"
+                        }
+                      >
+                        #{user.rank}
+                      </Badge>
+                      <Box style={{ minWidth: 0 }}>
+                        <Text size="sm" fw={600} truncate>
+                          {user.name || user.email}
+                        </Text>
+                        {user.name ? (
+                          <Text size="xs" c="dimmed" truncate>
+                            {user.email}
+                          </Text>
+                        ) : null}
+                      </Box>
+                    </Group>
+                    <Badge size="sm" variant="light" color="grape">
+                      {user.count}x
+                    </Badge>
+                  </Group>
+                ))}
+              </Stack>
+            </Box>
+          ) : (
+            <Box h={220}>
+              <EmptyState
+                icon={<IconUser size={48} stroke={1.5} />}
+                title="Belum ada ranking user"
+                description="Data ranking checkout user akan muncul setelah sinkronisasi kiosk."
+                size="sm"
+              />
+            </Box>
+          )}
         </Paper>
 
         {/* Monthly Trend Chart */}

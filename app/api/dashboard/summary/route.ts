@@ -132,6 +132,12 @@ export async function GET() {
     const uniqueKioskUsers = kioskCache?.uniqueUsers || 0;
     const cachedTopUsers = (kioskCache?.topUsers as any[]) || [];
     const topKioskUser = cachedTopUsers.length > 0 ? cachedTopUsers[0] : null;
+    const topCheckoutUsers = cachedTopUsers.slice(0, 10).map((user: any, idx: number) => ({
+      rank: idx + 1,
+      email: user.email,
+      name: user.name || null,
+      count: user.count || 0,
+    }));
     const topItems = ((kioskCache?.topItems as any[]) || []).slice(0, 5).map((item: any, idx: number) => ({
       rank: idx + 1,
       itemCode: item.itemCode,
@@ -314,6 +320,7 @@ export async function GET() {
         uniqueUsers: uniqueKioskUsers,
         topUser: topKioskUser,
       },
+      topCheckoutUsers,
       topItems,
       kioskWeeklyData,
       kioskLastSync: kioskCache?.lastSyncAt || null,
