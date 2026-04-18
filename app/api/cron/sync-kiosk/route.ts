@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
     listInventoryAdjustments,
@@ -14,76 +14,141 @@ const CRON_SECRET = process.env.CRON_SECRET;
 // Helper: delay between API calls to avoid rate limiting
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export async function GET(request: Request) {
-    // Verify cron secret
-    const authHeader = request.headers.get("authorization");
-    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+/**
+ * Process items in batches with concurrency control
+ */
+async function processBatch<T, R>(
+    items: T[],
+    batchSize: number,
+    delayMs: number,
+    processor: (item: T) => Promise<R>,
+): Promise<R[]> {
+    const results: R[] = [];
+    for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize);
+        const batchResults = await Promise.allSettled(batch.map(processor));
+        for (const result of batchResults) {
+            if (result.status === "fulfilled") {
+                results.push(result.value);
+            }
+        }
+        if (i + batchSize < items.length) {
+            await delay(delayMs);
+        }
     }
+    return results;
+}
 
-    try {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1; // 1-based
-        const startOfMonth = new Date(year, now.getMonth(), 1);
-        const startDateStr = startOfMonth.toISOString().split("T")[0];
+/**
+ * The actual sync logic, runs in the background via after()
+ */
+async function performSync() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // 1-based
+    const startOfMonth = new Date(year, now.getMonth(), 1);
+    const startDateStr = startOfMonth.toISOString().split("T")[0];
 
-        // Get all users with credentials
-        const users = await prisma.user.findMany({
-            include: {
-                accurateCredentials: true,
-            },
-        });
+    // Get all users with credentials
+    const users = await prisma.user.findMany({
+        include: {
+            accurateCredentials: true,
+        },
+    });
 
-        const results: { userId: string; status: string; error?: string }[] = [];
+    for (const user of users) {
+        try {
+            console.log(`[sync-kiosk] Syncing for user ${user.email}...`);
 
-        for (const user of users) {
-            try {
-                console.log(`[sync-kiosk] Syncing for user ${user.email}...`);
+            interface KioskUser {
+                email: string;
+                name: string;
+                count: number;
+            }
 
-                interface KioskUser {
-                    email: string;
-                    name: string;
-                    count: number;
-                }
+            interface KioskItem {
+                itemCode: string;
+                itemName: string;
+                totalQuantity: number;
+            }
 
-                interface KioskItem {
-                    itemCode: string;
-                    itemName: string;
-                    totalQuantity: number;
-                }
+            const usersByEmail = new Map<string, KioskUser>();
+            const itemsByCode = new Map<string, KioskItem>();
+            const dailyCounts = new Map<string, number>();
+            let totalCheckouts = 0;
 
-                const usersByEmail = new Map<string, KioskUser>();
-                const itemsByCode = new Map<string, KioskItem>();
-                const dailyCounts = new Map<string, number>();
-                let totalCheckouts = 0;
+            for (let cred of user.accurateCredentials) {
+                if (!cred.apiToken) continue;
 
-                for (let cred of user.accurateCredentials) {
-                    if (!cred.apiToken) continue;
+                try {
+                    // Ensure session is available
+                    if ((!cred.host || !cred.session) && cred.dbId) {
+                        const { host, session: newSession } = await refreshSession(
+                            cred.apiToken,
+                            cred.dbId,
+                        );
+                        cred = await prisma.accurateCredentials.update({
+                            where: { id: cred.id },
+                            data: { host, session: newSession },
+                        });
+                    }
 
-                    try {
-                        // Ensure session is available
-                        if ((!cred.host || !cred.session) && cred.dbId) {
-                            const { host, session: newSession } = await refreshSession(
-                                cred.apiToken,
-                                cred.dbId,
+                    if (!cred.host || !cred.session) continue;
+
+                    // Fetch all pages of inventory adjustments
+                    let page = 1;
+                    let hasMore = true;
+                    const allSelfCheckoutIds: { id: number; transDate: string; description: string }[] = [];
+
+                    while (hasMore) {
+                        let response;
+                        try {
+                            response = await listInventoryAdjustments(
+                                {
+                                    apiToken: cred.apiToken,
+                                    signatureSecret: cred.signatureSecret,
+                                    host: cred.host!,
+                                    session: cred.session!,
+                                },
+                                page,
+                                100,
+                                { startDate: startDateStr },
                             );
-                            cred = await prisma.accurateCredentials.update({
-                                where: { id: cred.id },
-                                data: { host, session: newSession },
-                            });
-                        }
+                        } catch (err: any) {
+                            // Try refreshing token once
+                            if (
+                                (err.message?.includes("401") ||
+                                    err.message?.includes("invalid_token")) &&
+                                cred.refreshToken
+                            ) {
+                                console.log(`[sync-kiosk] Refreshing token for ${cred.id}...`);
+                                const { accessToken, refreshToken: newRefreshToken } =
+                                    await refreshAccessToken(
+                                        cred.refreshToken,
+                                        process.env.ACCURATE_CLIENT_ID!,
+                                        process.env.ACCURATE_CLIENT_SECRET!,
+                                    );
 
-                        if (!cred.host || !cred.session) continue;
+                                cred = await prisma.accurateCredentials.update({
+                                    where: { id: cred.id },
+                                    data: {
+                                        apiToken: accessToken,
+                                        refreshToken: newRefreshToken || cred.refreshToken,
+                                    },
+                                });
 
-                        // Fetch all pages of inventory adjustments
-                        let page = 1;
-                        let hasMore = true;
-                        const allSelfCheckoutIds: { id: number; transDate: string; description: string }[] = [];
+                                if (cred.dbId) {
+                                    const { host, session: newSession } = await refreshSession(
+                                        accessToken,
+                                        cred.dbId,
+                                    );
+                                    cred = await prisma.accurateCredentials.update({
+                                        where: { id: cred.id },
+                                        data: { host, session: newSession },
+                                    });
+                                }
 
-                        while (hasMore) {
-                            let response;
-                            try {
+                                // Retry once
                                 response = await listInventoryAdjustments(
                                     {
                                         apiToken: cred.apiToken,
@@ -95,88 +160,54 @@ export async function GET(request: Request) {
                                     100,
                                     { startDate: startDateStr },
                                 );
-                            } catch (err: any) {
-                                // Try refreshing token once
-                                if (
-                                    (err.message?.includes("401") ||
-                                        err.message?.includes("invalid_token")) &&
-                                    cred.refreshToken
-                                ) {
-                                    console.log(`[sync-kiosk] Refreshing token for ${cred.id}...`);
-                                    const { accessToken, refreshToken: newRefreshToken } =
-                                        await refreshAccessToken(
-                                            cred.refreshToken,
-                                            process.env.ACCURATE_CLIENT_ID!,
-                                            process.env.ACCURATE_CLIENT_SECRET!,
-                                        );
-
-                                    cred = await prisma.accurateCredentials.update({
-                                        where: { id: cred.id },
-                                        data: {
-                                            apiToken: accessToken,
-                                            refreshToken: newRefreshToken || cred.refreshToken,
-                                        },
-                                    });
-
-                                    if (cred.dbId) {
-                                        const { host, session: newSession } = await refreshSession(
-                                            accessToken,
-                                            cred.dbId,
-                                        );
-                                        cred = await prisma.accurateCredentials.update({
-                                            where: { id: cred.id },
-                                            data: { host, session: newSession },
-                                        });
-                                    }
-
-                                    // Retry once
-                                    response = await listInventoryAdjustments(
-                                        {
-                                            apiToken: cred.apiToken,
-                                            signatureSecret: cred.signatureSecret,
-                                            host: cred.host!,
-                                            session: cred.session!,
-                                        },
-                                        page,
-                                        100,
-                                        { startDate: startDateStr },
-                                    );
-                                } else {
-                                    throw err;
-                                }
-                            }
-
-                            if (response.d && response.d.length > 0) {
-                                // Filter self-checkout adjustments
-                                const selfCheckouts = response.d.filter(
-                                    (adj) => adj.description?.includes("Self Checkout"),
-                                );
-
-                                selfCheckouts.forEach((adj) => {
-                                    allSelfCheckoutIds.push({
-                                        id: adj.id,
-                                        transDate: adj.transDate,
-                                        description: adj.description || "",
-                                    });
-                                });
-
-                                // Check if there are more pages
-                                if (response.sp && page < response.sp.pageCount) {
-                                    page++;
-                                } else {
-                                    hasMore = false;
-                                }
                             } else {
-                                hasMore = false;
+                                throw err;
                             }
                         }
 
-                        console.log(
-                            `[sync-kiosk] Found ${allSelfCheckoutIds.length} self-checkout adjustments for credential ${cred.id}`,
-                        );
+                        if (response.d && response.d.length > 0) {
+                            // Filter self-checkout adjustments
+                            const selfCheckouts = response.d.filter(
+                                (adj) => adj.description?.includes("Self Checkout"),
+                            );
 
-                        // Process each self-checkout adjustment
-                        for (const adj of allSelfCheckoutIds) {
+                            selfCheckouts.forEach((adj) => {
+                                allSelfCheckoutIds.push({
+                                    id: adj.id,
+                                    transDate: adj.transDate,
+                                    description: adj.description || "",
+                                });
+                            });
+
+                            // Check if there are more pages
+                            if (response.sp && page < response.sp.pageCount) {
+                                page++;
+                            } else {
+                                hasMore = false;
+                            }
+                        } else {
+                            hasMore = false;
+                        }
+                    }
+
+                    console.log(
+                        `[sync-kiosk] Found ${allSelfCheckoutIds.length} self-checkout adjustments for credential ${cred.id}`,
+                    );
+
+                    // Process each self-checkout adjustment
+                    // Use batched concurrent requests instead of sequential
+                    const credentialsForDetail = {
+                        apiToken: cred.apiToken,
+                        signatureSecret: cred.signatureSecret,
+                        host: cred.host!,
+                        session: cred.session!,
+                    };
+
+                    await processBatch(
+                        allSelfCheckoutIds,
+                        5, // 5 concurrent requests per batch
+                        100, // 100ms delay between batches
+                        async (adj) => {
                             totalCheckouts++;
 
                             // Parse user info from description
@@ -212,12 +243,7 @@ export async function GET(request: Request) {
                             // Fetch detail to get items
                             try {
                                 const detail = await getInventoryAdjustmentDetail(
-                                    {
-                                        apiToken: cred.apiToken,
-                                        signatureSecret: cred.signatureSecret,
-                                        host: cred.host!,
-                                        session: cred.session!,
-                                    },
+                                    credentialsForDetail,
                                     adj.id,
                                 );
 
@@ -239,102 +265,111 @@ export async function GET(request: Request) {
                                         }
                                     });
                                 }
-
-                                // Small delay to avoid rate limiting
-                                await delay(200);
                             } catch (detailErr) {
                                 console.error(
                                     `[sync-kiosk] Failed to fetch detail for adjustment ${adj.id}:`,
                                     detailErr,
                                 );
                             }
-                        }
-                    } catch (credErr: any) {
-                        console.error(
-                            `[sync-kiosk] Error processing credential ${cred.id}:`,
-                            credErr.message,
-                        );
-                    }
+                        },
+                    );
+                } catch (credErr: any) {
+                    console.error(
+                        `[sync-kiosk] Error processing credential ${cred.id}:`,
+                        credErr.message,
+                    );
                 }
+            }
 
-                // Build final aggregated data
-                const topUsers = Array.from(usersByEmail.values())
-                    .sort((a, b) => b.count - a.count)
-                    .slice(0, 10);
+            // Build final aggregated data
+            const topUsers = Array.from(usersByEmail.values())
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
 
-                const topItems = Array.from(itemsByCode.values())
-                    .sort((a, b) => b.totalQuantity - a.totalQuantity)
-                    .slice(0, 10);
+            const topItems = Array.from(itemsByCode.values())
+                .sort((a, b) => b.totalQuantity - a.totalQuantity)
+                .slice(0, 10);
 
-                const dailyData = Array.from(dailyCounts.entries())
-                    .map(([date, count]) => ({ date, count }))
-                    .sort((a, b) => a.date.localeCompare(b.date));
+            const dailyData = Array.from(dailyCounts.entries())
+                .map(([date, count]) => ({ date, count }))
+                .sort((a, b) => a.date.localeCompare(b.date));
 
-                const uniqueUsers = usersByEmail.size;
+            const uniqueUsers = usersByEmail.size;
 
-                // Upsert cache
-                if ((prisma as any).kioskSyncData) {
-                    await (prisma as any).kioskSyncData.upsert({
-                        where: {
-                            userId_year_month: {
-                                userId: user.id,
-                                year,
-                                month,
-                            },
-                        },
-                        update: {
-                            totalCheckouts: totalCheckouts,
-                            uniqueUsers,
-                            topUsers: topUsers as any,
-                            topItems: topItems as any,
-                            dailyData: dailyData as any,
-                            lastSyncAt: now,
-                        },
-                        create: {
+            // Upsert cache
+            if ((prisma as any).kioskSyncData) {
+                await (prisma as any).kioskSyncData.upsert({
+                    where: {
+                        userId_year_month: {
                             userId: user.id,
                             year,
                             month,
-                            totalCheckouts: totalCheckouts,
-                            uniqueUsers,
-                            topUsers: topUsers as any,
-                            topItems: topItems as any,
-                            dailyData: dailyData as any,
-                            lastSyncAt: now,
                         },
-                    });
-                } else {
-                    console.error('[sync-kiosk] kioskSyncData model not found on prisma client');
-                    throw new Error('Database model not ready. Please try again in a few seconds.');
-                }
-
-
-                console.log(
-                    `[sync-kiosk] ✅ Synced for ${user.email}: ${totalCheckouts} checkouts, ${uniqueUsers} users, ${topItems.length} items`,
-                );
-                results.push({ userId: user.id, status: "ok" });
-            } catch (userErr: any) {
-                console.error(
-                    `[sync-kiosk] ❌ Failed for ${user.email}:`,
-                    userErr.message,
-                );
-                results.push({
-                    userId: user.id,
-                    status: "error",
-                    error: userErr.message,
+                    },
+                    update: {
+                        totalCheckouts: totalCheckouts,
+                        uniqueUsers,
+                        topUsers: topUsers as any,
+                        topItems: topItems as any,
+                        dailyData: dailyData as any,
+                        lastSyncAt: now,
+                    },
+                    create: {
+                        userId: user.id,
+                        year,
+                        month,
+                        totalCheckouts: totalCheckouts,
+                        uniqueUsers,
+                        topUsers: topUsers as any,
+                        topItems: topItems as any,
+                        dailyData: dailyData as any,
+                        lastSyncAt: now,
+                    },
                 });
+            } else {
+                console.error('[sync-kiosk] kioskSyncData model not found on prisma client');
+                throw new Error('Database model not ready. Please try again in a few seconds.');
             }
-        }
 
-        return NextResponse.json({
-            success: true,
-            syncedAt: now.toISOString(),
-            results,
-        });
-    } catch (error: any) {
-        console.error("[sync-kiosk] Fatal error:", error);
-        return NextResponse.json(
-            { error: error.message || "Sync failed" },
-            { status: 500 },
-        );
+
+            console.log(
+                `[sync-kiosk] ✅ Synced for ${user.email}: ${totalCheckouts} checkouts, ${uniqueUsers} users, ${topItems.length} items`,
+            );
+        } catch (userErr: any) {
+            console.error(
+                `[sync-kiosk] ❌ Failed for ${user.email}:`,
+                userErr.message,
+            );
+        }
     }
+
+    console.log(`[sync-kiosk] 🏁 Background sync completed at ${new Date().toISOString()}`);
+}
+
+export async function GET(request: Request) {
+    // Verify cron secret
+    const authHeader = request.headers.get("authorization");
+    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Schedule the sync to run in the background AFTER the response is sent.
+    // This avoids Cloudflare's 100-second proxy timeout (HTTP 524).
+    after(async () => {
+        try {
+            await performSync();
+        } catch (error: any) {
+            console.error("[sync-kiosk] Fatal error in background sync:", error);
+        }
+    });
+
+    // Return immediately — the sync continues in the background
+    return NextResponse.json(
+        {
+            success: true,
+            message: "Kiosk sync triggered. Processing in background.",
+            triggeredAt: new Date().toISOString(),
+        },
+        { status: 202 },
+    );
 }
