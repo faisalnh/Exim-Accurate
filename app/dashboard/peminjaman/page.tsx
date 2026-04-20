@@ -6,6 +6,7 @@ import {
     Title,
     Text,
     Group,
+    SimpleGrid,
     Card,
     Badge,
     Button,
@@ -114,6 +115,26 @@ function formatDateValue(date: Date) {
     const month = `${date.getMonth() + 1}`.padStart(2, "0");
     const day = `${date.getDate()}`.padStart(2, "0");
     return `${year}-${month}-${day}`;
+}
+
+function formatHumanDate(value: string | Date, language: "id" | "en") {
+    return new Intl.DateTimeFormat(language === "id" ? "id-ID" : "en-US", {
+        timeZone: "Asia/Jakarta",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    }).format(new Date(value));
+}
+
+function formatHumanDateRange(
+    start: string | Date,
+    end: string | Date,
+    language: "id" | "en"
+) {
+    return `${formatHumanDate(start, language)} ${language === "id" ? "s/d" : "to"} ${formatHumanDate(
+        end,
+        language
+    )}`;
 }
 
 export default function PeminjamanDashboardPage() {
@@ -234,8 +255,16 @@ export default function PeminjamanDashboardPage() {
                         ? itemLabel
                         : `${itemLabel}${activity.scheduleStart && activity.scheduleEnd
                             ? language === "id"
-                                ? ` • ${activity.scheduleStart} s/d ${activity.scheduleEnd}`
-                                : ` • ${activity.scheduleStart} to ${activity.scheduleEnd}`
+                                ? ` • ${formatHumanDateRange(
+                                    activity.scheduleStart,
+                                    activity.scheduleEnd,
+                                    language
+                                )}`
+                                : ` • ${formatHumanDateRange(
+                                    activity.scheduleStart,
+                                    activity.scheduleEnd,
+                                    language
+                                )}`
                             : ""}`,
                 timestamp: activity.occurredAt,
                 status:
@@ -459,6 +488,86 @@ export default function PeminjamanDashboardPage() {
             (event) => selectedDate >= event.startDate && selectedDate <= event.endDate
         );
     }, [itemCalendarEvents, selectedCalendarDate]);
+
+    const itemAvailabilityByDate = useMemo(() => {
+        const reservedByDate = new Map<string, number>();
+        const totalStock = selectedItem?.totalStock || 0;
+
+        for (const event of itemCalendarEvents) {
+            const reservedQty =
+                event.type === "booking"
+                    ? event.quantity
+                    : Math.max(0, event.quantity - event.returnedQty);
+
+            if (reservedQty <= 0) {
+                continue;
+            }
+
+            let cursor = new Date(`${event.startDate}T00:00:00`);
+            const end = new Date(`${event.endDate}T00:00:00`);
+
+            while (cursor <= end) {
+                const dateKey = formatDateValue(cursor);
+                reservedByDate.set(dateKey, (reservedByDate.get(dateKey) || 0) + reservedQty);
+
+                cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);
+            }
+        }
+
+        return reservedByDate;
+    }, [itemCalendarEvents, selectedItem]);
+
+    const selectedDateLabel = selectedCalendarDate
+        ? formatHumanDate(selectedCalendarDate, language)
+        : language === "id"
+            ? "tanggal terpilih"
+            : "selected date";
+
+    const getAvailabilityMeta = useCallback(
+        (date: Date) => {
+            const dateKey = formatDateValue(date);
+            const reservedQty = itemAvailabilityByDate.get(dateKey) || 0;
+            const totalStock = selectedItem?.totalStock || 0;
+            const status =
+                totalStock <= 0 || reservedQty >= totalStock
+                    ? "unavailable"
+                    : reservedQty > 0
+                        ? "partial"
+                        : "available";
+
+            if (status === "unavailable") {
+                return {
+                    color: "rgba(250, 82, 82, 0.16)",
+                    textColor: "#c92a2a",
+                    label:
+                        language === "id"
+                            ? "Tidak tersedia pada tanggal ini"
+                            : "Not available on this date",
+                };
+            }
+
+            if (status === "partial") {
+                return {
+                    color: "rgba(253, 126, 20, 0.18)",
+                    textColor: "#d9480f",
+                    label:
+                        language === "id"
+                            ? "Sebagian stok masih tersedia"
+                            : "Partially available on this date",
+                };
+            }
+
+            return {
+                color: "rgba(64, 192, 87, 0.16)",
+                textColor: "#2b8a3e",
+                label:
+                    language === "id"
+                        ? "Tersedia pada tanggal ini"
+                        : "Available on this date",
+            };
+        },
+        [itemAvailabilityByDate, language, selectedItem?.totalStock]
+    );
 
     if (loading) {
         return (
@@ -1076,63 +1185,104 @@ export default function PeminjamanDashboardPage() {
                                                 : "Usage Calendar"}
                                         </Text>
                                     </Group>
-                                    <DatePicker
-                                        value={selectedCalendarDate}
-                                        onChange={setSelectedCalendarDate}
-                                    />
-                                    <Divider />
-                                    <Stack gap="xs">
-                                        <Text size="sm" fw={600}>
-                                            {language === "id"
-                                                ? "Pengguna pada tanggal terpilih"
-                                                : "Users on the selected date"}
-                                        </Text>
-                                        {calendarEventsForSelectedDate.length === 0 ? (
-                                            <Text c="dimmed" size="sm">
+                                    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" verticalSpacing="lg">
+                                        <Stack gap="md">
+                                            <DatePicker
+                                                value={selectedCalendarDate}
+                                                onChange={setSelectedCalendarDate}
+                                                getDayProps={(date) => {
+                                                    const meta = getAvailabilityMeta(date);
+                                                    const isSelected =
+                                                        !!selectedCalendarDate &&
+                                                        formatDateValue(date) ===
+                                                            formatDateValue(selectedCalendarDate);
+
+                                                    return {
+                                                        title: meta.label,
+                                                        style: {
+                                                            backgroundColor: meta.color,
+                                                            color: meta.textColor,
+                                                            fontWeight: isSelected ? 700 : 500,
+                                                            border: isSelected
+                                                                ? "2px solid var(--mantine-color-blue-6)"
+                                                                : "1px solid transparent",
+                                                        },
+                                                    };
+                                                }}
+                                            />
+                                            <Group gap="sm">
+                                                <Badge color="green" variant="light">
+                                                    {language === "id" ? "Tersedia" : "Available"}
+                                                </Badge>
+                                                <Badge color="orange" variant="light">
+                                                    {language === "id"
+                                                        ? "Sebagian tersedia"
+                                                        : "Partially available"}
+                                                </Badge>
+                                                <Badge color="red" variant="light">
+                                                    {language === "id"
+                                                        ? "Tidak tersedia"
+                                                        : "Unavailable"}
+                                                </Badge>
+                                            </Group>
+                                        </Stack>
+
+                                        <Stack gap="xs">
+                                            <Text size="sm" fw={600}>
                                                 {language === "id"
-                                                    ? "Tidak ada booking atau peminjaman pada tanggal ini."
-                                                    : "No booking or borrowing on this date."}
+                                                    ? `Pengguna pada ${selectedDateLabel}`
+                                                    : `Users on ${selectedDateLabel}`}
                                             </Text>
-                                        ) : (
-                                            calendarEventsForSelectedDate.map((event) => (
-                                                <Card key={event.id} withBorder radius="md" p="sm">
-                                                    <Group justify="space-between" align="flex-start">
-                                                        <Stack gap={2}>
-                                                            <Text size="sm" fw={600}>
-                                                                {event.borrowerName || event.borrowerEmail}
-                                                            </Text>
-                                                            <Text size="xs" c="dimmed">
-                                                                {event.borrowerDept
-                                                                    ? `${event.borrowerEmail} • ${event.borrowerDept}`
-                                                                    : event.borrowerEmail}
-                                                            </Text>
-                                                            <Text size="xs" c="dimmed">
-                                                                {event.startDate} - {event.endDate}
-                                                            </Text>
-                                                        </Stack>
-                                                        <Group gap="xs">
-                                                            <Badge
-                                                                color={
-                                                                    event.type === "booking"
-                                                                        ? "cyan"
-                                                                        : "violet"
-                                                                }
-                                                                variant="light"
-                                                            >
-                                                                {getTypeLabel(event.type)}
-                                                            </Badge>
-                                                            <Badge
-                                                                color={getStatusColor(event.status)}
-                                                                variant="light"
-                                                            >
-                                                                {event.quantity}x
-                                                            </Badge>
-                                                        </Group>
-                                                    </Group>
+                                            {calendarEventsForSelectedDate.length === 0 ? (
+                                                <Card withBorder radius="md" p="sm">
+                                                    <Text c="dimmed" size="sm">
+                                                        {language === "id"
+                                                            ? "Tidak ada booking atau peminjaman pada tanggal ini."
+                                                            : "No booking or borrowing on this date."}
+                                                    </Text>
                                                 </Card>
-                                            ))
-                                        )}
-                                    </Stack>
+                                            ) : (
+                                                calendarEventsForSelectedDate.map((event) => (
+                                                    <Card key={event.id} withBorder radius="md" p="sm">
+                                                        <Group justify="space-between" align="flex-start">
+                                                            <Stack gap={2}>
+                                                                <Text size="sm" fw={600}>
+                                                                    {event.borrowerName || event.borrowerEmail}
+                                                                </Text>
+                                                                <Text size="xs" c="dimmed">
+                                                                    {event.borrowerDept
+                                                                        ? `${event.borrowerEmail} • ${event.borrowerDept}`
+                                                                        : event.borrowerEmail}
+                                                                </Text>
+                                                                <Text size="xs" c="dimmed">
+                                                                    {formatHumanDate(event.startDate, language)} -{" "}
+                                                                    {formatHumanDate(event.endDate, language)}
+                                                                </Text>
+                                                            </Stack>
+                                                            <Group gap="xs">
+                                                                <Badge
+                                                                    color={
+                                                                        event.type === "booking"
+                                                                            ? "cyan"
+                                                                            : "violet"
+                                                                    }
+                                                                    variant="light"
+                                                                >
+                                                                    {getTypeLabel(event.type)}
+                                                                </Badge>
+                                                                <Badge
+                                                                    color={getStatusColor(event.status)}
+                                                                    variant="light"
+                                                                >
+                                                                    {event.quantity}x
+                                                                </Badge>
+                                                            </Group>
+                                                        </Group>
+                                                    </Card>
+                                                ))
+                                            )}
+                                        </Stack>
+                                    </SimpleGrid>
                                 </Stack>
                             </Card>
 

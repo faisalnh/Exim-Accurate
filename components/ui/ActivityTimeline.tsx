@@ -131,25 +131,43 @@ function formatRelativeTime(
   date: Date | string,
   language: "id" | "en",
 ): string {
-  const now = new Date();
-  const then = new Date(date);
-  const diffMs = now.getTime() - then.getTime();
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
+  const formatter = new Intl.RelativeTimeFormat(
+    language === "id" ? "id-ID" : "en-US",
+    { numeric: "auto" },
+  );
+  const now = Date.now();
+  const then = new Date(date).getTime();
+  const diffSeconds = Math.round((then - now) / 1000);
 
-  if (diffSeconds < 60) {
+  if (Math.abs(diffSeconds) < 60) {
     return language === "id" ? "Baru saja" : "Just now";
-  } else if (diffMinutes < 60) {
-    return language === "id" ? `${diffMinutes}m lalu` : `${diffMinutes}m ago`;
-  } else if (diffHours < 24) {
-    return language === "id" ? `${diffHours}j lalu` : `${diffHours}h ago`;
-  } else if (diffDays < 7) {
-    return language === "id" ? `${diffDays}h lalu` : `${diffDays}d ago`;
-  } else {
-    return then.toLocaleDateString();
   }
+
+  const divisions: Array<[Intl.RelativeTimeFormatUnit, number]> = [
+    ["day", 86400],
+    ["hour", 3600],
+    ["minute", 60],
+  ];
+
+  for (const [unit, secondsInUnit] of divisions) {
+    if (Math.abs(diffSeconds) >= secondsInUnit || unit === "minute") {
+      return formatter.format(Math.round(diffSeconds / secondsInUnit), unit);
+    }
+  }
+
+  return language === "id" ? "Baru saja" : "Just now";
+}
+
+function formatAbsoluteTime(date: Date | string, language: "id" | "en"): string {
+  return new Intl.DateTimeFormat(language === "id" ? "id-ID" : "en-US", {
+    timeZone: "Asia/Jakarta",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(date));
 }
 
 export function ActivityTimeline({
@@ -299,6 +317,12 @@ export function ActivityTimeline({
                 <Group gap="xs" align="center">
                   <Text size="xs" c="dimmed">
                     {formatRelativeTime(activity.timestamp, language)}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    •
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    {formatAbsoluteTime(activity.timestamp, language)} WIB
                   </Text>
                   {activity.metadata?.count !== undefined && (
                     <>
