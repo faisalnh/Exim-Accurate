@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
     try {
         const where: any = {
             userId: session.user.id,
-            credentialId,
         };
 
         if (status !== "all") {

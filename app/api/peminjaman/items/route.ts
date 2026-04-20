@@ -20,11 +20,9 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // Get all borrowable items for this credential
         const items = await prisma.borrowableItem.findMany({
             where: {
                 userId: session.user.id,
-                credentialId,
             },
             orderBy: { createdAt: "desc" },
         });
@@ -34,7 +32,6 @@ export async function GET(req: NextRequest) {
             by: ["itemCode"],
             where: {
                 session: {
-                    credentialId,
                     userId: session.user.id,
                     status: { in: ["active", "partial"] },
                 },
@@ -102,7 +99,10 @@ export async function POST(req: NextRequest) {
         // Upsert (update if exists, create if not)
         const item = await prisma.borrowableItem.upsert({
             where: {
-                credentialId_itemCode: { credentialId, itemCode },
+                userId_itemCode: {
+                    userId: session.user.id,
+                    itemCode,
+                },
             },
             update: {
                 itemName,
@@ -110,7 +110,6 @@ export async function POST(req: NextRequest) {
             },
             create: {
                 userId: session.user.id,
-                credentialId,
                 itemCode,
                 itemName,
                 totalStock,

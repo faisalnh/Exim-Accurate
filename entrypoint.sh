@@ -96,7 +96,6 @@ async function main() {
     CREATE TABLE IF NOT EXISTS \"BorrowableItem\" (
       \"id\" TEXT NOT NULL,
       \"userId\" TEXT NOT NULL,
-      \"credentialId\" TEXT NOT NULL,
       \"itemCode\" TEXT NOT NULL,
       \"itemName\" TEXT NOT NULL,
       \"totalStock\" INTEGER NOT NULL,
@@ -107,8 +106,37 @@ async function main() {
   \`);
 
   await prisma.\$executeRawUnsafe(\`
-    CREATE UNIQUE INDEX IF NOT EXISTS \"BorrowableItem_credentialId_itemCode_key\"
-    ON \"BorrowableItem\"(\"credentialId\", \"itemCode\")
+    WITH ranked_items AS (
+      SELECT
+        \"id\",
+        ROW_NUMBER() OVER (
+          PARTITION BY \"userId\", \"itemCode\"
+          ORDER BY
+            \"totalStock\" DESC,
+            \"updatedAt\" DESC,
+            \"createdAt\" DESC,
+            \"id\" ASC
+        ) AS row_num
+      FROM \"BorrowableItem\"
+    )
+    DELETE FROM \"BorrowableItem\"
+    WHERE \"id\" IN (
+      SELECT \"id\"
+      FROM ranked_items
+      WHERE row_num > 1
+    )
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    DROP INDEX IF EXISTS \"BorrowableItem_credentialId_itemCode_key\"
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    ALTER TABLE \"BorrowableItem\" DROP CONSTRAINT IF EXISTS \"BorrowableItem_credentialId_fkey\"
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    ALTER TABLE \"BorrowableItem\" DROP COLUMN IF EXISTS \"credentialId\"
   \`);
 
   await prisma.\$executeRawUnsafe(\`
@@ -203,14 +231,8 @@ async function main() {
   \`);
 
   await prisma.\$executeRawUnsafe(\`
-    DO \\\$\\\$ BEGIN
-      ALTER TABLE \"BorrowableItem\" DROP CONSTRAINT IF EXISTS \"BorrowableItem_credentialId_fkey\";
-      ALTER TABLE \"BorrowableItem\"
-        ADD CONSTRAINT \"BorrowableItem_credentialId_fkey\"
-        FOREIGN KEY (\"credentialId\") REFERENCES \"AccurateCredentials\"(\"id\")
-        ON DELETE CASCADE ON UPDATE CASCADE;
-    EXCEPTION WHEN duplicate_object THEN NULL;
-    END \\\$\\\$
+    CREATE UNIQUE INDEX IF NOT EXISTS \"BorrowableItem_userId_itemCode_key\"
+    ON \"BorrowableItem\"(\"userId\", \"itemCode\")
   \`);
 
   await prisma.\$executeRawUnsafe(\`

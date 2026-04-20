@@ -42,7 +42,6 @@ export async function GET(req: NextRequest) {
     try {
         const activityWhere = {
             userId: session.user.id,
-            credentialId,
             ...(itemCode ? { itemCode } : {}),
         };
         const borrowingActivityDelegate = (prisma as any).borrowingActivity;
@@ -66,7 +65,6 @@ export async function GET(req: NextRequest) {
             ? await borrowingSessionDelegate.findMany({
                 where: {
                     userId: session.user.id,
-                    credentialId,
                     items: {
                         some: {
                             itemCode,
@@ -91,7 +89,6 @@ export async function GET(req: NextRequest) {
                 return borrowingSessionDelegate.findMany({
                     where: {
                         userId: session.user.id,
-                        credentialId,
                         items: {
                             some: {
                                 itemCode,

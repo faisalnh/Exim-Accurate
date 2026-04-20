@@ -148,7 +148,6 @@ function isDateWithinRange(value: Date, startDate: Date, endDate: Date) {
 
 async function buildAvailabilityContext(args: {
   userId: string;
-  credentialId: string;
   items: RequestedBorrowItem[];
 }) {
   const requestedItems = normalizeRequestedItems(args.items);
@@ -158,7 +157,6 @@ async function buildAvailabilityContext(args: {
     prisma.borrowableItem.findMany({
       where: {
         userId: args.userId,
-        credentialId: args.credentialId,
         itemCode: { in: itemCodes },
       },
       select: {
@@ -170,7 +168,6 @@ async function buildAvailabilityContext(args: {
     prisma.borrowingSession.findMany({
       where: {
         userId: args.userId,
-        credentialId: args.credentialId,
         status: { in: ["active", "partial", "booked"] },
         items: {
           some: {
@@ -347,7 +344,6 @@ function evaluateAvailabilityRange(
 
 export async function checkBorrowAvailability(args: {
   userId: string;
-  credentialId: string;
   items: RequestedBorrowItem[];
   startDate: Date | string;
   endDate: Date | string;
@@ -362,14 +358,12 @@ export async function checkBorrowAvailability(args: {
 
 export async function getBorrowDurationOptions(args: {
   userId: string;
-  credentialId: string;
   items: RequestedBorrowItem[];
   startDate?: Date | string;
 }) {
   const startDate = startOfDay(args.startDate || new Date());
   const context = await buildAvailabilityContext({
     userId: args.userId,
-    credentialId: args.credentialId,
     items: args.items,
   });
 

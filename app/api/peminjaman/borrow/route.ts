@@ -154,7 +154,6 @@ export async function POST(req: NextRequest) {
 
         const availability = await checkBorrowAvailability({
             userId: session.user.id,
-            credentialId,
             items,
             startDate: startsAt,
             endDate: dueAt,

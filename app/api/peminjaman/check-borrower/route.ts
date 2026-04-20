@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
         // Find active/partial sessions for this borrower
         const activeSessions = await prisma.borrowingSession.findMany({
             where: {
-                credentialId,
+                userId: session.user.id,
                 borrowerEmail: email.toLowerCase().trim(),
                 status: { in: ["active", "partial"] },
             },

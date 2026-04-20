@@ -56,7 +56,6 @@ export async function POST(req: NextRequest) {
             type === "borrow"
                 ? await getBorrowDurationOptions({
                     userId: session.user.id,
-                    credentialId,
                     items,
                     startDate: startsAt,
                 })
@@ -70,7 +69,6 @@ export async function POST(req: NextRequest) {
             requestedDueAt
                 ? await checkBorrowAvailability({
                     userId: session.user.id,
-                    credentialId,
                     items,
                     startDate: startsAt,
                     endDate: endOfDay(requestedDueAt),
