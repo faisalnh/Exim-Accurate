@@ -119,7 +119,10 @@ async function main() {
       \"borrowerEmail\" TEXT NOT NULL,
       \"borrowerName\" TEXT,
       \"borrowerDept\" TEXT,
+      \"type\" TEXT NOT NULL DEFAULT 'borrow',
       \"status\" TEXT NOT NULL DEFAULT 'active',
+      \"startsAt\" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \"dueAt\" TIMESTAMP(3),
       \"borrowedAt\" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
       \"returnedAt\" TIMESTAMP(3),
       \"notes\" TEXT,
@@ -140,6 +143,52 @@ async function main() {
       \"returnedAt\" TIMESTAMP(3),
       CONSTRAINT \"BorrowingItem_pkey\" PRIMARY KEY (\"id\")
     )
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    CREATE TABLE IF NOT EXISTS \"BorrowingActivity\" (
+      \"id\" TEXT NOT NULL,
+      \"userId\" TEXT NOT NULL,
+      \"credentialId\" TEXT NOT NULL,
+      \"sessionId\" TEXT,
+      \"itemCode\" TEXT NOT NULL,
+      \"itemName\" TEXT NOT NULL,
+      \"borrowerEmail\" TEXT NOT NULL,
+      \"borrowerName\" TEXT,
+      \"borrowerDept\" TEXT,
+      \"activityType\" TEXT NOT NULL,
+      \"quantity\" INTEGER NOT NULL DEFAULT 1,
+      \"occurredAt\" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \"scheduleStart\" TIMESTAMP(3),
+      \"scheduleEnd\" TIMESTAMP(3),
+      \"details\" TEXT,
+      CONSTRAINT \"BorrowingActivity_pkey\" PRIMARY KEY (\"id\")
+    )
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    ALTER TABLE \"BorrowingSession\"
+      ADD COLUMN IF NOT EXISTS \"type\" TEXT NOT NULL DEFAULT 'borrow'
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    ALTER TABLE \"BorrowingSession\"
+      ADD COLUMN IF NOT EXISTS \"startsAt\" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    ALTER TABLE \"BorrowingSession\"
+      ADD COLUMN IF NOT EXISTS \"dueAt\" TIMESTAMP(3)
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    CREATE INDEX IF NOT EXISTS \"BorrowingActivity_credentialId_occurredAt_idx\"
+    ON \"BorrowingActivity\"(\"credentialId\", \"occurredAt\")
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    CREATE INDEX IF NOT EXISTS \"BorrowingActivity_credentialId_itemCode_occurredAt_idx\"
+    ON \"BorrowingActivity\"(\"credentialId\", \"itemCode\", \"occurredAt\")
   \`);
 
   // Foreign Keys for Borrowing
@@ -191,6 +240,38 @@ async function main() {
         ADD CONSTRAINT \"BorrowingItem_sessionId_fkey\"
         FOREIGN KEY (\"sessionId\") REFERENCES \"BorrowingSession\"(\"id\")
         ON DELETE CASCADE ON UPDATE CASCADE;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END \\\$\\\$
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    DO \\\$\\\$ BEGIN
+      ALTER TABLE \"BorrowingActivity\"
+        ADD CONSTRAINT \"BorrowingActivity_userId_fkey\"
+        FOREIGN KEY (\"userId\") REFERENCES \"User\"(\"id\")
+        ON DELETE CASCADE ON UPDATE CASCADE;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END \\\$\\\$
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    DO \\\$\\\$ BEGIN
+      ALTER TABLE \"BorrowingActivity\" DROP CONSTRAINT IF EXISTS \"BorrowingActivity_credentialId_fkey\";
+      ALTER TABLE \"BorrowingActivity\"
+        ADD CONSTRAINT \"BorrowingActivity_credentialId_fkey\"
+        FOREIGN KEY (\"credentialId\") REFERENCES \"AccurateCredentials\"(\"id\")
+        ON DELETE CASCADE ON UPDATE CASCADE;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END \\\$\\\$
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    DO \\\$\\\$ BEGIN
+      ALTER TABLE \"BorrowingActivity\" DROP CONSTRAINT IF EXISTS \"BorrowingActivity_sessionId_fkey\";
+      ALTER TABLE \"BorrowingActivity\"
+        ADD CONSTRAINT \"BorrowingActivity_sessionId_fkey\"
+        FOREIGN KEY (\"sessionId\") REFERENCES \"BorrowingSession\"(\"id\")
+        ON DELETE SET NULL ON UPDATE CASCADE;
     EXCEPTION WHEN duplicate_object THEN NULL;
     END \\\$\\\$
   \`);

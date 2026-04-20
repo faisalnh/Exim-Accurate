@@ -22,6 +22,9 @@ import {
   IconClock,
   IconAlertTriangle,
   IconRefresh,
+  IconClipboardList,
+  IconCalendarEvent,
+  IconRotateClockwise2,
 } from "@tabler/icons-react";
 import { ReactNode } from "react";
 import { useLanguage } from "@/lib/language";
@@ -34,7 +37,10 @@ export type ActivityType =
   | "error"
   | "success"
   | "pending"
-  | "warning";
+  | "warning"
+  | "borrow"
+  | "booking"
+  | "return";
 
 export type ActivityStatus = "success" | "error" | "pending" | "warning";
 
@@ -103,6 +109,21 @@ const typeConfig: Record<
     icon: <IconAlertTriangle size={16} />,
     color: "orange",
     label: "Peringatan",
+  },
+  borrow: {
+    icon: <IconClipboardList size={16} />,
+    color: "violet",
+    label: "Peminjaman",
+  },
+  booking: {
+    icon: <IconCalendarEvent size={16} />,
+    color: "cyan",
+    label: "Booking",
+  },
+  return: {
+    icon: <IconRotateClockwise2 size={16} />,
+    color: "green",
+    label: "Pengembalian",
   },
 };
 
@@ -174,6 +195,18 @@ export function ActivityTimeline({
     warning: {
       ...typeConfig.warning,
       label: language === "id" ? "Peringatan" : "Warning",
+    },
+    borrow: {
+      ...typeConfig.borrow,
+      label: language === "id" ? "Peminjaman" : "Borrowing",
+    },
+    booking: {
+      ...typeConfig.booking,
+      label: language === "id" ? "Booking" : "Booking",
+    },
+    return: {
+      ...typeConfig.return,
+      label: language === "id" ? "Pengembalian" : "Return",
     },
   };
   const localizedStatusConfig = {
@@ -358,6 +391,9 @@ export function CompactActivityList({
                   success: "Success",
                   pending: "Pending",
                   warning: "Warning",
+                  borrow: "Borrowing",
+                  booking: "Booking",
+                  return: "Return",
                 }[activity.type] || typeConfig[activity.type].label,
         };
 

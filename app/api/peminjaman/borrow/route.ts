@@ -6,6 +6,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { saveInventoryAdjustment } from "@/lib/accurate/inventory";
 import { refreshSession, refreshAccessToken } from "@/lib/accurate/client";
+import {
+    calculateDueDateFromDuration,
+    checkBorrowAvailability,
+    createBorrowingActivities,
+    formatDateOnly,
+    startOfDay,
+    endOfDay,
+} from "@/lib/peminjaman";
 import dayjs from "dayjs";
 
 interface BorrowItem {
@@ -18,6 +26,10 @@ interface BorrowRequest {
     credentialId: string;
     borrowerEmail: string;
     items: BorrowItem[];
+    type?: "borrow" | "booking";
+    startsAt?: string;
+    dueAt?: string;
+    durationDays?: number;
     notes?: string;
 }
 
@@ -104,6 +116,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { credentialId, borrowerEmail, items, notes } = body;
+    const type = body.type === "booking" ? "booking" : "borrow";
 
     if (!credentialId || !borrowerEmail || !items?.length) {
         return NextResponse.json({ error: "credentialId, borrowerEmail, and items are required" }, { status: 400 });
@@ -111,67 +124,135 @@ export async function POST(req: NextRequest) {
 
     try {
         const { name: borrowerName, department: borrowerDept } = parseStaffInfo(borrowerEmail);
+        const startsAt = startOfDay(body.startsAt || new Date());
+        const dueAt = body.dueAt
+            ? endOfDay(body.dueAt)
+            : body.durationDays
+                ? endOfDay(calculateDueDateFromDuration(body.durationDays, startsAt))
+                : null;
 
-        // Create borrowing session
-        const borrowingSession = await prisma.borrowingSession.create({
-            data: {
+        if (!dueAt) {
+            return NextResponse.json(
+                { error: "dueAt or durationDays is required" },
+                { status: 400 }
+            );
+        }
+
+        if (dueAt.getTime() < startsAt.getTime()) {
+            return NextResponse.json(
+                { error: "Return date must be after start date" },
+                { status: 400 }
+            );
+        }
+
+        if (type === "borrow" && formatDateOnly(startsAt) !== formatDateOnly(new Date())) {
+            return NextResponse.json(
+                { error: "Borrowing must start today" },
+                { status: 400 }
+            );
+        }
+
+        const availability = await checkBorrowAvailability({
+            userId: session.user.id,
+            credentialId,
+            items,
+            startDate: startsAt,
+            endDate: dueAt,
+        });
+
+        if (!availability.ok) {
+            return NextResponse.json(
+                {
+                    error:
+                        type === "booking"
+                            ? "Booking date conflicts with an existing booking or loan"
+                            : "Selected duration conflicts with an existing booking or loan",
+                    availability,
+                },
+                { status: 409 }
+            );
+        }
+
+        const borrowingSession = await prisma.$transaction(async (tx) => {
+            const created = await tx.borrowingSession.create({
+                data: {
+                    userId: session.user.id,
+                    credentialId,
+                    borrowerEmail: borrowerEmail.toLowerCase().trim(),
+                    borrowerName,
+                    borrowerDept,
+                    type,
+                    status: type === "booking" ? "booked" : "active",
+                    startsAt,
+                    dueAt,
+                    notes,
+                    items: {
+                        create: items.map((item) => ({
+                            itemCode: item.itemCode,
+                            itemName: item.itemName,
+                            quantity: item.quantity,
+                        })),
+                    },
+                },
+                include: { items: true },
+            });
+
+            await createBorrowingActivities(tx, {
+                sessionId: created.id,
                 userId: session.user.id,
                 credentialId,
                 borrowerEmail: borrowerEmail.toLowerCase().trim(),
                 borrowerName,
                 borrowerDept,
-                status: "active",
-                notes,
-                items: {
-                    create: items.map((item) => ({
-                        itemCode: item.itemCode,
-                        itemName: item.itemName,
-                        quantity: item.quantity,
-                    })),
-                },
-            },
-            include: { items: true },
+                activityType: type === "booking" ? "booking" : "borrow",
+                scheduleStart: startsAt,
+                scheduleEnd: dueAt,
+                items,
+                details: notes || null,
+            });
+
+            return created;
         });
 
         // Create ADJUSTMENT_OUT in Accurate
         let adjustmentId: number | null = null;
-        try {
-            const credential = await ensureCredentialSession(credentialId, session.user.id);
+        if (type === "borrow") {
+            try {
+                const credential = await ensureCredentialSession(credentialId, session.user.id);
 
-            const description = `Peminjaman by ${borrowerName || borrowerEmail}${borrowerDept ? ` | Dept: ${borrowerDept}` : ""} | Email: ${borrowerEmail}`;
+                const description = `Peminjaman by ${borrowerName || borrowerEmail}${borrowerDept ? ` | Dept: ${borrowerDept}` : ""} | Email: ${borrowerEmail}`;
 
-            const adjustmentData = {
-                transDate: dayjs().format("YYYY-MM-DD"),
-                description,
-                detailItem: items.map((item) => ({
-                    itemNo: item.itemCode,
-                    quantity: item.quantity,
-                    itemAdjustmentType: "ADJUSTMENT_OUT" as const,
-                })),
-            };
+                const adjustmentData = {
+                    transDate: dayjs().format("YYYY-MM-DD"),
+                    description,
+                    detailItem: items.map((item) => ({
+                        itemNo: item.itemCode,
+                        quantity: item.quantity,
+                        itemAdjustmentType: "ADJUSTMENT_OUT" as const,
+                    })),
+                };
 
-            console.log("[peminjaman/borrow] Creating ADJUSTMENT_OUT:", JSON.stringify(adjustmentData));
+                console.log("[peminjaman/borrow] Creating ADJUSTMENT_OUT:", JSON.stringify(adjustmentData));
 
-            const result = await saveInventoryAdjustment(
-                {
-                    apiToken: credential.apiToken,
-                    signatureSecret: credential.signatureSecret,
-                    host: credential.host!,
-                    session: credential.session!,
-                },
-                adjustmentData
-            );
+                const result = await saveInventoryAdjustment(
+                    {
+                        apiToken: credential.apiToken,
+                        signatureSecret: credential.signatureSecret,
+                        host: credential.host!,
+                        session: credential.session!,
+                    },
+                    adjustmentData
+                );
 
-            adjustmentId = result.id;
+                adjustmentId = result.id;
 
-            // Update session with adjustment ID
-            await prisma.borrowingSession.update({
-                where: { id: borrowingSession.id },
-                data: { adjustmentOutId: adjustmentId },
-            });
-        } catch (accErr: any) {
-            console.error("[peminjaman/borrow] Accurate adjustment failed (session still created):", accErr.message);
-            // Don't fail the whole operation — the local record is created even if Accurate fails
+                await prisma.borrowingSession.update({
+                    where: { id: borrowingSession.id },
+                    data: { adjustmentOutId: adjustmentId },
+                });
+            } catch (accErr: any) {
+                console.error("[peminjaman/borrow] Accurate adjustment failed (session still created):", accErr.message);
+            }
         }
 
         return NextResponse.json({
@@ -181,6 +262,9 @@ export async function POST(req: NextRequest) {
             borrowerName,
             borrowerDept,
             itemCount: items.length,
+            type,
+            startsAt: borrowingSession.startsAt,
+            dueAt: borrowingSession.dueAt,
         });
     } catch (error: any) {
         console.error("[peminjaman/borrow] Error:", error);

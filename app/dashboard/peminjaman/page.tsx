@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
     Stack,
     Title,
@@ -20,10 +20,11 @@ import {
     rem,
     Select,
     ScrollArea,
-    Paper,
     Tooltip,
     Modal,
+    Divider,
 } from "@mantine/core";
+import { DatePicker } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import {
     IconClipboardList,
@@ -35,8 +36,10 @@ import {
     IconRefresh,
     IconUser,
     IconCalendar,
+    IconCalendarEvent,
 } from "@tabler/icons-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { ActivityTimeline, ActivityItem } from "@/components/ui/ActivityTimeline";
 import { useLanguage } from "@/lib/language";
 
 interface Credential {
@@ -60,7 +63,10 @@ interface BorrowingSession {
     borrowerEmail: string;
     borrowerName: string | null;
     borrowerDept: string | null;
+    type: string;
     status: string;
+    startsAt: string;
+    dueAt: string | null;
     borrowedAt: string;
     returnedAt: string | null;
     items: {
@@ -70,6 +76,44 @@ interface BorrowingSession {
         quantity: number;
         returnedQty: number;
     }[];
+}
+
+interface ItemActivityResponse {
+    id: string;
+    itemCode: string;
+    itemName: string;
+    borrowerEmail: string;
+    borrowerName: string | null;
+    borrowerDept: string | null;
+    activityType: "borrow" | "booking" | "return";
+    quantity: number;
+    occurredAt: string;
+    scheduleStart: string | null;
+    scheduleEnd: string | null;
+    details: string | null;
+}
+
+interface ItemCalendarEvent {
+    id: string;
+    sessionId: string;
+    type: string;
+    status: string;
+    borrowerEmail: string;
+    borrowerName: string | null;
+    borrowerDept: string | null;
+    itemCode: string;
+    itemName: string;
+    quantity: number;
+    returnedQty: number;
+    startDate: string;
+    endDate: string;
+}
+
+function formatDateValue(date: Date) {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
 }
 
 export default function PeminjamanDashboardPage() {
@@ -94,6 +138,16 @@ export default function PeminjamanDashboardPage() {
     const [statusFilter, setStatusFilter] = useState<string>("active");
     const [searchQuery, setSearchQuery] = useState("");
     const [totalSessions, setTotalSessions] = useState(0);
+    const [activities, setActivities] = useState<ActivityItem[]>([]);
+    const [activitiesLoading, setActivitiesLoading] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<BorrowableItem | null>(null);
+    const [itemDetailOpen, setItemDetailOpen] = useState(false);
+    const [itemActivities, setItemActivities] = useState<ActivityItem[]>([]);
+    const [itemCalendarEvents, setItemCalendarEvents] = useState<ItemCalendarEvent[]>([]);
+    const [itemDetailLoading, setItemDetailLoading] = useState(false);
+    const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(
+        new Date()
+    );
 
     // Fetch credentials
     useEffect(() => {
@@ -155,10 +209,108 @@ export default function PeminjamanDashboardPage() {
         }
     }, [selectedCredentialId, statusFilter, searchQuery]);
 
+    const mapActivityToTimeline = useCallback(
+        (activity: ItemActivityResponse): ActivityItem => {
+            const borrowerLabel = activity.borrowerName || activity.borrowerEmail;
+            const itemLabel = `${activity.itemName} ×${activity.quantity}`;
+
+            return {
+                id: activity.id,
+                type: activity.activityType,
+                title:
+                    activity.activityType === "booking"
+                        ? language === "id"
+                            ? `Booking oleh ${borrowerLabel}`
+                            : `Booking by ${borrowerLabel}`
+                        : activity.activityType === "return"
+                            ? language === "id"
+                                ? `Pengembalian oleh ${borrowerLabel}`
+                                : `Return by ${borrowerLabel}`
+                            : language === "id"
+                                ? `Peminjaman oleh ${borrowerLabel}`
+                                : `Borrowing by ${borrowerLabel}`,
+                description:
+                    activity.activityType === "return"
+                        ? itemLabel
+                        : `${itemLabel}${activity.scheduleStart && activity.scheduleEnd
+                            ? language === "id"
+                                ? ` • ${activity.scheduleStart} s/d ${activity.scheduleEnd}`
+                                : ` • ${activity.scheduleStart} to ${activity.scheduleEnd}`
+                            : ""}`,
+                timestamp: activity.occurredAt,
+                status:
+                    activity.activityType === "return"
+                        ? "success"
+                        : activity.activityType === "booking"
+                            ? "pending"
+                            : "warning",
+                metadata: {
+                    count: activity.quantity,
+                },
+            };
+        },
+        [language]
+    );
+
+    const fetchActivities = useCallback(async () => {
+        if (!selectedCredentialId) return;
+        setActivitiesLoading(true);
+        try {
+            const res = await fetch(
+                `/api/peminjaman/activity?credentialId=${selectedCredentialId}&limit=40`
+            );
+            if (!res.ok) {
+                throw new Error("Failed to fetch activities");
+            }
+
+            const data = await res.json();
+            setActivities((data.activities as ItemActivityResponse[]).map(mapActivityToTimeline));
+        } catch (err) {
+            console.error("Failed to fetch borrowing activities", err);
+            setActivities([]);
+        } finally {
+            setActivitiesLoading(false);
+        }
+    }, [mapActivityToTimeline, selectedCredentialId]);
+
+    const openItemDetails = useCallback(
+        async (item: BorrowableItem) => {
+            if (!selectedCredentialId) return;
+
+            setSelectedItem(item);
+            setSelectedCalendarDate(new Date());
+            setItemDetailOpen(true);
+            setItemDetailLoading(true);
+
+            try {
+                const res = await fetch(
+                    `/api/peminjaman/activity?credentialId=${selectedCredentialId}&itemCode=${encodeURIComponent(item.itemCode)}&limit=50`
+                );
+                if (!res.ok) {
+                    throw new Error("Failed to fetch item activity");
+                }
+
+                const data = await res.json();
+                setItemActivities(
+                    (data.activities as ItemActivityResponse[]).map(mapActivityToTimeline)
+                );
+                setItemCalendarEvents(data.calendarEvents || []);
+            } catch (err) {
+                console.error("Failed to fetch item details", err);
+                setItemActivities([]);
+                setItemCalendarEvents([]);
+            } finally {
+                setItemDetailLoading(false);
+            }
+        },
+        [mapActivityToTimeline, selectedCredentialId]
+    );
+
     useEffect(() => {
         fetchItems();
         fetchSessions();
-    }, [fetchItems, fetchSessions]);
+        fetchActivities();
+    }, [fetchActivities, fetchItems, fetchSessions]);
 
     // Add borrowable item
     const handleAddItem = async () => {
@@ -253,6 +405,8 @@ export default function PeminjamanDashboardPage() {
                 return "green";
             case "partial":
                 return "yellow";
+            case "booked":
+                return "cyan";
             default:
                 return "gray";
         }
@@ -267,6 +421,8 @@ export default function PeminjamanDashboardPage() {
                     return "Dikembalikan";
                 case "partial":
                     return "Sebagian";
+                case "booked":
+                    return "Booking";
                 default:
                     return status;
             }
@@ -278,10 +434,31 @@ export default function PeminjamanDashboardPage() {
                 return "Returned";
             case "partial":
                 return "Partial";
+            case "booked":
+                return "Booked";
             default:
                 return status;
         }
     };
+
+    const getTypeLabel = (type: string) => {
+        if (type === "booking") {
+            return language === "id" ? "Booking" : "Booking";
+        }
+
+        return language === "id" ? "Peminjaman" : "Borrowing";
+    };
+
+    const calendarEventsForSelectedDate = useMemo(() => {
+        if (!selectedCalendarDate) {
+            return itemCalendarEvents;
+        }
+
+        const selectedDate = formatDateValue(selectedCalendarDate);
+        return itemCalendarEvents.filter(
+            (event) => selectedDate >= event.startDate && selectedDate <= event.endDate
+        );
+    }, [itemCalendarEvents, selectedCalendarDate]);
 
     if (loading) {
         return (
@@ -339,6 +516,12 @@ export default function PeminjamanDashboardPage() {
                         </Tabs.Tab>
                         <Tabs.Tab value="history" leftSection={<IconHistory size={16} />}>
                             {language === "id" ? "Riwayat" : "History"}
+                        </Tabs.Tab>
+                        <Tabs.Tab
+                            value="activity"
+                            leftSection={<IconCalendarEvent size={16} />}
+                        >
+                            {language === "id" ? "Aktivitas Terbaru" : "Recent Activity"}
                         </Tabs.Tab>
                     </Tabs.List>
 
@@ -457,9 +640,14 @@ export default function PeminjamanDashboardPage() {
                                                             </Text>
                                                         </Table.Td>
                                                         <Table.Td>
-                                                            <Text size="sm" fw={500}>
+                                                            <Button
+                                                                variant="subtle"
+                                                                size="compact-sm"
+                                                                px={0}
+                                                                onClick={() => void openItemDetails(item)}
+                                                            >
                                                                 {item.itemName}
-                                                            </Text>
+                                                            </Button>
                                                         </Table.Td>
                                                         <Table.Td ta="center">
                                                             <Badge color="blue" variant="light">
@@ -683,6 +871,11 @@ export default function PeminjamanDashboardPage() {
                                             label:
                                                 language === "id" ? "Sebagian" : "Partial",
                                         },
+                                        {
+                                            value: "booked",
+                                            label:
+                                                language === "id" ? "Booking" : "Booked",
+                                        },
                                     ]}
                                     w={150}
                                 />
@@ -712,6 +905,9 @@ export default function PeminjamanDashboardPage() {
                                             <Table.Thead>
                                                 <Table.Tr>
                                                     <Table.Th>
+                                                        {language === "id" ? "Tipe" : "Type"}
+                                                    </Table.Th>
+                                                    <Table.Th>
                                                         {language === "id" ? "Peminjam" : "Borrower"}
                                                     </Table.Th>
                                                     <Table.Th>
@@ -719,13 +915,13 @@ export default function PeminjamanDashboardPage() {
                                                     </Table.Th>
                                                     <Table.Th>
                                                         {language === "id"
-                                                            ? "Tanggal Pinjam"
-                                                            : "Borrow Date"}
+                                                            ? "Mulai"
+                                                            : "Start"}
                                                     </Table.Th>
                                                     <Table.Th>
                                                         {language === "id"
-                                                            ? "Tanggal Kembali"
-                                                            : "Return Date"}
+                                                            ? "Kembali / Selesai"
+                                                            : "Return / End"}
                                                     </Table.Th>
                                                     <Table.Th>Status</Table.Th>
                                                 </Table.Tr>
@@ -733,6 +929,18 @@ export default function PeminjamanDashboardPage() {
                                             <Table.Tbody>
                                                 {sessions.map((session) => (
                                                     <Table.Tr key={session.id}>
+                                                        <Table.Td>
+                                                            <Badge
+                                                                color={
+                                                                    session.type === "booking"
+                                                                        ? "cyan"
+                                                                        : "violet"
+                                                                }
+                                                                variant="light"
+                                                            >
+                                                                {getTypeLabel(session.type)}
+                                                            </Badge>
+                                                        </Table.Td>
                                                         <Table.Td>
                                                             <Stack gap={0}>
                                                                 <Text size="sm" fw={500}>
@@ -760,15 +968,15 @@ export default function PeminjamanDashboardPage() {
                                                         <Table.Td>
                                                             <Text size="sm">
                                                                 {new Date(
-                                                                    session.borrowedAt
+                                                                    session.startsAt
                                                                 ).toLocaleDateString()}
                                                             </Text>
                                                         </Table.Td>
                                                         <Table.Td>
                                                             <Text size="sm">
-                                                                {session.returnedAt
+                                                                {(session.returnedAt || session.dueAt)
                                                                     ? new Date(
-                                                                        session.returnedAt
+                                                                        session.returnedAt || session.dueAt || session.borrowedAt
                                                                     ).toLocaleDateString()
                                                                     : "-"}
                                                             </Text>
@@ -798,8 +1006,162 @@ export default function PeminjamanDashboardPage() {
                             )}
                         </Stack>
                     </Tabs.Panel>
+
+                    <Tabs.Panel value="activity" pt="md">
+                        <Card withBorder radius="md" p="lg">
+                            {activitiesLoading ? (
+                                <Center h={240}>
+                                    <Loader />
+                                </Center>
+                            ) : (
+                                <ActivityTimeline
+                                    activities={activities}
+                                    maxItems={40}
+                                    showViewAll={false}
+                                    emptyMessage={
+                                        language === "id"
+                                            ? "Belum ada aktivitas peminjaman, booking, atau pengembalian."
+                                            : "No borrowing, booking, or return activity yet."
+                                    }
+                                />
+                            )}
+                        </Card>
+                    </Tabs.Panel>
                 </Tabs>
             </Stack>
+
+            <Modal
+                opened={itemDetailOpen}
+                onClose={() => setItemDetailOpen(false)}
+                title={selectedItem?.itemName || (language === "id" ? "Detail Barang" : "Item Details")}
+                size="xl"
+            >
+                <Stack gap="lg">
+                    {selectedItem && (
+                        <Group justify="space-between" align="flex-start">
+                            <Stack gap={2}>
+                                <Text fw={600}>{selectedItem.itemName}</Text>
+                                <Text c="dimmed" size="sm">
+                                    {selectedItem.itemCode}
+                                </Text>
+                            </Stack>
+                            <Group gap="xs">
+                                <Badge color="green" variant="light">
+                                    {language === "id"
+                                        ? `${selectedItem.available} tersedia`
+                                        : `${selectedItem.available} available`}
+                                </Badge>
+                                <Badge color="orange" variant="light">
+                                    {language === "id"
+                                        ? `${selectedItem.currentlyOut} dipinjam`
+                                        : `${selectedItem.currentlyOut} borrowed`}
+                                </Badge>
+                            </Group>
+                        </Group>
+                    )}
+
+                    {itemDetailLoading ? (
+                        <Center h={280}>
+                            <Loader />
+                        </Center>
+                    ) : (
+                        <>
+                            <Card withBorder radius="md" p="md">
+                                <Stack gap="md">
+                                    <Group gap="xs">
+                                        <IconCalendar size={18} />
+                                        <Text fw={600}>
+                                            {language === "id"
+                                                ? "Kalender Penggunaan"
+                                                : "Usage Calendar"}
+                                        </Text>
+                                    </Group>
+                                    <DatePicker
+                                        value={selectedCalendarDate}
+                                        onChange={setSelectedCalendarDate}
+                                    />
+                                    <Divider />
+                                    <Stack gap="xs">
+                                        <Text size="sm" fw={600}>
+                                            {language === "id"
+                                                ? "Pengguna pada tanggal terpilih"
+                                                : "Users on the selected date"}
+                                        </Text>
+                                        {calendarEventsForSelectedDate.length === 0 ? (
+                                            <Text c="dimmed" size="sm">
+                                                {language === "id"
+                                                    ? "Tidak ada booking atau peminjaman pada tanggal ini."
+                                                    : "No booking or borrowing on this date."}
+                                            </Text>
+                                        ) : (
+                                            calendarEventsForSelectedDate.map((event) => (
+                                                <Card key={event.id} withBorder radius="md" p="sm">
+                                                    <Group justify="space-between" align="flex-start">
+                                                        <Stack gap={2}>
+                                                            <Text size="sm" fw={600}>
+                                                                {event.borrowerName || event.borrowerEmail}
+                                                            </Text>
+                                                            <Text size="xs" c="dimmed">
+                                                                {event.borrowerDept
+                                                                    ? `${event.borrowerEmail} • ${event.borrowerDept}`
+                                                                    : event.borrowerEmail}
+                                                            </Text>
+                                                            <Text size="xs" c="dimmed">
+                                                                {event.startDate} - {event.endDate}
+                                                            </Text>
+                                                        </Stack>
+                                                        <Group gap="xs">
+                                                            <Badge
+                                                                color={
+                                                                    event.type === "booking"
+                                                                        ? "cyan"
+                                                                        : "violet"
+                                                                }
+                                                                variant="light"
+                                                            >
+                                                                {getTypeLabel(event.type)}
+                                                            </Badge>
+                                                            <Badge
+                                                                color={getStatusColor(event.status)}
+                                                                variant="light"
+                                                            >
+                                                                {event.quantity}x
+                                                            </Badge>
+                                                        </Group>
+                                                    </Group>
+                                                </Card>
+                                            ))
+                                        )}
+                                    </Stack>
+                                </Stack>
+                            </Card>
+
+                            <Card withBorder radius="md" p="md">
+                                <Stack gap="md">
+                                    <Group gap="xs">
+                                        <IconClipboardList size={18} />
+                                        <Text fw={600}>
+                                            {language === "id"
+                                                ? "Log Aktivitas Barang"
+                                                : "Item Activity Log"}
+                                        </Text>
+                                    </Group>
+                                    <ActivityTimeline
+                                        activities={itemActivities}
+                                        maxItems={50}
+                                        showViewAll={false}
+                                        emptyMessage={
+                                            language === "id"
+                                                ? "Belum ada aktivitas untuk barang ini."
+                                                : "No activity for this item yet."
+                                        }
+                                    />
+                                </Stack>
+                            </Card>
+                        </>
+                    )}
+                </Stack>
+            </Modal>
         </DashboardLayout>
     );
 }

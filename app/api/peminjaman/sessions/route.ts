@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const credentialId = searchParams.get("credentialId");
-    const status = searchParams.get("status") || "all"; // active, returned, partial, all
+    const status = searchParams.get("status") || "all"; // active, returned, partial, booked, all
     const search = searchParams.get("search") || "";
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "20");
@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
             where.OR = [
                 { borrowerEmail: { contains: search, mode: "insensitive" } },
                 { borrowerName: { contains: search, mode: "insensitive" } },
+                { borrowerDept: { contains: search, mode: "insensitive" } },
                 { items: { some: { itemCode: { contains: search, mode: "insensitive" } } } },
                 { items: { some: { itemName: { contains: search, mode: "insensitive" } } } },
             ];

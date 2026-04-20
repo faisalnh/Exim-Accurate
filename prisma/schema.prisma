@@ -23,6 +23,7 @@ model User {
   kioskSyncData       KioskSyncData[]
   borrowableItems     BorrowableItem[]
   borrowingSessions   BorrowingSession[]
+  borrowingActivities BorrowingActivity[]
 }
 
 model AccurateCredentials {
@@ -44,6 +45,7 @@ model AccurateCredentials {
   importJobs       ImportJob[]
   borrowableItems  BorrowableItem[]
   borrowingSessions BorrowingSession[]
+  borrowingActivities BorrowingActivity[]
 }
 
 // Self Checkout feature - tracks staff checkout sessions
@@ -160,7 +162,10 @@ model BorrowingSession {
   borrowerName  String?
   borrowerDept  String?
 
+  type          String    @default("borrow") // borrow, booking
   status        String    @default("active") // active, returned, partial
+  startsAt      DateTime  @default(now())
+  dueAt         DateTime?
   borrowedAt    DateTime  @default(now())
   returnedAt    DateTime?
   notes         String?
@@ -169,6 +174,7 @@ model BorrowingSession {
   adjustmentInId  Int?    // Accurate adjustment ID for return (ADJUSTMENT_IN)
 
   items         BorrowingItem[]
+  activities    BorrowingActivity[]
   user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   credential    AccurateCredentials @relation(fields: [credentialId], references: [id], onDelete: Cascade)
 }
@@ -184,4 +190,31 @@ model BorrowingItem {
 
   returnedQty Int       @default(0)
   returnedAt  DateTime?
+}
+
+model BorrowingActivity {
+  id            String    @id @default(uuid())
+  userId        String
+  credentialId  String
+  sessionId     String?
+
+  itemCode      String
+  itemName      String
+  borrowerEmail String
+  borrowerName  String?
+  borrowerDept  String?
+
+  activityType  String    // borrow, booking, return
+  quantity      Int       @default(1)
+  occurredAt    DateTime  @default(now())
+  scheduleStart DateTime?
+  scheduleEnd   DateTime?
+  details       String?
+
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credential    AccurateCredentials   @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+  session       BorrowingSession?     @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([credentialId, occurredAt])
+  @@index([credentialId, itemCode, occurredAt])
 }

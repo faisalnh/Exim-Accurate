@@ -20,9 +20,8 @@ import {
     Loader,
     NumberInput,
     Checkbox,
-    Paper,
-    Divider,
     ScrollArea,
+    Alert,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
@@ -61,6 +60,57 @@ interface ActiveItem {
     borrowedAt: string;
 }
 
+interface AvailabilityItem {
+    itemCode: string;
+    itemName: string;
+    requestedQty: number;
+    totalStock: number;
+    maxReservedQty: number;
+    availableQty: number;
+    ok: boolean;
+    nextConflictDate: string | null;
+    blockingReservations: Array<{
+        sessionId: string;
+        type: string;
+        status: string;
+        borrowerEmail: string;
+        borrowerName: string | null;
+        borrowerDept: string | null;
+        quantity: number;
+        startDate: string;
+        endDate: string;
+    }>;
+}
+
+interface AvailabilityResponse {
+    type: "borrow" | "booking";
+    startsAt: string;
+    durationOptions: {
+        allowedDurations: number[];
+        maxReturnDate: string | null;
+        nextConflictDate: string | null;
+    } | null;
+    selectedRange: {
+        ok: boolean;
+        startDate: string;
+        endDate: string;
+        items: AvailabilityItem[];
+    } | null;
+}
+
+function toDateInputValue(date: Date) {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+function addDays(date: Date, days: number) {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    return next;
+}
+
 export default function PeminjamanKioskPage() {
     const { language } = useLanguage();
     const params = useParams();
@@ -77,6 +127,17 @@ export default function PeminjamanKioskPage() {
     // Borrow flow
     const [cart, setCart] = useState<CartItem[]>([]);
     const [lookingUp, setLookingUp] = useState(false);
+    const [transactionType, setTransactionType] = useState<"borrow" | "booking">("borrow");
+    const [borrowDuration, setBorrowDuration] = useState(1);
+    const [customDueDate, setCustomDueDate] = useState<string | null>(null);
+    const [bookingStartDate, setBookingStartDate] = useState(
+        toDateInputValue(new Date())
+    );
+    const [bookingDueDate, setBookingDueDate] = useState(
+        toDateInputValue(addDays(new Date(), 1))
+    );
+    const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
+    const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
     // Return flow
     const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
@@ -92,6 +153,19 @@ export default function PeminjamanKioskPage() {
     // Refs
     const badgeInputRef = useRef<HTMLInputElement>(null);
     const itemInputRef = useRef<HTMLInputElement>(null);
+    const todayValue = toDateInputValue(new Date());
+    const selectedBorrowDueDate =
+        customDueDate || toDateInputValue(addDays(new Date(), borrowDuration));
+    const selectedSchedule =
+        transactionType === "booking"
+            ? {
+                startsAt: bookingStartDate,
+                dueAt: bookingDueDate,
+            }
+            : {
+                startsAt: todayValue,
+                dueAt: selectedBorrowDueDate,
+            };
 
     // Auto-focus for scanner mode
     useEffect(() => {
@@ -239,6 +313,102 @@ export default function PeminjamanKioskPage() {
         [cart, credentialId, language, lookingUp]
     );
 
+    const fetchAvailability = useCallback(
+        async (override?: {
+            type?: "borrow" | "booking";
+            startsAt?: string;
+            dueAt?: string | null;
+        }) => {
+            if (cart.length === 0) {
+                setAvailability(null);
+                return;
+            }
+
+            const type = override?.type || transactionType;
+            const startsAt = override?.startsAt || selectedSchedule.startsAt;
+            const dueAt = override?.dueAt ?? selectedSchedule.dueAt;
+
+            if (!startsAt || !dueAt) {
+                setAvailability(null);
+                return;
+            }
+
+            setAvailabilityLoading(true);
+            try {
+                const res = await fetch("/api/peminjaman/availability", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        credentialId,
+                        items: cart,
+                        type,
+                        startsAt,
+                        dueAt,
+                    }),
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => null);
+                    throw new Error(err?.error || "Failed to check availability");
+                }
+
+                const data = (await res.json()) as AvailabilityResponse;
+                setAvailability(data);
+            } catch (err: any) {
+                notifications.show({
+                    title: language === "id" ? "Gagal" : "Failed",
+                    message: err.message,
+                    color: "red",
+                });
+                setAvailability(null);
+            } finally {
+                setAvailabilityLoading(false);
+            }
+        },
+        [cart, credentialId, language, selectedSchedule.dueAt, selectedSchedule.startsAt, transactionType]
+    );
+
+    useEffect(() => {
+        if (currentStep !== "borrow-scan") {
+            return;
+        }
+
+        void fetchAvailability();
+    }, [currentStep, fetchAvailability]);
+
+    useEffect(() => {
+        if (transactionType !== "borrow" || !availability?.durationOptions) {
+            return;
+        }
+
+        if (!customDueDate) {
+            if (
+                !availability.durationOptions.allowedDurations.includes(borrowDuration) &&
+                availability.durationOptions.allowedDurations.length > 0
+            ) {
+                setBorrowDuration(availability.durationOptions.allowedDurations[0]);
+            }
+            return;
+        }
+
+        if (
+            availability.durationOptions.maxReturnDate &&
+            customDueDate > availability.durationOptions.maxReturnDate
+        ) {
+            setCustomDueDate(availability.durationOptions.maxReturnDate);
+        }
+    }, [availability, borrowDuration, customDueDate, transactionType]);
+
+    useEffect(() => {
+        if (!bookingStartDate) {
+            return;
+        }
+
+        if (!bookingDueDate || bookingDueDate < bookingStartDate) {
+            setBookingDueDate(bookingStartDate);
+        }
+    }, [bookingDueDate, bookingStartDate]);
+
     // Handle camera scan
     const handleCameraScan = useCallback(
         (result: string) => {
@@ -265,6 +435,35 @@ export default function PeminjamanKioskPage() {
     // Submit borrow
     const handleSubmitBorrow = useCallback(async () => {
         if (cart.length === 0) return;
+
+        if (!selectedSchedule.startsAt || !selectedSchedule.dueAt) {
+            notifications.show({
+                title: language === "id" ? "Tanggal Belum Lengkap" : "Dates Required",
+                message:
+                    language === "id"
+                        ? "Pilih tanggal mulai dan tanggal kembali terlebih dahulu."
+                        : "Select a start date and return date first.",
+                color: "red",
+            });
+            return;
+        }
+
+        if (availabilityLoading) {
+            return;
+        }
+
+        if (availability?.selectedRange && !availability.selectedRange.ok) {
+            notifications.show({
+                title: language === "id" ? "Jadwal Bentrok" : "Schedule Conflict",
+                message:
+                    language === "id"
+                        ? "Tanggal yang dipilih bertabrakan dengan booking atau peminjaman lain."
+                        : "The selected dates conflict with another booking or loan.",
+                color: "red",
+            });
+            return;
+        }
+
         setSubmitting(true);
 
         try {
@@ -275,6 +474,9 @@ export default function PeminjamanKioskPage() {
                     credentialId,
                     borrowerEmail,
                     items: cart,
+                    type: transactionType,
+                    startsAt: selectedSchedule.startsAt,
+                    dueAt: selectedSchedule.dueAt,
                 }),
             });
 
@@ -286,11 +488,22 @@ export default function PeminjamanKioskPage() {
             setCompleted(true);
             setCurrentStep("confirm");
             notifications.show({
-                title: language === "id" ? "Peminjaman Berhasil" : "Borrow Successful",
+                title:
+                    transactionType === "booking"
+                        ? language === "id"
+                            ? "Booking Berhasil"
+                            : "Booking Successful"
+                        : language === "id"
+                            ? "Peminjaman Berhasil"
+                            : "Borrow Successful",
                 message:
-                    language === "id"
-                        ? `${cart.length} barang dipinjam`
-                        : `${cart.length} items borrowed`,
+                    transactionType === "booking"
+                        ? language === "id"
+                            ? `${cart.length} barang dibooking`
+                            : `${cart.length} items booked`
+                        : language === "id"
+                            ? `${cart.length} barang dipinjam`
+                            : `${cart.length} items borrowed`,
                 color: "green",
                 icon: <IconCheck size={18} />,
             });
@@ -303,7 +516,17 @@ export default function PeminjamanKioskPage() {
         } finally {
             setSubmitting(false);
         }
-    }, [cart, credentialId, borrowerEmail, language]);
+    }, [
+        availability,
+        availabilityLoading,
+        cart,
+        credentialId,
+        borrowerEmail,
+        language,
+        selectedSchedule.dueAt,
+        selectedSchedule.startsAt,
+        transactionType,
+    ]);
 
     // Submit return
     const handleSubmitReturn = useCallback(async () => {
@@ -356,6 +579,12 @@ export default function PeminjamanKioskPage() {
         setBorrowerName("");
         setBorrowerDept("");
         setCart([]);
+        setTransactionType("borrow");
+        setBorrowDuration(1);
+        setCustomDueDate(null);
+        setBookingStartDate(todayValue);
+        setBookingDueDate(toDateInputValue(addDays(new Date(), 1)));
+        setAvailability(null);
         setActiveItems([]);
         setSelectedReturns({});
         setCompleted(false);
@@ -672,6 +901,7 @@ export default function PeminjamanKioskPage() {
                                         leftSection={<IconPlus size={22} />}
                                         onClick={() => {
                                             setMode("borrow");
+                                            setTransactionType("borrow");
                                             setCurrentStep("borrow-scan");
                                         }}
                                         style={{
@@ -806,9 +1036,13 @@ export default function PeminjamanKioskPage() {
                                 >
                                     <Group justify="space-between">
                                         <Text c="white" fw={700} size="lg">
-                                            {language === "id"
-                                                ? "Barang Pinjaman"
-                                                : "Borrowed Items"}
+                                            {transactionType === "booking"
+                                                ? language === "id"
+                                                    ? "Barang Booking"
+                                                    : "Booked Items"
+                                                : language === "id"
+                                                    ? "Barang Pinjaman"
+                                                    : "Borrowed Items"}
                                         </Text>
                                         <Badge color="violet" variant="light" size="lg">
                                             {totalCartItems}
@@ -817,104 +1051,292 @@ export default function PeminjamanKioskPage() {
                                 </Box>
 
                                 <ScrollArea style={{ flex: 1 }} p="md">
-                                    {cart.length === 0 ? (
-                                        <Center style={{ height: 200 }}>
-                                            <Stack align="center" gap="sm">
-                                                <IconPackage
-                                                    size={40}
-                                                    style={{ color: "rgba(255,255,255,0.3)" }}
-                                                />
-                                                <Text c="rgba(255,255,255,0.5)" size="sm" ta="center">
-                                                    {language === "id"
-                                                        ? "Scan barang untuk menambahkan"
-                                                        : "Scan items to add"}
-                                                </Text>
-                                            </Stack>
-                                        </Center>
-                                    ) : (
-                                        <Stack gap="sm">
-                                            {cart.map((item) => (
-                                                <Group
-                                                    key={item.itemCode}
-                                                    p="sm"
-                                                    style={{
-                                                        background: "rgba(167, 139, 250, 0.08)",
-                                                        borderRadius: rem(10),
-                                                        border: "1px solid rgba(167, 139, 250, 0.15)",
-                                                    }}
-                                                    justify="space-between"
-                                                >
-                                                    <Stack gap={2} style={{ flex: 1 }}>
-                                                        <Text c="white" size="sm" fw={600}>
-                                                            {item.itemName}
-                                                        </Text>
-                                                        <Text c="rgba(255,255,255,0.5)" size="xs">
-                                                            {item.itemCode}
-                                                        </Text>
-                                                    </Stack>
-                                                    <Group gap="xs">
-                                                        <ActionIcon
-                                                            size="sm"
-                                                            variant="subtle"
-                                                            onClick={() =>
-                                                                setCart((prev) =>
-                                                                    prev
-                                                                        .map((i) =>
-                                                                            i.itemCode === item.itemCode
-                                                                                ? {
-                                                                                    ...i,
-                                                                                    quantity: i.quantity - 1,
-                                                                                }
-                                                                                : i
+                                    <Stack gap="md">
+                                        {cart.length === 0 ? (
+                                            <Center style={{ height: 200 }}>
+                                                <Stack align="center" gap="sm">
+                                                    <IconPackage
+                                                        size={40}
+                                                        style={{ color: "rgba(255,255,255,0.3)" }}
+                                                    />
+                                                    <Text c="rgba(255,255,255,0.5)" size="sm" ta="center">
+                                                        {language === "id"
+                                                            ? "Scan barang untuk menambahkan"
+                                                            : "Scan items to add"}
+                                                    </Text>
+                                                </Stack>
+                                            </Center>
+                                        ) : (
+                                            <>
+                                                <Stack gap="sm">
+                                                    {cart.map((item) => (
+                                                        <Group
+                                                            key={item.itemCode}
+                                                            p="sm"
+                                                            style={{
+                                                                background: "rgba(167, 139, 250, 0.08)",
+                                                                borderRadius: rem(10),
+                                                                border: "1px solid rgba(167, 139, 250, 0.15)",
+                                                            }}
+                                                            justify="space-between"
+                                                        >
+                                                            <Stack gap={2} style={{ flex: 1 }}>
+                                                                <Text c="white" size="sm" fw={600}>
+                                                                    {item.itemName}
+                                                                </Text>
+                                                                <Text c="rgba(255,255,255,0.5)" size="xs">
+                                                                    {item.itemCode}
+                                                                </Text>
+                                                            </Stack>
+                                                            <Group gap="xs">
+                                                                <ActionIcon
+                                                                    size="sm"
+                                                                    variant="subtle"
+                                                                    onClick={() =>
+                                                                        setCart((prev) =>
+                                                                            prev
+                                                                                .map((i) =>
+                                                                                    i.itemCode === item.itemCode
+                                                                                        ? {
+                                                                                            ...i,
+                                                                                            quantity: i.quantity - 1,
+                                                                                        }
+                                                                                        : i
+                                                                                )
+                                                                                .filter((i) => i.quantity > 0)
                                                                         )
-                                                                        .filter((i) => i.quantity > 0)
-                                                                )
-                                                            }
-                                                            style={{ color: "rgba(255,255,255,0.6)" }}
-                                                        >
-                                                            <IconMinus size={14} />
-                                                        </ActionIcon>
-                                                        <Text c="white" fw={700} size="sm" w={20} ta="center">
-                                                            {item.quantity}
+                                                                    }
+                                                                    style={{ color: "rgba(255,255,255,0.6)" }}
+                                                                >
+                                                                    <IconMinus size={14} />
+                                                                </ActionIcon>
+                                                                <Text c="white" fw={700} size="sm" w={20} ta="center">
+                                                                    {item.quantity}
+                                                                </Text>
+                                                                <ActionIcon
+                                                                    size="sm"
+                                                                    variant="subtle"
+                                                                    onClick={() =>
+                                                                        setCart((prev) =>
+                                                                            prev.map((i) =>
+                                                                                i.itemCode === item.itemCode
+                                                                                    ? {
+                                                                                        ...i,
+                                                                                        quantity: i.quantity + 1,
+                                                                                    }
+                                                                                    : i
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                    style={{ color: "rgba(255,255,255,0.6)" }}
+                                                                >
+                                                                    <IconPlus size={14} />
+                                                                </ActionIcon>
+                                                                <ActionIcon
+                                                                    size="sm"
+                                                                    variant="subtle"
+                                                                    color="red"
+                                                                    onClick={() =>
+                                                                        setCart((prev) =>
+                                                                            prev.filter(
+                                                                                (i) => i.itemCode !== item.itemCode
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <IconTrash size={14} />
+                                                                </ActionIcon>
+                                                            </Group>
+                                                        </Group>
+                                                    ))}
+                                                </Stack>
+
+                                                <Box
+                                                    p="md"
+                                                    style={{
+                                                        background: "rgba(255,255,255,0.04)",
+                                                        borderRadius: rem(12),
+                                                        border: "1px solid rgba(148, 163, 184, 0.15)",
+                                                    }}
+                                                >
+                                                    <Stack gap="sm">
+                                                        <Text c="white" fw={600} size="sm">
+                                                            {language === "id"
+                                                                ? "Tipe Transaksi"
+                                                                : "Transaction Type"}
                                                         </Text>
-                                                        <ActionIcon
-                                                            size="sm"
-                                                            variant="subtle"
-                                                            onClick={() =>
-                                                                setCart((prev) =>
-                                                                    prev.map((i) =>
-                                                                        i.itemCode === item.itemCode
-                                                                            ? {
-                                                                                ...i,
-                                                                                quantity: i.quantity + 1,
-                                                                            }
-                                                                            : i
-                                                                    )
-                                                                )
-                                                            }
-                                                            style={{ color: "rgba(255,255,255,0.6)" }}
-                                                        >
-                                                            <IconPlus size={14} />
-                                                        </ActionIcon>
-                                                        <ActionIcon
-                                                            size="sm"
-                                                            variant="subtle"
-                                                            color="red"
-                                                            onClick={() =>
-                                                                setCart((prev) =>
-                                                                    prev.filter(
-                                                                        (i) => i.itemCode !== item.itemCode
-                                                                    )
-                                                                )
-                                                            }
-                                                        >
-                                                            <IconTrash size={14} />
-                                                        </ActionIcon>
-                                                    </Group>
-                                                </Group>
-                                            ))}
-                                        </Stack>
-                                    )}
+                                                        <Group grow>
+                                                            <Button
+                                                                variant={
+                                                                    transactionType === "borrow"
+                                                                        ? "filled"
+                                                                        : "light"
+                                                                }
+                                                                onClick={() => setTransactionType("borrow")}
+                                                            >
+                                                                {language === "id"
+                                                                    ? "Pinjam Sekarang"
+                                                                    : "Borrow Now"}
+                                                            </Button>
+                                                            <Button
+                                                                variant={
+                                                                    transactionType === "booking"
+                                                                        ? "filled"
+                                                                        : "light"
+                                                                }
+                                                                color="cyan"
+                                                                onClick={() => setTransactionType("booking")}
+                                                            >
+                                                                {language === "id" ? "Booking" : "Booking"}
+                                                            </Button>
+                                                        </Group>
+
+                                                        {transactionType === "borrow" ? (
+                                                            <Stack gap="xs">
+                                                                <Text c="rgba(255,255,255,0.7)" size="xs">
+                                                                    {language === "id"
+                                                                        ? "Pilih durasi pinjam. Opsi akan dikurangi jika ada booking yang bentrok."
+                                                                        : "Choose the loan duration. Options are reduced when a booking conflicts."}
+                                                                </Text>
+                                                                <Group gap="xs" wrap="wrap">
+                                                                    {Array.from({ length: 7 }, (_, index) => index + 1).map((days) => {
+                                                                        const isAllowed =
+                                                                            availability?.durationOptions?.allowedDurations.includes(days) ??
+                                                                            cart.length === 0;
+
+                                                                        return (
+                                                                            <Button
+                                                                                key={days}
+                                                                                size="xs"
+                                                                                variant={
+                                                                                    !customDueDate && borrowDuration === days
+                                                                                        ? "filled"
+                                                                                        : "light"
+                                                                                }
+                                                                                disabled={!isAllowed}
+                                                                                onClick={() => {
+                                                                                    setCustomDueDate(null);
+                                                                                    setBorrowDuration(days);
+                                                                                }}
+                                                                            >
+                                                                                {days} {language === "id" ? "hari" : "day"}
+                                                                            </Button>
+                                                                        );
+                                                                    })}
+                                                                </Group>
+                                                                <TextInput
+                                                                    type="date"
+                                                                    label={
+                                                                        language === "id"
+                                                                            ? "Tanggal Kembali Custom"
+                                                                            : "Custom Return Date"
+                                                                    }
+                                                                    value={customDueDate || ""}
+                                                                    min={todayValue}
+                                                                    max={
+                                                                        availability?.durationOptions?.maxReturnDate ||
+                                                                        undefined
+                                                                    }
+                                                                    onChange={(event) =>
+                                                                        setCustomDueDate(
+                                                                            event.currentTarget.value || null
+                                                                        )
+                                                                    }
+                                                                />
+                                                                {availability?.durationOptions?.nextConflictDate && (
+                                                                    <Text c="rgba(255,255,255,0.55)" size="xs">
+                                                                        {language === "id"
+                                                                            ? `Booking terdekat bentrok pada ${availability.durationOptions.nextConflictDate}.`
+                                                                            : `The next conflict starts on ${availability.durationOptions.nextConflictDate}.`}
+                                                                    </Text>
+                                                                )}
+                                                            </Stack>
+                                                        ) : (
+                                                            <Stack gap="xs">
+                                                                <TextInput
+                                                                    type="date"
+                                                                    label={
+                                                                        language === "id"
+                                                                            ? "Mulai Booking"
+                                                                            : "Booking Start"
+                                                                    }
+                                                                    value={bookingStartDate}
+                                                                    min={todayValue}
+                                                                    onChange={(event) =>
+                                                                        setBookingStartDate(event.currentTarget.value)
+                                                                    }
+                                                                />
+                                                                <TextInput
+                                                                    type="date"
+                                                                    label={
+                                                                        language === "id"
+                                                                            ? "Tanggal Kembali"
+                                                                            : "Return Date"
+                                                                    }
+                                                                    value={bookingDueDate}
+                                                                    min={bookingStartDate || todayValue}
+                                                                    onChange={(event) =>
+                                                                        setBookingDueDate(event.currentTarget.value)
+                                                                    }
+                                                                />
+                                                            </Stack>
+                                                        )}
+
+                                                        {availabilityLoading && (
+                                                            <Group gap="xs">
+                                                                <Loader size="xs" />
+                                                                <Text c="rgba(255,255,255,0.6)" size="xs">
+                                                                    {language === "id"
+                                                                        ? "Memeriksa ketersediaan..."
+                                                                        : "Checking availability..."}
+                                                                </Text>
+                                                            </Group>
+                                                        )}
+
+                                                        {availability?.selectedRange && (
+                                                            <Alert
+                                                                color={
+                                                                    availability.selectedRange.ok ? "green" : "red"
+                                                                }
+                                                                variant="light"
+                                                            >
+                                                                <Stack gap={4}>
+                                                                    <Text size="sm" fw={600}>
+                                                                        {availability.selectedRange.ok
+                                                                            ? language === "id"
+                                                                                ? "Jadwal tersedia"
+                                                                                : "Schedule available"
+                                                                            : language === "id"
+                                                                                ? "Jadwal bentrok"
+                                                                                : "Schedule conflict"}
+                                                                    </Text>
+                                                                    <Text size="xs">
+                                                                        {availability.selectedRange.ok
+                                                                            ? language === "id"
+                                                                                ? `${availability.selectedRange.startDate} sampai ${availability.selectedRange.endDate}`
+                                                                                : `${availability.selectedRange.startDate} to ${availability.selectedRange.endDate}`
+                                                                            : language === "id"
+                                                                                ? "Pilih tanggal lain atau kurangi durasi."
+                                                                                : "Choose a different date range or reduce the duration."}
+                                                                    </Text>
+                                                                    {!availability.selectedRange.ok &&
+                                                                        availability.selectedRange.items
+                                                                            .filter((item) => !item.ok)
+                                                                            .map((item) => (
+                                                                                <Text key={item.itemCode} size="xs">
+                                                                                    {item.itemName}:{" "}
+                                                                                    {item.nextConflictDate ||
+                                                                                        availability.selectedRange?.startDate}
+                                                                                </Text>
+                                                                            ))}
+                                                                </Stack>
+                                                            </Alert>
+                                                        )}
+                                                    </Stack>
+                                                </Box>
+                                            </>
+                                        )}
+                                    </Stack>
                                 </ScrollArea>
 
                                 <Box
@@ -927,15 +1349,30 @@ export default function PeminjamanKioskPage() {
                                         fullWidth
                                         size="lg"
                                         variant="gradient"
-                                        gradient={{ from: "violet.5", to: "grape.7", deg: 135 }}
-                                        disabled={cart.length === 0 || submitting}
+                                        gradient={
+                                            transactionType === "booking"
+                                                ? { from: "cyan.5", to: "blue.6", deg: 135 }
+                                                : { from: "violet.5", to: "grape.7", deg: 135 }
+                                        }
+                                        disabled={
+                                            cart.length === 0 ||
+                                            submitting ||
+                                            availabilityLoading ||
+                                            (availability?.selectedRange
+                                                ? !availability.selectedRange.ok
+                                                : false)
+                                        }
                                         loading={submitting}
                                         onClick={handleSubmitBorrow}
                                         style={{ borderRadius: rem(12) }}
                                     >
-                                        {language === "id"
-                                            ? `Pinjam ${totalCartItems} Barang`
-                                            : `Borrow ${totalCartItems} Items`}
+                                        {transactionType === "booking"
+                                            ? language === "id"
+                                                ? `Booking ${totalCartItems} Barang`
+                                                : `Book ${totalCartItems} Items`
+                                            : language === "id"
+                                                ? `Pinjam ${totalCartItems} Barang`
+                                                : `Borrow ${totalCartItems} Items`}
                                     </Button>
                                 </Box>
                             </Box>
@@ -1096,10 +1533,14 @@ export default function PeminjamanKioskPage() {
 
                                 <Stack align="center" gap="sm">
                                     <Title order={2} c="white" ta="center">
-                                        {mode === "borrow"
+                                        {mode === "borrow" && transactionType !== "booking"
                                             ? language === "id"
                                                 ? "Peminjaman Berhasil! ✨"
                                                 : "Borrow Successful! ✨"
+                                            : mode === "borrow"
+                                                ? language === "id"
+                                                    ? "Booking Berhasil! ✨"
+                                                    : "Booking Successful! ✨"
                                             : language === "id"
                                                 ? "Pengembalian Berhasil! ✨"
                                                 : "Return Successful! ✨"}

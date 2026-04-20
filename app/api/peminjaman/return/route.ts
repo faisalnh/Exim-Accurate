@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { saveInventoryAdjustment } from "@/lib/accurate/inventory";
 import { refreshSession, refreshAccessToken } from "@/lib/accurate/client";
+import { createBorrowingActivities } from "@/lib/peminjaman";
 import dayjs from "dayjs";
 
 interface ReturnItem {
@@ -114,6 +115,19 @@ export async function POST(req: NextRequest) {
         // Update each borrowing item's returnedQty
         const itemsToAdjust: Array<{ itemCode: string; quantity: number }> = [];
         const sessionIds = new Set<string>();
+        const returnActivities: Array<{
+            sessionId: string;
+            userId: string;
+            credentialId: string;
+            borrowerEmail: string;
+            borrowerName: string | null;
+            borrowerDept: string | null;
+            itemCode: string;
+            itemName: string;
+            quantity: number;
+            scheduleStart: Date;
+            scheduleEnd: Date | null;
+        }> = [];
 
         for (const returnItem of items) {
             const bi = borrowingItems.find((b) => b.id === returnItem.borrowingItemId);
@@ -134,6 +148,19 @@ export async function POST(req: NextRequest) {
 
             itemsToAdjust.push({ itemCode: bi.itemCode, quantity: actualReturn });
             sessionIds.add(bi.sessionId);
+            returnActivities.push({
+                sessionId: bi.sessionId,
+                userId: bi.session.userId,
+                credentialId: bi.session.credentialId,
+                borrowerEmail: bi.session.borrowerEmail,
+                borrowerName: bi.session.borrowerName,
+                borrowerDept: bi.session.borrowerDept,
+                itemCode: bi.itemCode,
+                itemName: bi.itemName,
+                quantity: actualReturn,
+                scheduleStart: bi.session.startsAt,
+                scheduleEnd: bi.session.dueAt,
+            });
         }
 
         // Update session statuses
@@ -151,6 +178,38 @@ export async function POST(req: NextRequest) {
                     status: allReturned ? "returned" : anyReturned ? "partial" : "active",
                     returnedAt: allReturned ? new Date() : null,
                 },
+            });
+        }
+
+        if (returnActivities.length > 0) {
+            await prisma.$transaction(async (tx) => {
+                const groupedBySession = new Map<string, typeof returnActivities>();
+
+                for (const activity of returnActivities) {
+                    const current = groupedBySession.get(activity.sessionId) || [];
+                    current.push(activity);
+                    groupedBySession.set(activity.sessionId, current);
+                }
+
+                for (const [sessionId, activities] of groupedBySession.entries()) {
+                    const first = activities[0];
+                    await createBorrowingActivities(tx, {
+                        sessionId,
+                        userId: first.userId,
+                        credentialId: first.credentialId,
+                        borrowerEmail: first.borrowerEmail,
+                        borrowerName: first.borrowerName,
+                        borrowerDept: first.borrowerDept,
+                        activityType: "return",
+                        scheduleStart: first.scheduleStart,
+                        scheduleEnd: first.scheduleEnd,
+                        items: activities.map((activity) => ({
+                            itemCode: activity.itemCode,
+                            itemName: activity.itemName,
+                            quantity: activity.quantity,
+                        })),
+                    });
+                }
             });
         }
 
