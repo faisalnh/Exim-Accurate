@@ -212,6 +212,7 @@ export const en = {
         notDetected: "Not detected",
       },
       disconnectTooltip: "Disconnect account",
+      disconnectTitle: "Disconnect Account",
       disconnectConfirm: "Are you sure you want to delete this credential?",
       notifications: {
         connectedTitle: "Connected",
