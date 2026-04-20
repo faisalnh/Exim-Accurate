@@ -549,7 +549,7 @@ export default function KioskCheckoutPage() {
           </ActionIcon>
           <Stack gap={0}>
             <Title order={3} c="white" className="kiosk-heading">
-              {language === "id" ? "Checkout Mandiri" : "Self-Checkout"}
+              {language === "id" ? "Pengambilan" : "Pickup"}
             </Title>
             <Text c="rgba(255,255,255,0.5)" size="xs">
               {staffInfo?.name ||
@@ -561,6 +561,18 @@ export default function KioskCheckoutPage() {
         </Group>
 
         <Group gap="md">
+          <Button
+            variant="subtle"
+            color="grape"
+            onClick={() => router.push(`/kiosk/${credentialId}/peminjaman`)}
+            leftSection={<IconArrowRight size={18} />}
+            style={{
+              background: "rgba(12, 18, 32, 0.85)",
+              border: "1px solid var(--kiosk-stroke)",
+            }}
+          >
+            {language === "id" ? "Ke Peminjaman" : "Go to Borrowing"}
+          </Button>
           <LanguageSelect size="xs" />
           <Button
             variant={useScanner ? "filled" : "subtle"}

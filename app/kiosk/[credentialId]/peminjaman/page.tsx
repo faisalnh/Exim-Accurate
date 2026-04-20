@@ -28,6 +28,7 @@ import {
     IconClipboardList,
     IconScan,
     IconArrowLeft,
+    IconArrowRight,
     IconCheck,
     IconAlertTriangle,
     IconPackage,
@@ -659,6 +660,20 @@ export default function PeminjamanKioskPage() {
                 </Stack>
             </Group>
             <Group gap="sm">
+                <Button
+                    variant="light"
+                    size="xs"
+                    color="cyan"
+                    onClick={() => router.push(`/kiosk/${credentialId}`)}
+                    leftSection={<IconArrowRight size={14} />}
+                    style={{
+                        backgroundColor: "rgba(56, 189, 248, 0.16)",
+                        border: "1px solid rgba(56, 189, 248, 0.35)",
+                        color: "white",
+                    }}
+                >
+                    {language === "id" ? "Ke Pengambilan" : "Go to Pickup"}
+                </Button>
                 <Button
                     variant={useScanner ? "filled" : "light"}
                     size="xs"

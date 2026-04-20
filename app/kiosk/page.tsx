@@ -167,11 +167,11 @@ export default function KioskHomePage() {
         icon: <IconShoppingCart size={40} />,
         gradient: { from: "cyan.4", to: "indigo.6", deg: 135 },
         glowColor: "rgba(56, 189, 248, 0.45)",
-        title: language === "id" ? "Checkout Mandiri" : "Self-Checkout",
+        title: language === "id" ? "Pengambilan" : "Pickup",
         description:
           language === "id"
-            ? "Scan barang untuk checkout inventaris. Barang akan dikurangi dari stok Accurate."
-            : "Scan items for inventory checkout. Items will be deducted from Accurate stock.",
+            ? "Scan barang untuk pengambilan inventaris. Barang akan dikurangi dari stok Accurate."
+            : "Scan items for pickup. Items will be deducted from Accurate stock.",
         onClick: () =>
           router.push(`/kiosk/${selectedCredential.id}`),
       },
@@ -415,8 +415,8 @@ export default function KioskHomePage() {
             </Text>
             <Text size="xs" c="rgba(255,255,255,0.5)" fw={500}>
               {language === "id"
-                ? "Terminal Checkout & Peminjaman"
-                : "Checkout & Borrowing Terminal"}
+                ? "Terminal Pengambilan & Peminjaman"
+                : "Pickup & Borrowing Terminal"}
             </Text>
           </Stack>
         </Group>
