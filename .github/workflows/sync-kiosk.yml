@@ -17,6 +17,8 @@ jobs:
           APP_URL: ${{ secrets.APP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          set -euo pipefail
+
           if [ -z "$APP_URL" ]; then
             echo "::error::APP_URL secret is not set. Please add it in GitHub Settings > Secrets."
             exit 1
@@ -28,21 +30,44 @@ jobs:
           fi
 
           SYNC_URL="${APP_URL}/api/cron/sync-kiosk"
+          HEALTH_URL="${APP_URL}"
           echo "Triggering kiosk sync at ${SYNC_URL}..."
 
-          RESPONSE=$(curl -s -w "\n%{http_code}" --max-time 30 -X GET \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            "${SYNC_URL}")
+          echo "Running preflight health check..."
+          HEALTH_CODE=$(curl -s -o /tmp/kiosk_health_body.txt -w "%{http_code}" --max-time 20 "${HEALTH_URL}" || true)
+          echo "Preflight health status: ${HEALTH_CODE}"
+          if [ "${HEALTH_CODE}" -lt 200 ] || [ "${HEALTH_CODE}" -ge 500 ]; then
+            echo "::warning::Preflight health check returned HTTP ${HEALTH_CODE}"
+            echo "Preflight response:"
+            cat /tmp/kiosk_health_body.txt || true
+          fi
 
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
+          SUCCESS=0
+          for attempt in 1 2 3; do
+            echo "Sync attempt ${attempt}/3..."
 
-          echo "HTTP Status: ${HTTP_CODE}"
-          echo "Response: ${BODY}"
+            HTTP_CODE=$(curl -s -o /tmp/kiosk_sync_body.txt -w "%{http_code}" --max-time 30 -X GET \
+              -H "Authorization: Bearer ${CRON_SECRET}" \
+              "${SYNC_URL}" || true)
 
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            echo "✅ Kiosk sync triggered successfully! The sync is processing in the background."
-          else
-            echo "::error::Kiosk sync failed with HTTP ${HTTP_CODE}"
+            echo "HTTP Status: ${HTTP_CODE}"
+            echo "Response:"
+            cat /tmp/kiosk_sync_body.txt || true
+
+            if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 300 ]; then
+              SUCCESS=1
+              echo "✅ Kiosk sync triggered successfully! The sync is processing in the background."
+              break
+            fi
+
+            if [ "${attempt}" -lt 3 ]; then
+              sleep_seconds=$((attempt * 15))
+              echo "::warning::Sync trigger failed with HTTP ${HTTP_CODE}. Retrying in ${sleep_seconds}s..."
+              sleep "${sleep_seconds}"
+            fi
+          done
+
+          if [ "${SUCCESS}" -ne 1 ]; then
+            echo "::error::Kiosk sync failed after 3 attempts"
             exit 1
           fi
