@@ -32,7 +32,6 @@ export async function GET() {
       return NextResponse.json({ error: "Tidak diizinkan" }, { status: 401 });
     }
 
-    const userId = session.user.id;
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -50,44 +49,40 @@ export async function GET() {
       recentImports,
     ] = await Promise.all([
       prisma.exportJob.count({
-        where: { userId, status: "done" },
+        where: { status: "done" },
       }),
       prisma.importJob.count({
-        where: { userId, status: "done" },
+        where: { status: "done" },
       }),
       prisma.accurateCredentials.count({
-        where: { userId },
+        where: {},
       }),
       prisma.exportJob.count({
         where: {
-          userId,
           status: "done",
           startedAt: { gte: startOfMonth, lt: startOfNextMonth },
         },
       }),
       prisma.importJob.count({
         where: {
-          userId,
           status: "done",
           startedAt: { gte: startOfMonth, lt: startOfNextMonth },
         },
       }),
       prisma.exportJob.count({
         where: {
-          userId,
           status: "done",
           startedAt: { gte: startOfLastMonth, lt: startOfMonth },
         },
       }),
       prisma.importJob.count({
         where: {
-          userId,
           status: "done",
           startedAt: { gte: startOfLastMonth, lt: startOfMonth },
         },
       }),
       prisma.exportJob.findMany({
-        where: { userId },
+        where: {},
         orderBy: { startedAt: "desc" },
         take: 10,
         select: {
@@ -99,7 +94,7 @@ export async function GET() {
         },
       }),
       prisma.importJob.findMany({
-        where: { userId },
+        where: {},
         orderBy: { startedAt: "desc" },
         take: 10,
         select: {
@@ -113,43 +108,92 @@ export async function GET() {
     ]);
 
     // Read kiosk data from cache (synced by /api/cron/sync-kiosk)
-    let kioskCache = null;
+    let kioskCaches: any[] = [];
     if ((prisma as any).kioskSyncData) {
-      kioskCache = await (prisma as any).kioskSyncData.findUnique({
+      kioskCaches = await (prisma as any).kioskSyncData.findMany({
         where: {
-          userId_year_month: {
-            userId,
-            year: now.getFullYear(),
-            month: now.getMonth() + 1,
-          },
+          year: now.getFullYear(),
+          month: now.getMonth() + 1,
         },
       });
     } else {
       console.warn('[dashboard/summary] kioskSyncData model not found on prisma client yet');
     }
 
-    const totalKioskCheckouts = kioskCache?.totalCheckouts || 0;
-    const uniqueKioskUsers = kioskCache?.uniqueUsers || 0;
-    const cachedTopUsers = (kioskCache?.topUsers as any[]) || [];
+    const totalKioskCheckouts = kioskCaches.reduce(
+      (sum, cache) => sum + (cache.totalCheckouts || 0),
+      0,
+    );
+
+    const topUsersByEmail = new Map<string, { email: string; name: string | null; count: number }>();
+    const topItemsByCode = new Map<string, { itemCode: string; itemName: string; totalQuantity: number }>();
+    const dailyCountMap = new Map<string, number>();
+    let kioskLastSync: string | null = null;
+
+    for (const cache of kioskCaches) {
+      if (!kioskLastSync || new Date(cache.lastSyncAt).getTime() > new Date(kioskLastSync).getTime()) {
+        kioskLastSync = cache.lastSyncAt;
+      }
+
+      for (const user of ((cache.topUsers as any[]) || [])) {
+        const key = user.email || "unknown@kiosk";
+        const existing = topUsersByEmail.get(key);
+        if (existing) {
+          existing.count += user.count || 0;
+          if (!existing.name && user.name) {
+            existing.name = user.name;
+          }
+        } else {
+          topUsersByEmail.set(key, {
+            email: key,
+            name: user.name || null,
+            count: user.count || 0,
+          });
+        }
+      }
+
+      for (const item of ((cache.topItems as any[]) || [])) {
+        const key = item.itemCode || "UNKNOWN";
+        const existing = topItemsByCode.get(key);
+        if (existing) {
+          existing.totalQuantity += item.totalQuantity || 0;
+        } else {
+          topItemsByCode.set(key, {
+            itemCode: key,
+            itemName: item.itemName || key,
+            totalQuantity: item.totalQuantity || 0,
+          });
+        }
+      }
+
+      for (const day of ((cache.dailyData as any[]) || [])) {
+        if (!day?.date) continue;
+        dailyCountMap.set(day.date, (dailyCountMap.get(day.date) || 0) + (day.count || 0));
+      }
+    }
+
+    const cachedTopUsers = Array.from(topUsersByEmail.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    const uniqueKioskUsers = topUsersByEmail.size;
     const topKioskUser = cachedTopUsers.length > 0 ? cachedTopUsers[0] : null;
-    const topCheckoutUsers = cachedTopUsers.slice(0, 10).map((user: any, idx: number) => ({
+    const topCheckoutUsers = cachedTopUsers.map((user: any, idx: number) => ({
       rank: idx + 1,
       email: user.email,
       name: user.name || null,
       count: user.count || 0,
     }));
-    const topItems = ((kioskCache?.topItems as any[]) || []).slice(0, 5).map((item: any, idx: number) => ({
+    const topItems = Array.from(topItemsByCode.values())
+      .sort((a, b) => b.totalQuantity - a.totalQuantity)
+      .slice(0, 5)
+      .map((item: any, idx: number) => ({
       rank: idx + 1,
       itemCode: item.itemCode,
       itemName: item.itemName || item.itemCode,
       totalQuantity: item.totalQuantity || 0,
     }));
-    const cachedDailyData = (kioskCache?.dailyData as any[]) || [];
 
     // Build kiosk weekly chart data (last 7 days) from cached daily data
-    const dailyMap = new Map<string, number>();
-    cachedDailyData.forEach((d: any) => dailyMap.set(d.date, d.count));
-
     const kioskWeeklyData: { name: string; checkouts: number }[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
@@ -158,7 +202,7 @@ export async function GET() {
       const dayLabel = d.toLocaleDateString("id-ID", { weekday: "short", day: "numeric" });
       kioskWeeklyData.push({
         name: dayLabel,
-        checkouts: dailyMap.get(key) || 0,
+        checkouts: dailyCountMap.get(key) || 0,
       });
     }
 
@@ -181,7 +225,6 @@ export async function GET() {
     const [weeklyExports, weeklyImports] = await Promise.all([
       prisma.exportJob.findMany({
         where: {
-          userId,
           status: "done",
           startedAt: { gte: weekStart },
         },
@@ -189,7 +232,6 @@ export async function GET() {
       }),
       prisma.importJob.findMany({
         where: {
-          userId,
           status: "done",
           startedAt: { gte: weekStart },
         },
@@ -228,7 +270,6 @@ export async function GET() {
 
     const monthJobs = await prisma.exportJob.findMany({
       where: {
-        userId,
         status: "done",
         startedAt: { gte: startOfMonth, lt: startOfNextMonth },
       },
@@ -237,7 +278,6 @@ export async function GET() {
 
     const monthImports = await prisma.importJob.findMany({
       where: {
-        userId,
         status: "done",
         startedAt: { gte: startOfMonth, lt: startOfNextMonth },
       },
@@ -323,7 +363,7 @@ export async function GET() {
       topCheckoutUsers,
       topItems,
       kioskWeeklyData,
-      kioskLastSync: kioskCache?.lastSyncAt || null,
+      kioskLastSync,
       weeklyActivityData,
       monthlyTrendData: monthlyBuckets,
       monthTotal: thisMonthTotal,
