@@ -5,3 +5,6 @@
 ## 2026-02-04 - [Consistent Empty States]
 **Learning:** Replacing plain text empty states with visually rich components significantly improves the perceived quality of the application and provides clearer calls to action.
 **Action:** Always check for empty states in lists/tables and use the `EmptyState` component instead of plain text.
+## 2026-04-21 - [Better Confirmation Modals]
+**Learning:** Native `window.confirm()` dialogs provide a poor user experience as they block the main thread, cannot be styled to match the app's design system, and look outdated.
+**Action:** Always use the design system's modal component (e.g., `@mantine/modals` `openConfirmModal`) for destructive actions like deleting items, ensuring consistency and a smoother interaction.
