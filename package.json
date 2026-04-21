@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "npm run lint && npm run type-check",
+    "db:deploy": "prisma migrate deploy",
+    "db:resolve:borrowing-history": "prisma migrate resolve --applied 20260216105500_add_borrowing_feature && prisma migrate resolve --applied 20260420090000_merge_borrowable_items_across_credentials",
     "pretype-check": "prisma generate",
     "type-check": "tsc --noEmit",
     "db:generate": "prisma generate",
@@ -30,6 +32,7 @@
     "html5-qrcode": "^2.3.8",
     "next": "^16.0.0",
     "next-auth": "^4.24.11",
+    "prisma": "^6.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.7.0",
@@ -46,7 +49,6 @@
     "postcss": "^8.4.49",
     "postcss-preset-mantine": "^1.17.0",
     "postcss-simple-vars": "^7.0.1",
-    "prisma": "^6.3.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.2"
   }
