@@ -126,6 +126,47 @@ export function normalizeRequestedItems(items: RequestedBorrowItem[]) {
   return Array.from(grouped.values());
 }
 
+export async function listBorrowableItemCodes() {
+  const rows = await prisma.borrowableItem.findMany({
+    select: {
+      itemCode: true,
+    },
+    orderBy: {
+      itemCode: "asc",
+    },
+  });
+
+  return rows.map((row) => row.itemCode);
+}
+
+export async function getBorrowableItemsMap(itemCodes?: string[]) {
+  const rows = await prisma.borrowableItem.findMany({
+    where: itemCodes?.length
+      ? {
+          itemCode: { in: itemCodes },
+        }
+      : undefined,
+    select: {
+      itemCode: true,
+      itemName: true,
+      totalStock: true,
+    },
+  });
+
+  return new Map(rows.map((row) => [row.itemCode, row]));
+}
+
+export async function findUnconfiguredBorrowableItems(
+  items: RequestedBorrowItem[],
+) {
+  const requestedItems = normalizeRequestedItems(items);
+  const borrowableItems = await getBorrowableItemsMap(
+    requestedItems.map((item) => item.itemCode),
+  );
+
+  return requestedItems.filter((item) => !borrowableItems.has(item.itemCode));
+}
+
 function getReservationRange(session: {
   startsAt: Date;
   dueAt: Date | null;
@@ -147,27 +188,15 @@ function isDateWithinRange(value: Date, startDate: Date, endDate: Date) {
 }
 
 async function buildAvailabilityContext(args: {
-  userId: string;
   items: RequestedBorrowItem[];
 }) {
   const requestedItems = normalizeRequestedItems(args.items);
   const itemCodes = requestedItems.map((item) => item.itemCode);
 
   const [borrowableItems, sessions] = await Promise.all([
-    prisma.borrowableItem.findMany({
-      where: {
-        userId: args.userId,
-        itemCode: { in: itemCodes },
-      },
-      select: {
-        itemCode: true,
-        itemName: true,
-        totalStock: true,
-      },
-    }),
+    getBorrowableItemsMap(itemCodes),
     prisma.borrowingSession.findMany({
       where: {
-        userId: args.userId,
         status: { in: ["active", "partial", "booked"] },
         items: {
           some: {
@@ -200,9 +229,6 @@ async function buildAvailabilityContext(args: {
     }),
   ]);
 
-  const borrowableMap = new Map(
-    borrowableItems.map((item) => [item.itemCode, item]),
-  );
   const reservationsByItemCode = new Map<string, ReservationWindow[]>();
 
   for (const session of sessions) {
@@ -239,7 +265,7 @@ async function buildAvailabilityContext(args: {
   }
 
   return {
-    borrowableItems: borrowableMap,
+    borrowableItems,
     requestedItems,
     reservationsByItemCode,
   } satisfies AvailabilityContext;
@@ -343,7 +369,6 @@ function evaluateAvailabilityRange(
 }
 
 export async function checkBorrowAvailability(args: {
-  userId: string;
   items: RequestedBorrowItem[];
   startDate: Date | string;
   endDate: Date | string;
@@ -357,13 +382,11 @@ export async function checkBorrowAvailability(args: {
 }
 
 export async function getBorrowDurationOptions(args: {
-  userId: string;
   items: RequestedBorrowItem[];
   startDate?: Date | string;
 }) {
   const startDate = startOfDay(args.startDate || new Date());
   const context = await buildAvailabilityContext({
-    userId: args.userId,
     items: args.items,
   });
 

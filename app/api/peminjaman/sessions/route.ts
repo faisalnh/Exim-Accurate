@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { listBorrowableItemCodes } from "@/lib/peminjaman";
 
 // GET — List borrowing sessions with filters
 export async function GET(req: NextRequest) {
@@ -24,8 +25,23 @@ export async function GET(req: NextRequest) {
     }
 
     try {
+        const borrowableItemCodes = await listBorrowableItemCodes();
+        if (borrowableItemCodes.length === 0) {
+            return NextResponse.json({
+                sessions: [],
+                total: 0,
+                page,
+                pageSize,
+                totalPages: 0,
+            });
+        }
+
         const where: any = {
-            userId: session.user.id,
+            items: {
+                some: {
+                    itemCode: { in: borrowableItemCodes },
+                },
+            },
         };
 
         if (status !== "all") {
@@ -46,7 +62,11 @@ export async function GET(req: NextRequest) {
             prisma.borrowingSession.findMany({
                 where,
                 include: {
-                    items: true,
+                    items: {
+                        where: {
+                            itemCode: { in: borrowableItemCodes },
+                        },
+                    },
                 },
                 orderBy: { borrowedAt: "desc" },
                 skip: (page - 1) * pageSize,

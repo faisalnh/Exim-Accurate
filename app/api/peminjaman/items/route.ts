@@ -21,9 +21,6 @@ export async function GET(req: NextRequest) {
 
     try {
         const items = await prisma.borrowableItem.findMany({
-            where: {
-                userId: session.user.id,
-            },
             orderBy: { createdAt: "desc" },
         });
 
@@ -32,7 +29,6 @@ export async function GET(req: NextRequest) {
             by: ["itemCode"],
             where: {
                 session: {
-                    userId: session.user.id,
                     status: { in: ["active", "partial"] },
                 },
             },
@@ -59,6 +55,8 @@ export async function GET(req: NextRequest) {
                 available: item.totalStock - currentlyOut,
             };
         });
+
+        console.log("[peminjaman/items] GET returning items:", enriched.length);
 
         return NextResponse.json(enriched);
     } catch (error: any) {
@@ -99,17 +97,13 @@ export async function POST(req: NextRequest) {
         // Upsert (update if exists, create if not)
         const item = await prisma.borrowableItem.upsert({
             where: {
-                userId_itemCode: {
-                    userId: session.user.id,
-                    itemCode,
-                },
+                itemCode,
             },
             update: {
                 itemName,
                 totalStock,
             },
             create: {
-                userId: session.user.id,
                 itemCode,
                 itemName,
                 totalStock,
@@ -139,7 +133,7 @@ export async function DELETE(req: NextRequest) {
 
     try {
         const item = await prisma.borrowableItem.findFirst({
-            where: { id, userId: session.user.id },
+            where: { id },
         });
         if (!item) {
             return NextResponse.json({ error: "Item not found" }, { status: 404 });

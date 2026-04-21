@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatDateOnly } from "@/lib/peminjaman";
+import { formatDateOnly, listBorrowableItemCodes } from "@/lib/peminjaman";
 
 function isMissingSchemaError(error: unknown) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -40,9 +40,27 @@ export async function GET(req: NextRequest) {
     }
 
     try {
+        const borrowableItemCodes = await listBorrowableItemCodes();
+        if (borrowableItemCodes.length === 0) {
+            return NextResponse.json({
+                activities: [],
+                calendarEvents: [],
+            });
+        }
+
+        if (itemCode && !borrowableItemCodes.includes(itemCode)) {
+            return NextResponse.json({
+                activities: [],
+                calendarEvents: [],
+            });
+        }
+
         const activityWhere = {
-            userId: session.user.id,
-            ...(itemCode ? { itemCode } : {}),
+            itemCode: itemCode
+                ? itemCode
+                : {
+                    in: borrowableItemCodes,
+                },
         };
         const borrowingActivityDelegate = (prisma as any).borrowingActivity;
         const borrowingSessionDelegate = (prisma as any).borrowingSession;
@@ -64,17 +82,24 @@ export async function GET(req: NextRequest) {
         const sessions = itemCode && borrowingSessionDelegate
             ? await borrowingSessionDelegate.findMany({
                 where: {
-                    userId: session.user.id,
                     items: {
                         some: {
-                            itemCode,
+                            itemCode: itemCode
+                                ? itemCode
+                                : {
+                                    in: borrowableItemCodes,
+                                },
                         },
                     },
                 },
                 include: {
                     items: {
                         where: {
-                            itemCode,
+                            itemCode: itemCode
+                                ? itemCode
+                                : {
+                                    in: borrowableItemCodes,
+                                },
                         },
                     },
                 },
@@ -88,17 +113,24 @@ export async function GET(req: NextRequest) {
 
                 return borrowingSessionDelegate.findMany({
                     where: {
-                        userId: session.user.id,
                         items: {
                             some: {
-                                itemCode,
+                                itemCode: itemCode
+                                    ? itemCode
+                                    : {
+                                        in: borrowableItemCodes,
+                                    },
                             },
                         },
                     },
                     include: {
                         items: {
                             where: {
-                                itemCode,
+                                itemCode: itemCode
+                                    ? itemCode
+                                    : {
+                                        in: borrowableItemCodes,
+                                    },
                             },
                         },
                     },

@@ -7,6 +7,7 @@ import {
     AVAILABILITY_CUSTOM_HORIZON_DAYS,
     checkBorrowAvailability,
     endOfDay,
+    findUnconfiguredBorrowableItems,
     formatDateOnly,
     getBorrowDurationOptions,
     startOfDay,
@@ -48,6 +49,20 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+        const unconfiguredItems = await findUnconfiguredBorrowableItems(items);
+        if (unconfiguredItems.length > 0) {
+            return NextResponse.json(
+                {
+                    error: "Some items are not configured in Barang Peminjaman",
+                    items: unconfiguredItems.map((item) => ({
+                        itemCode: item.itemCode,
+                        itemName: item.itemName || item.itemCode,
+                    })),
+                },
+                { status: 400 }
+            );
+        }
+
         const startsAt = startOfDay(
             body.startsAt || (type === "borrow" ? new Date() : new Date())
         );
@@ -55,7 +70,6 @@ export async function POST(req: NextRequest) {
         const durationOptions =
             type === "borrow"
                 ? await getBorrowDurationOptions({
-                    userId: session.user.id,
                     items,
                     startDate: startsAt,
                 })
@@ -68,7 +82,6 @@ export async function POST(req: NextRequest) {
         const selectedRange =
             requestedDueAt
                 ? await checkBorrowAvailability({
-                    userId: session.user.id,
                     items,
                     startDate: startsAt,
                     endDate: endOfDay(requestedDueAt),

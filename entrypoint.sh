@@ -95,7 +95,6 @@ async function main() {
   await prisma.\$executeRawUnsafe(\`
     CREATE TABLE IF NOT EXISTS \"BorrowableItem\" (
       \"id\" TEXT NOT NULL,
-      \"userId\" TEXT NOT NULL,
       \"itemCode\" TEXT NOT NULL,
       \"itemName\" TEXT NOT NULL,
       \"totalStock\" INTEGER NOT NULL,
@@ -110,7 +109,7 @@ async function main() {
       SELECT
         \"id\",
         ROW_NUMBER() OVER (
-          PARTITION BY \"userId\", \"itemCode\"
+          PARTITION BY \"itemCode\"
           ORDER BY
             \"totalStock\" DESC,
             \"updatedAt\" DESC,
@@ -132,7 +131,19 @@ async function main() {
   \`);
 
   await prisma.\$executeRawUnsafe(\`
+    DROP INDEX IF EXISTS \"BorrowableItem_userId_itemCode_key\"
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    ALTER TABLE \"BorrowableItem\" DROP CONSTRAINT IF EXISTS \"BorrowableItem_userId_fkey\"
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
     ALTER TABLE \"BorrowableItem\" DROP CONSTRAINT IF EXISTS \"BorrowableItem_credentialId_fkey\"
+  \`);
+
+  await prisma.\$executeRawUnsafe(\`
+    ALTER TABLE \"BorrowableItem\" DROP COLUMN IF EXISTS \"userId\"
   \`);
 
   await prisma.\$executeRawUnsafe(\`
@@ -219,22 +230,12 @@ async function main() {
     ON \"BorrowingActivity\"(\"credentialId\", \"itemCode\", \"occurredAt\")
   \`);
 
+  await prisma.\$executeRawUnsafe(\`
+    CREATE UNIQUE INDEX IF NOT EXISTS \"BorrowableItem_itemCode_key\"
+    ON \"BorrowableItem\"(\"itemCode\")
+  \`);
+
   // Foreign Keys for Borrowing
-  await prisma.\$executeRawUnsafe(\`
-    DO \\\$\\\$ BEGIN
-      ALTER TABLE \"BorrowableItem\"
-        ADD CONSTRAINT \"BorrowableItem_userId_fkey\"
-        FOREIGN KEY (\"userId\") REFERENCES \"User\"(\"id\")
-        ON DELETE CASCADE ON UPDATE CASCADE;
-    EXCEPTION WHEN duplicate_object THEN NULL;
-    END \\\$\\\$
-  \`);
-
-  await prisma.\$executeRawUnsafe(\`
-    CREATE UNIQUE INDEX IF NOT EXISTS \"BorrowableItem_userId_itemCode_key\"
-    ON \"BorrowableItem\"(\"userId\", \"itemCode\")
-  \`);
-
   await prisma.\$executeRawUnsafe(\`
     DO \\\$\\\$ BEGIN
       ALTER TABLE \"BorrowingSession\"

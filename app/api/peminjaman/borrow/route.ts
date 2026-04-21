@@ -9,6 +9,7 @@ import { refreshSession, refreshAccessToken } from "@/lib/accurate/client";
 import {
     calculateDueDateFromDuration,
     checkBorrowAvailability,
+    findUnconfiguredBorrowableItems,
     createBorrowingActivities,
     formatDateOnly,
     startOfDay,
@@ -152,8 +153,21 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        const unconfiguredItems = await findUnconfiguredBorrowableItems(items);
+        if (unconfiguredItems.length > 0) {
+            return NextResponse.json(
+                {
+                    error: "Some items are not configured in Barang Peminjaman",
+                    items: unconfiguredItems.map((item) => ({
+                        itemCode: item.itemCode,
+                        itemName: item.itemName || item.itemCode,
+                    })),
+                },
+                { status: 400 }
+            );
+        }
+
         const availability = await checkBorrowAvailability({
-            userId: session.user.id,
             items,
             startDate: startsAt,
             endDate: dueAt,

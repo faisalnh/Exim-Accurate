@@ -2,7 +2,7 @@ WITH ranked_items AS (
   SELECT
     "id",
     ROW_NUMBER() OVER (
-      PARTITION BY "userId", "itemCode"
+      PARTITION BY "itemCode"
       ORDER BY
         "totalStock" DESC,
         "updatedAt" DESC,
@@ -20,9 +20,12 @@ DELETE FROM "BorrowableItem"
 WHERE "id" IN (SELECT "id" FROM duplicate_items);
 
 DROP INDEX IF EXISTS "BorrowableItem_credentialId_itemCode_key";
+DROP INDEX IF EXISTS "BorrowableItem_userId_itemCode_key";
+ALTER TABLE "BorrowableItem" DROP CONSTRAINT IF EXISTS "BorrowableItem_userId_fkey";
 ALTER TABLE "BorrowableItem" DROP CONSTRAINT IF EXISTS "BorrowableItem_credentialId_fkey";
 
+ALTER TABLE "BorrowableItem" DROP COLUMN IF EXISTS "userId";
 ALTER TABLE "BorrowableItem" DROP COLUMN IF EXISTS "credentialId";
 
-CREATE UNIQUE INDEX IF NOT EXISTS "BorrowableItem_userId_itemCode_key"
-ON "BorrowableItem"("userId", "itemCode");
+CREATE UNIQUE INDEX IF NOT EXISTS "BorrowableItem_itemCode_key"
+ON "BorrowableItem"("itemCode");
