@@ -120,62 +120,24 @@ export async function GET() {
       console.warn('[dashboard/summary] kioskSyncData model not found on prisma client yet');
     }
 
-    const totalKioskCheckouts = kioskCaches.reduce(
-      (sum, cache) => sum + (cache.totalCheckouts || 0),
-      0,
-    );
+    // Treat the strongest monthly kiosk cache as the organization-wide source of truth.
+    // This avoids double-counting when multiple admin logins can trigger the same sync.
+    const kioskCache =
+      kioskCaches
+        .slice()
+        .sort((a, b) => {
+          const totalDiff = (b.totalCheckouts || 0) - (a.totalCheckouts || 0);
+          if (totalDiff !== 0) return totalDiff;
 
-    const topUsersByEmail = new Map<string, { email: string; name: string | null; count: number }>();
-    const topItemsByCode = new Map<string, { itemCode: string; itemName: string; totalQuantity: number }>();
-    const dailyCountMap = new Map<string, number>();
-    let kioskLastSync: string | null = null;
+          const uniqueDiff = (b.uniqueUsers || 0) - (a.uniqueUsers || 0);
+          if (uniqueDiff !== 0) return uniqueDiff;
 
-    for (const cache of kioskCaches) {
-      if (!kioskLastSync || new Date(cache.lastSyncAt).getTime() > new Date(kioskLastSync).getTime()) {
-        kioskLastSync = cache.lastSyncAt;
-      }
+          return new Date(b.lastSyncAt).getTime() - new Date(a.lastSyncAt).getTime();
+        })[0] || null;
 
-      for (const user of ((cache.topUsers as any[]) || [])) {
-        const key = user.email || "unknown@kiosk";
-        const existing = topUsersByEmail.get(key);
-        if (existing) {
-          existing.count += user.count || 0;
-          if (!existing.name && user.name) {
-            existing.name = user.name;
-          }
-        } else {
-          topUsersByEmail.set(key, {
-            email: key,
-            name: user.name || null,
-            count: user.count || 0,
-          });
-        }
-      }
-
-      for (const item of ((cache.topItems as any[]) || [])) {
-        const key = item.itemCode || "UNKNOWN";
-        const existing = topItemsByCode.get(key);
-        if (existing) {
-          existing.totalQuantity += item.totalQuantity || 0;
-        } else {
-          topItemsByCode.set(key, {
-            itemCode: key,
-            itemName: item.itemName || key,
-            totalQuantity: item.totalQuantity || 0,
-          });
-        }
-      }
-
-      for (const day of ((cache.dailyData as any[]) || [])) {
-        if (!day?.date) continue;
-        dailyCountMap.set(day.date, (dailyCountMap.get(day.date) || 0) + (day.count || 0));
-      }
-    }
-
-    const cachedTopUsers = Array.from(topUsersByEmail.values())
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-    const uniqueKioskUsers = topUsersByEmail.size;
+    const totalKioskCheckouts = kioskCache?.totalCheckouts || 0;
+    const uniqueKioskUsers = kioskCache?.uniqueUsers || 0;
+    const cachedTopUsers = ((kioskCache?.topUsers as any[]) || []).slice(0, 10);
     const topKioskUser = cachedTopUsers.length > 0 ? cachedTopUsers[0] : null;
     const topCheckoutUsers = cachedTopUsers.map((user: any, idx: number) => ({
       rank: idx + 1,
@@ -183,17 +145,20 @@ export async function GET() {
       name: user.name || null,
       count: user.count || 0,
     }));
-    const topItems = Array.from(topItemsByCode.values())
-      .sort((a, b) => b.totalQuantity - a.totalQuantity)
-      .slice(0, 5)
-      .map((item: any, idx: number) => ({
+    const topItems = (((kioskCache?.topItems as any[]) || []).slice(0, 5)).map((item: any, idx: number) => ({
       rank: idx + 1,
       itemCode: item.itemCode,
       itemName: item.itemName || item.itemCode,
       totalQuantity: item.totalQuantity || 0,
     }));
+    let kioskLastSync: string | null = kioskCache?.lastSyncAt || null;
 
     // Build kiosk weekly chart data (last 7 days) from cached daily data
+    const dailyCountMap = new Map<string, number>();
+    (((kioskCache?.dailyData as any[]) || [])).forEach((day: any) => {
+      if (!day?.date) return;
+      dailyCountMap.set(day.date, day.count || 0);
+    });
     const kioskWeeklyData: { name: string; checkouts: number }[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
