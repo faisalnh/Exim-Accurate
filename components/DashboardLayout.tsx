@@ -16,10 +16,12 @@ import {
   Tooltip,
   Stack,
   rem,
+  UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { signOut, useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   IconDashboard,
   IconFileExport,
@@ -237,43 +239,42 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               onClick={toggle}
               hiddenFrom="sm"
               size="sm"
+              aria-label="Toggle navigation"
             />
-            <Group
-              gap="xs"
-              style={{ cursor: "pointer" }}
-              onClick={() => router.push("/dashboard")}
-            >
-              <Box
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background:
-                    "linear-gradient(135deg, #228BE6 0%, #1C7ED6 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontWeight: 700,
-                  fontSize: 16,
-                }}
-              >
-                E
-              </Box>
-              <Text
-                size="xl"
-                fw={700}
-                style={{
-                  background: isDark
-                    ? "linear-gradient(135deg, #74C0FC 0%, #A5D8FF 100%)"
-                    : "linear-gradient(135deg, #228BE6 0%, #1C7ED6 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Exima
-              </Text>
-            </Group>
+            <UnstyledButton component={Link} href="/dashboard">
+              <Group gap="xs">
+                <Box
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    background:
+                      "linear-gradient(135deg, #228BE6 0%, #1C7ED6 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: 16,
+                  }}
+                >
+                  E
+                </Box>
+                <Text
+                  size="xl"
+                  fw={700}
+                  style={{
+                    background: isDark
+                      ? "linear-gradient(135deg, #74C0FC 0%, #A5D8FF 100%)"
+                      : "linear-gradient(135deg, #228BE6 0%, #1C7ED6 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  Exima
+                </Text>
+              </Group>
+            </UnstyledButton>
           </Group>
 
           <Group gap="sm">
