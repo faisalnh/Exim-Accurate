@@ -5,3 +5,7 @@
 ## 2026-02-04 - [Consistent Empty States]
 **Learning:** Replacing plain text empty states with visually rich components significantly improves the perceived quality of the application and provides clearer calls to action.
 **Action:** Always check for empty states in lists/tables and use the `EmptyState` component instead of plain text.
+
+## 2026-02-04 - [Confirmation Dialogs]
+**Learning:** Destructive actions like deletion in high-traffic dashboards are prone to accidental clicks. Native confirmation prompts are disruptive.
+**Action:** Use `modals.openConfirmModal` with clear, localized warning messages and distinct confirm button styling (red) for all destructive actions to prevent data loss.
