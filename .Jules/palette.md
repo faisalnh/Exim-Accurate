@@ -5,3 +5,7 @@
 ## 2026-02-04 - [Consistent Empty States]
 **Learning:** Replacing plain text empty states with visually rich components significantly improves the perceived quality of the application and provides clearer calls to action.
 **Action:** Always check for empty states in lists/tables and use the `EmptyState` component instead of plain text.
+
+## 2024-05-23 - [Icon Button Accessibility]
+**Learning:** Icon-only buttons without aria-labels are completely inaccessible to screen readers, leaving users guessing their function.
+**Action:** Always add descriptive, localized aria-labels to ActionIcon components that lack visible text.
