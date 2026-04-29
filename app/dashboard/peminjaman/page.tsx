@@ -797,6 +797,7 @@ export default function PeminjamanDashboardPage() {
                                                                     onClick={() =>
                                                                         handleDeleteItem(item.id)
                                                                     }
+                                                                    aria-label={language === "id" ? "Hapus" : "Delete"}
                                                                 >
                                                                     <IconTrash size={16} />
                                                                 </ActionIcon>
