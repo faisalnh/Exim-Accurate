@@ -152,6 +152,7 @@ export default function PeminjamanDashboardPage() {
     const [newItemStock, setNewItemStock] = useState<number>(1);
     const [lookingUp, setLookingUp] = useState(false);
     const [addingItem, setAddingItem] = useState(false);
+    const [deletingItemIds, setDeletingItemIds] = useState<string[]>([]);
 
     // Sessions tab
     const [sessions, setSessions] = useState<BorrowingSession[]>([]);
@@ -406,6 +407,7 @@ export default function PeminjamanDashboardPage() {
 
     // Delete borrowable item
     const handleDeleteItem = async (id: string) => {
+        setDeletingItemIds((prev) => [...prev, id]);
         try {
             const res = await fetch(`/api/peminjaman/items?id=${id}`, {
                 method: "DELETE",
@@ -423,6 +425,8 @@ export default function PeminjamanDashboardPage() {
                 message: language === "id" ? "Gagal menghapus" : "Failed to delete",
                 color: "red",
             });
+        } finally {
+            setDeletingItemIds((prev) => prev.filter((itemId) => itemId !== id));
         }
     };
 
@@ -794,6 +798,7 @@ export default function PeminjamanDashboardPage() {
                                                                 <ActionIcon
                                                                     color="red"
                                                                     variant="subtle"
+                                                                    loading={deletingItemIds.includes(item.id)}
                                                                     onClick={() =>
                                                                         handleDeleteItem(item.id)
                                                                     }
