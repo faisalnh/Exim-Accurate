@@ -33,6 +33,8 @@ import {
   IconSettings,
   IconExternalLink,
   IconClipboardList,
+  IconChartBar,
+  IconChartLine,
 } from "@tabler/icons-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageSelect } from "@/components/ui/LanguageSelect";
@@ -190,6 +192,32 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       href: "/dashboard/peminjaman",
     },
     {
+      label: "Analytics",
+      icon: <IconChartBar size={20} />,
+      children: [
+        {
+          label: "Overview",
+          icon: <IconChartLine size={16} />,
+          href: "/dashboard/analytics",
+        },
+        {
+          label: "Peminjaman",
+          icon: <IconClipboardList size={16} />,
+          href: "/dashboard/analytics/peminjaman",
+        },
+        {
+          label: "Pengambilan",
+          icon: <IconScan size={16} />,
+          href: "/dashboard/analytics/pengambilan",
+        },
+        {
+          label: "Resources",
+          icon: <IconChartBar size={16} />,
+          href: "/dashboard/analytics/resources",
+        },
+      ],
+    },
+    {
       label: t.dashboard.nav.credentials,
       icon: <IconKey size={20} />,
       href: "/dashboard/credentials",
@@ -198,7 +226,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const isActive = (href: string) => pathname === href;
   const isParentActive = (children?: { href: string }[]) =>
-    children?.some((child) => pathname === child.href);
+    children?.some(
+      (child) =>
+        pathname === child.href || pathname.startsWith(`${child.href}/`),
+    );
 
   const handleNavClick = (href: string) => {
     router.push(href);
