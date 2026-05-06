@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Badge,
   Box,
@@ -27,6 +28,12 @@ function dateValue(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+function parseDateParam(value: string | null) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function formatValue(value: unknown) {
   if (value === null || value === undefined) return "-";
   if (typeof value === "boolean") return value ? "Ya" : "Tidak";
@@ -36,16 +43,21 @@ function formatValue(value: unknown) {
   return String(value);
 }
 
-function cell(column: string, row: Record<string, unknown>) {
+function cell(
+  column: string,
+  row: Record<string, unknown>,
+  detailQueryString = "",
+) {
   const value = row[column];
   const itemCode = typeof row.itemCode === "string" ? row.itemCode : null;
   const email = typeof value === "string" ? value : null;
+  const detailQuery = detailQueryString ? `?${detailQueryString}` : "";
 
   if ((column === "itemCode" || column === "itemName") && itemCode) {
     return (
       <Text
         component={Link}
-        href={`/dashboard/analytics/items/${encodeURIComponent(itemCode)}`}
+        href={`/dashboard/analytics/items/${encodeURIComponent(itemCode)}${detailQuery}`}
         c="blue"
         fw={500}
       >
@@ -58,7 +70,7 @@ function cell(column: string, row: Record<string, unknown>) {
     return (
       <Text
         component={Link}
-        href={`/dashboard/analytics/users/${encodeURIComponent(email)}`}
+        href={`/dashboard/analytics/users/${encodeURIComponent(email)}${detailQuery}`}
         c="blue"
         fw={500}
       >
@@ -70,7 +82,13 @@ function cell(column: string, row: Record<string, unknown>) {
   return formatValue(value);
 }
 
-function HistoryTable({ rows }: { rows: Record<string, unknown>[] }) {
+function HistoryTable({
+  rows,
+  detailQueryString = "",
+}: {
+  rows: Record<string, unknown>[];
+  detailQueryString?: string;
+}) {
   const columns = rows.length ? Object.keys(rows[0]) : [];
 
   if (!rows.length) {
@@ -96,7 +114,9 @@ function HistoryTable({ rows }: { rows: Record<string, unknown>[] }) {
           {rows.map((row, index) => (
             <Table.Tr key={index}>
               {columns.map((column) => (
-                <Table.Td key={column}>{cell(column, row)}</Table.Td>
+                <Table.Td key={column}>
+                  {cell(column, row, detailQueryString)}
+                </Table.Td>
               ))}
             </Table.Tr>
           ))}
@@ -113,10 +133,13 @@ export function AnalyticsEntityPage({
   type: EntityType;
   value: string;
 }) {
+  const searchParams = useSearchParams();
   const now = new Date();
+  const startDateParam = parseDateParam(searchParams.get("startDate"));
+  const endDateParam = parseDateParam(searchParams.get("endDate"));
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
-    new Date(now.getFullYear(), now.getMonth(), 1),
-    new Date(now.getFullYear(), now.getMonth() + 1, 0),
+    startDateParam || new Date(now.getFullYear(), now.getMonth(), 1),
+    endDateParam || new Date(now.getFullYear(), now.getMonth() + 1, 0),
   ]);
   const [loading, setLoading] = useState(true);
   const [peminjaman, setPeminjaman] = useState<any>(null);
@@ -183,6 +206,13 @@ export function AnalyticsEntityPage({
 
   const peminjamanRows = peminjaman?.details?.data || [];
   const pengambilanRows = pengambilan?.details?.data || [];
+  const detailQueryString = useMemo(() => {
+    const params = new URLSearchParams();
+    if (dateRange[0]) params.set("startDate", dateValue(dateRange[0]));
+    if (dateRange[1]) params.set("endDate", dateValue(dateRange[1]));
+    return params.toString();
+  }, [dateRange]);
+  const detailQuery = detailQueryString ? `?${detailQueryString}` : "";
   const itemName =
     type === "item"
       ? peminjamanRows[0]?.itemName || pengambilanRows[0]?.itemName || value
@@ -232,7 +262,7 @@ export function AnalyticsEntityPage({
         <Box>
           <Button
             component={Link}
-            href="/dashboard/analytics"
+            href={`/dashboard/analytics${detailQuery}`}
             variant="subtle"
             leftSection={<IconArrowLeft size={16} />}
             mb="sm"
@@ -310,11 +340,17 @@ export function AnalyticsEntityPage({
             </Tabs.List>
 
             <Tabs.Panel value="peminjaman">
-              <HistoryTable rows={peminjamanDisplayRows} />
+              <HistoryTable
+                rows={peminjamanDisplayRows}
+                detailQueryString={detailQueryString}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value="pengambilan">
-              <HistoryTable rows={pengambilanDisplayRows} />
+              <HistoryTable
+                rows={pengambilanDisplayRows}
+                detailQueryString={detailQueryString}
+              />
             </Tabs.Panel>
           </Tabs>
         </Paper>
