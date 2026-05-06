@@ -21,23 +21,49 @@ export async function GET(req: NextRequest) {
 
   try {
     const filters = await parseAnalyticsFilters(req);
+    const { searchParams } = new URL(req.url);
+    const exactItemCode = searchParams.get("exactItemCode") === "true";
     const where: any = {
       createdAt: { gte: filters.startDate, lte: filters.endDate },
     };
 
     if (filters.credentialId) where.credentialId = filters.credentialId;
-    if (filters.email) where.staffEmail = { contains: filters.email, mode: "insensitive" };
+    if (filters.email)
+      where.staffEmail = { contains: filters.email, mode: "insensitive" };
     if (filters.status) where.status = filters.status;
-    if (filters.itemCode) where.items = { some: { itemCode: filters.itemCode } };
 
-    const rows = await prisma.checkoutSession.findMany({
+    const itemWhere = filters.itemCode
+      ? {
+          OR: exactItemCode
+            ? [{ itemCode: filters.itemCode }]
+            : [
+                {
+                  itemCode: { contains: filters.itemCode, mode: "insensitive" },
+                },
+                {
+                  itemName: { contains: filters.itemCode, mode: "insensitive" },
+                },
+              ],
+        }
+      : undefined;
+
+    if (itemWhere) {
+      where.items = { some: itemWhere };
+    }
+
+    const rows = (await prisma.checkoutSession.findMany({
       where,
-      include: { items: true },
+      include: { items: itemWhere ? { where: itemWhere as any } : true },
       orderBy: { createdAt: "desc" },
-    });
+    })) as any[];
 
     const totalQuantity = rows.reduce(
-      (sum, row) => sum + row.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
+      (sum, row) =>
+        sum +
+        row.items.reduce(
+          (itemSum: number, item: any) => itemSum + item.quantity,
+          0,
+        ),
       0,
     );
 
@@ -52,16 +78,28 @@ export async function GET(req: NextRequest) {
 
     const trendMap = new Map<string, number>();
     for (const row of rows) {
-      const quantity = row.items.reduce((sum, item) => sum + item.quantity, 0);
+      const quantity = row.items.reduce(
+        (sum: number, item: any) => sum + item.quantity,
+        0,
+      );
       const key = trendKey(row.createdAt, filters.groupBy);
       trendMap.set(key, (trendMap.get(key) || 0) + quantity);
     }
 
-    const itemMap = new Map<string, { total: number; data: { itemCode: string; itemName: string } }>();
-    const staffMap = new Map<string, { total: number; data: { email: string; name: string | null } }>();
+    const itemMap = new Map<
+      string,
+      { total: number; data: { itemCode: string; itemName: string } }
+    >();
+    const staffMap = new Map<
+      string,
+      { total: number; data: { email: string; name: string | null } }
+    >();
 
     for (const row of rows) {
-      const sessionQuantity = row.items.reduce((sum, item) => sum + item.quantity, 0);
+      const sessionQuantity = row.items.reduce(
+        (sum: number, item: any) => sum + item.quantity,
+        0,
+      );
       const staff = staffMap.get(row.staffEmail) || {
         total: 0,
         data: { email: row.staffEmail, name: row.staffName },
@@ -72,7 +110,10 @@ export async function GET(req: NextRequest) {
       for (const item of row.items) {
         const entry = itemMap.get(item.itemCode) || {
           total: 0,
-          data: { itemCode: item.itemCode, itemName: item.itemName || item.itemCode },
+          data: {
+            itemCode: item.itemCode,
+            itemName: item.itemName || item.itemCode,
+          },
         };
         entry.total += item.quantity;
         itemMap.set(item.itemCode, entry);
@@ -80,8 +121,7 @@ export async function GET(req: NextRequest) {
     }
 
     const details = rows.flatMap((row) =>
-      row.items.map((item) => ({
-        sessionId: row.id,
+      row.items.map((item: any) => ({
         createdAt: row.createdAt,
         completedAt: row.completedAt,
         status: row.status,
@@ -101,7 +141,11 @@ export async function GET(req: NextRequest) {
       trend: Array.from(trendMap.entries())
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([name, checkouts]) => ({ name, checkouts })),
-      statusBreakdown: sumBy(rows, (row) => row.status, () => 1),
+      statusBreakdown: sumBy(
+        rows,
+        (row) => row.status,
+        () => 1,
+      ),
       topItems: mapToRankedRows(itemMap),
       topStaff: mapToRankedRows(staffMap),
       failures: rows
@@ -116,7 +160,10 @@ export async function GET(req: NextRequest) {
       details: paginate(details, filters.page, filters.pageSize),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal memuat analytics pengambilan";
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Gagal memuat analytics pengambilan";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

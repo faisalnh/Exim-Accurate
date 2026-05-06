@@ -210,11 +210,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           icon: <IconScan size={16} />,
           href: "/dashboard/analytics/pengambilan",
         },
-        {
-          label: "Resources",
-          icon: <IconChartBar size={16} />,
-          href: "/dashboard/analytics/resources",
-        },
       ],
     },
     {

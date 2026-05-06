@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Badge,
@@ -33,7 +34,7 @@ import {
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatsCard } from "@/components/ui/StatsCard";
 
-type AnalyticsMode = "overview" | "peminjaman" | "pengambilan" | "resources";
+type AnalyticsMode = "overview" | "peminjaman" | "pengambilan";
 
 const titles: Record<
   AnalyticsMode,
@@ -57,11 +58,6 @@ const titles: Record<
       "Analisis self-checkout, staf, item, status, dan kegagalan transaksi.",
     endpoint: "/api/analytics/pengambilan",
   },
-  resources: {
-    title: "Resource Usage Analytics",
-    subtitle: "Analisis pemakaian resource lintas peminjaman dan pengambilan.",
-    endpoint: "/api/analytics/resources",
-  },
 };
 
 function dateValue(date: Date) {
@@ -77,8 +73,46 @@ function formatValue(value: unknown) {
   return String(value);
 }
 
+function linkedCell(column: string, row: Record<string, unknown>) {
+  const value = row[column];
+  const itemCode = typeof row.itemCode === "string" ? row.itemCode : null;
+  const email = typeof value === "string" ? value : null;
+
+  if ((column === "itemCode" || column === "itemName") && itemCode) {
+    return (
+      <Text
+        component={Link}
+        href={`/dashboard/analytics/items/${encodeURIComponent(itemCode)}`}
+        c="blue"
+        fw={500}
+      >
+        {formatValue(value)}
+      </Text>
+    );
+  }
+
+  if (["email", "borrowerEmail", "staffEmail"].includes(column) && email) {
+    return (
+      <Text
+        component={Link}
+        href={`/dashboard/analytics/users/${encodeURIComponent(email)}`}
+        c="blue"
+        fw={500}
+      >
+        {formatValue(value)}
+      </Text>
+    );
+  }
+
+  return formatValue(value);
+}
+
 function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
-  const columns = rows.length ? Object.keys(rows[0]).slice(0, 10) : [];
+  const columns = rows.length
+    ? Object.keys(rows[0])
+        .filter((column) => column !== "sessionId")
+        .slice(0, 10)
+    : [];
 
   if (!rows.length) {
     return (
@@ -103,7 +137,7 @@ function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
           {rows.map((row, index) => (
             <Table.Tr key={index}>
               {columns.map((column) => (
-                <Table.Td key={column}>{formatValue(row[column])}</Table.Td>
+                <Table.Td key={column}>{linkedCell(column, row)}</Table.Td>
               ))}
             </Table.Tr>
           ))}
@@ -240,19 +274,9 @@ export function AnalyticsPage({ mode }: { mode: AnalyticsMode }) {
       ];
     }
     if (mode === "pengambilan") {
-      return [
-        ["Total Sesi", data.summary?.totalSessions || 0],
-        ["Selesai", data.summary?.completed || 0],
-        ["Gagal", data.summary?.failed || 0],
-        ["Qty Diambil", data.summary?.totalQuantity || 0],
-      ];
+      return [];
     }
-    return [
-      ["Resource Unik", data.summary?.uniqueResources || 0],
-      ["Qty Dipinjam", data.summary?.totalBorrowed || 0],
-      ["Qty Dikembalikan", data.summary?.totalReturned || 0],
-      ["Qty Diambil", data.summary?.totalCheckedOut || 0],
-    ];
+    return [];
   }, [data, mode]);
 
   const mainTrend =
@@ -264,9 +288,7 @@ export function AnalyticsPage({ mode }: { mode: AnalyticsMode }) {
       ? ["peminjaman", "pengambilan"]
       : mode === "peminjaman"
         ? ["borrow", "booking", "return"]
-        : mode === "resources"
-          ? ["borrowed", "returned"]
-          : ["checkouts"];
+        : ["checkouts"];
   const details = data?.details?.data || [];
 
   return (
@@ -327,7 +349,8 @@ export function AnalyticsPage({ mode }: { mode: AnalyticsMode }) {
             leftSection={<IconSearch size={16} />}
           />
           <TextInput
-            label="Item code"
+            label="Item code / name"
+            placeholder="Cari berdasarkan kode atau nama item"
             value={itemCode}
             onChange={(event) => setItemCode(event.currentTarget.value)}
           />
@@ -343,21 +366,23 @@ export function AnalyticsPage({ mode }: { mode: AnalyticsMode }) {
         </Paper>
       )}
 
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
-        {loading
-          ? Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} height={112} radius="lg" />
-            ))
-          : cards.map(([label, value]) => (
-              <StatsCard
-                key={label}
-                title={String(label)}
-                value={String(value)}
-                icon={<IconChartBar size={22} />}
-                color="brand"
-              />
-            ))}
-      </SimpleGrid>
+      {mode !== "pengambilan" && (
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
+          {loading
+            ? Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} height={112} radius="lg" />
+              ))
+            : cards.map(([label, value]) => (
+                <StatsCard
+                  key={label}
+                  title={String(label)}
+                  value={String(value)}
+                  icon={<IconChartBar size={22} />}
+                  color="brand"
+                />
+              ))}
+        </SimpleGrid>
+      )}
 
       {!loading && (
         <ChartCard title="Trend" data={mainTrend} bars={chartBars} />
