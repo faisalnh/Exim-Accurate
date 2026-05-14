@@ -200,6 +200,7 @@ export default function KioskHomePage() {
             <ActionIcon
               variant="subtle"
               size="lg"
+              aria-label={t.common.back}
               onClick={() => setSelectedCredential(null)}
               style={{ color: "rgba(255,255,255,0.7)" }}
             >
@@ -212,6 +213,7 @@ export default function KioskHomePage() {
               variant="subtle"
               color="gray"
               size="lg"
+              aria-label={isFullscreen ? t.kiosk.exitFullscreen : t.kiosk.fullscreen}
               onClick={toggleFullscreen}
               style={{
                 background: "rgba(12, 18, 32, 0.85)",
